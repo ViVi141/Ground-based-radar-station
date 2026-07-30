@@ -1,0 +1,43 @@
+GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_generator.et" {
+ ID "F0DBA538AC2A0552"
+ components {
+  SCR_EditableEntityComponent "{69FCEDCE20021001}" : "{996046FE206C699A}Prefabs/Editor/Components/Default_SCR_EditableEntityComponent.ct" {
+   m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE20021002}" {
+    Name "RPL-5 Radar Generator"
+    m_aAuthoredLabels {
+    }
+    m_aAutoLabels {
+     108 1 121
+    }
+   }
+  }
+  RplComponent "{5624A88DC2D9928D}" {
+   Enabled 1
+  }
+  ActionsManagerComponent "{69FCEDCE20021010}" {
+   ActionContexts {
+    UserActionContext "{69FCEDCE20021011}" {
+     ContextName "RadarPower"
+     Position PointInfo "{69FCEDCE20021012}" {
+      Offset 0 1.2 0.5
+     }
+     Radius 2.5
+    }
+   }
+   additionalActions {
+    GBRS_RadarStationPowerUserAction "{69FCEDCE20021013}" {
+     ParentContextList {
+      "RadarPower"
+     }
+     Duration 0
+    }
+   }
+  }
+ }
+ {
+  GenericEntity : "{69FCEDCEA0010009}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_RPL5_01/E_ApproachRadar_RPL5_01_antenna.et" {
+   ID "69FCEDCE20021004"
+   coords 0 0 0
+  }
+ }
+}

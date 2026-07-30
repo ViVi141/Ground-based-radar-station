@@ -1,0 +1,18 @@
+GenericEntity : "{002A9FA2A8544E0C}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_antenna.et" {
+ ID "F0DBA538AC2A0552"
+ components {
+  SCR_EditableEntityComponent "{69FCEDCE20031001}" : "{996046FE206C699A}Prefabs/Editor/Components/Default_SCR_EditableEntityComponent.ct" {
+   m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE20031002}" {
+    Name "RPL-5 Mast Antenna"
+    m_aAuthoredLabels {
+    }
+    m_aAutoLabels {
+     108 1 121
+    }
+   }
+  }
+  RplComponent "{5624A88DC2D9928D}" {
+   Enabled 1
+  }
+ }
+}

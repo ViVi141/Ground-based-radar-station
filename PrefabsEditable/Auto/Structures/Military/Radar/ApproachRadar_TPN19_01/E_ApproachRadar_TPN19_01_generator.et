@@ -1,0 +1,37 @@
+GenericEntity : "{451BE00A37C69679}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01_generator.et" {
+ ID "F0DBA538AC2A0552"
+ components {
+  SCR_EditableEntityComponent "{69FCEDCE20051001}" : "{996046FE206C699A}Prefabs/Editor/Components/Default_SCR_EditableEntityComponent.ct" {
+   m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE20051002}" {
+    Name "TPN-19 Radar Generator"
+    m_aAuthoredLabels {
+    }
+    m_aAutoLabels {
+     108 1 121
+    }
+   }
+  }
+  RplComponent "{5624A88DC2D9928D}" {
+   Enabled 1
+  }
+  ActionsManagerComponent "{69FCEDCE20051010}" {
+   ActionContexts {
+    UserActionContext "{69FCEDCE20051011}" {
+     ContextName "RadarPower"
+     Position PointInfo "{69FCEDCE20051012}" {
+      Offset 0 1.2 0.5
+     }
+     Radius 2.5
+    }
+   }
+   additionalActions {
+    GBRS_RadarStationPowerUserAction "{69FCEDCE20051013}" {
+     ParentContextList {
+      "RadarPower"
+     }
+     Duration 0
+    }
+   }
+  }
+ }
+}

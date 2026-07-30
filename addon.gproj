@@ -1,0 +1,8 @@
+GameProject {
+ ID "Groundbasedradarstation"
+ GUID "69FCEDCE73FC5335"
+ TITLE "Ground-based radar station"
+ Dependencies {
+  "6892AB0669DF29AA" "58D0FB3206B6F859"
+ }
+}

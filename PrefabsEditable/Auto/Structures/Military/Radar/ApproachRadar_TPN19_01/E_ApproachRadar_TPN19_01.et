@@ -1,0 +1,17 @@
+StaticModelEntity : "{A0190D51FD62FF68}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01.et" {
+ ID "56ACD1C4DB91DB10"
+ components {
+  SCR_EditableEntityComponent "{69FCEDCE20041001}" : "{996046FE206C699A}Prefabs/Editor/Components/Default_SCR_EditableEntityComponent.ct" {
+   m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE20041002}" {
+    Name "TPN-19 Radar"
+    m_aAuthoredLabels {
+    }
+    m_aAutoLabels {
+     108 1 121
+    }
+   }
+  }
+  RplComponent "{69FCEDCE20041003}" : "{B193E926C1935A4C}Prefabs/Editor/Components/Default_RplComponent.ct" {
+  }
+ }
+}

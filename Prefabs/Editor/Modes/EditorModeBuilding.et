@@ -1,0 +1,11 @@
+SCR_EditorModeEntity : "{E8DD27917B43F8BD}Prefabs/Editor/Modes/EditorModeBuilding.et" {
+ ID "518A34314C7CB324"
+ components {
+  SCR_CampaignBuildingPlacingEditorComponent "{5A0ACCCCDF0C0F65}" {
+   m_Registries +{
+    SCR_PlaceableEntitiesRegistry "{69FCEDCE41000002}" : "{69FCEDCEA0020001}Configs/Editor/PlaceableEntities/Compositions/GBRS_RadarStations.conf" {
+    }
+   }
+  }
+ }
+}

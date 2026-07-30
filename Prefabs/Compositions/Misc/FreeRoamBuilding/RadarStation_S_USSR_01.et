@@ -1,0 +1,70 @@
+GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposition_Base.et" {
+ ID "5282DCB5DFC8538F"
+ components {
+  FactionAffiliationComponent "{69FCEDCE10021001}" {
+   "faction affiliation" "USSR"
+  }
+  RigidBody "{5E96A067A67C5029}" {
+   Geometries {
+    PhysicsBoxGeometry UserAction {
+     Extents 8 0.5 8
+    }
+   }
+  }
+  Hierarchy "{69FCEDCE10021003}" {
+   Enabled 1
+  }
+  RDF_RadarComponent "{69FCEDCE10021004}" {
+  }
+  RDF_RadarNetworkComponent "{69FCEDCE10021005}" {
+  }
+  GBRS_RadarStationComponent "{69FCEDCE10021006}" {
+   m_eFactionPreset 1
+   m_fSupplyCostPerTick 5
+   m_fSupplyTickIntervalS 30
+   m_bRequireSuppliesToPowerOn 1
+   m_fElevationBoresightDeg 4
+   m_fElevationBeamwidthDeg 8
+  }
+ }
+ coords 0 0 0
+ {
+  StaticModelEntity : "{A0190D51FD62FF68}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01.et" {
+   ID "69FCEDCE10022001"
+   components {
+    Hierarchy "{69FCEDCE10022002}" {
+     Enabled 1
+    }
+   }
+   coords 0 0 1.5
+  }
+  GenericEntity : "{451BE00A37C69679}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01_generator.et" {
+   ID "69FCEDCE10022003"
+   components {
+    Hierarchy "{69FCEDCE10022004}" {
+     Enabled 1
+    }
+    ActionsManagerComponent "{69FCEDCE10022010}" {
+     ActionContexts {
+      UserActionContext "{69FCEDCE10022011}" {
+       ContextName "RadarPower"
+       Position PointInfo "{69FCEDCE10022012}" {
+        Offset 0 1.2 0.5
+       }
+       Radius 2.5
+      }
+     }
+     additionalActions {
+      GBRS_RadarStationPowerUserAction "{69FCEDCE10022013}" {
+       ParentContextList {
+        "RadarPower"
+       }
+       Duration 0
+      }
+     }
+    }
+   }
+   coords -3.5 0 -1.5
+  }
+ }
+}

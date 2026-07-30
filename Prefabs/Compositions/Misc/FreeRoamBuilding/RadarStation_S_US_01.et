@@ -1,0 +1,84 @@
+GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposition_Base.et" {
+ ID "5282DCB5DFC8538F"
+ components {
+  FactionAffiliationComponent "{69FCEDCE10011001}" {
+   "faction affiliation" "US"
+  }
+  RigidBody "{5E96A067A67C5029}" {
+   Geometries {
+    PhysicsBoxGeometry UserAction {
+     Extents 8 0.5 8
+    }
+   }
+  }
+  Hierarchy "{69FCEDCE10011003}" {
+   Enabled 1
+  }
+  RDF_RadarComponent "{69FCEDCE10011004}" {
+  }
+  RDF_RadarNetworkComponent "{69FCEDCE10011005}" {
+  }
+  GBRS_RadarStationComponent "{69FCEDCE10011006}" {
+   m_eFactionPreset 0
+   m_fSupplyCostPerTick 5
+   m_fSupplyTickIntervalS 30
+   m_bRequireSuppliesToPowerOn 1
+   m_fElevationBoresightDeg 4
+   m_fElevationBeamwidthDeg 8
+  }
+ }
+ coords 0 0 0
+ {
+  GenericEntity : "{A528F04F41F2A2D0}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_on.et" {
+   ID "69FCEDCE10012001"
+   components {
+    Hierarchy "{69FCEDCE10012002}" {
+     Enabled 1
+    }
+    ProcAnimComponent "{5A4ED832D66CA486}" {
+     Enabled 0
+    }
+   }
+   coords 0 0 1.5
+  }
+  GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_generator.et" {
+   ID "69FCEDCE10012003"
+   components {
+    Hierarchy "{69FCEDCE10012004}" {
+     Enabled 1
+    }
+    ActionsManagerComponent "{69FCEDCE10012010}" {
+     ActionContexts {
+      UserActionContext "{69FCEDCE10012011}" {
+       ContextName "RadarPower"
+       Position PointInfo "{69FCEDCE10012012}" {
+        Offset 0 1.2 0.5
+       }
+       Radius 2.5
+      }
+     }
+     additionalActions {
+      GBRS_RadarStationPowerUserAction "{69FCEDCE10012013}" {
+       ParentContextList {
+        "RadarPower"
+       }
+       Duration 0
+      }
+     }
+    }
+   }
+   coords -4 0 -2
+   {
+    GenericEntity : "{002A9FA2A8544E0C}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_antenna.et" {
+     ID "69FCEDCE10012005"
+     components {
+      Hierarchy "{69FCEDCE10012006}" {
+       Enabled 1
+      }
+     }
+     coords 0 0 0
+    }
+   }
+  }
+ }
+}

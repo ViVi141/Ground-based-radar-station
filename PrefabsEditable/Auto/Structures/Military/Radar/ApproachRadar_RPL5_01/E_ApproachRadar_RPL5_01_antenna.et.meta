@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{69FCEDCEA0010009}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_RPL5_01/E_ApproachRadar_RPL5_01_antenna.et"
+ Configurations {
+  EntityTemplateResourceClass PC {
+  }
+  EntityTemplateResourceClass XBOX_ONE : PC {
+  }
+  EntityTemplateResourceClass XBOX_SERIES : PC {
+  }
+  EntityTemplateResourceClass PS4 : PC {
+  }
+  EntityTemplateResourceClass PS5 : PC {
+  }
+  EntityTemplateResourceClass HEADLESS : PC {
+  }
+ }
+}
