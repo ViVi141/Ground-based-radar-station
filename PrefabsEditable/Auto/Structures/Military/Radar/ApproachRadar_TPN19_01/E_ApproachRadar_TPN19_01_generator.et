@@ -31,6 +31,18 @@ GenericEntity : "{451BE00A37C69679}Prefabs/Structures/Military/Radar/ApproachRad
      }
      Duration 0
     }
+    GBRS_RadarStationOpenPpiUserAction "{69FCEDCE20051014}" {
+     ParentContextList {
+      "RadarPower"
+     }
+     Duration 0
+    }
+    GBRS_RadarStationScanVisualUserAction "{69FCEDCE20051015}" {
+     ParentContextList {
+      "RadarPower"
+     }
+     Duration 0
+    }
    }
   }
  }

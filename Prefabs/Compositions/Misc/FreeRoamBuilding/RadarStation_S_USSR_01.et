@@ -61,6 +61,18 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
        }
        Duration 0
       }
+      GBRS_RadarStationOpenPpiUserAction "{69FCEDCE10022014}" {
+       ParentContextList {
+        "RadarPower"
+       }
+       Duration 0
+      }
+      GBRS_RadarStationScanVisualUserAction "{69FCEDCE10022015}" {
+       ParentContextList {
+        "RadarPower"
+       }
+       Duration 0
+      }
      }
     }
    }
