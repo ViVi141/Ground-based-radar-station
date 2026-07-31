@@ -63,7 +63,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     [Attribute("0.9", UIWidgets.Slider, desc: "Frustum boresight core alpha", params: "0.1 1 0.05")]
     protected float m_fVisualCoreAlpha;
 
-    [Attribute("1", UIWidgets.CheckBox, desc: "Print [GBRS-DEBUG] radar detection diagnostics to console")]
+    [Attribute("0", UIWidgets.CheckBox, desc: "Print [GBRS-DEBUG] radar detection diagnostics to console")]
     protected bool m_bDebugLog;
 
     protected bool m_bPowered;

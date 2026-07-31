@@ -1,0 +1,2657 @@
+{
+  "profile": "rdf_physical_detect_1to1_eden_dem",
+  "notes": "Ports RDF_RadarPhysicalDetect + CFAR + scan gate + Swerling. When profile DemData/GM_Eden is present, clutter/LOS/knife use real terrain_y + surface_class around the spawned radar site.",
+  "target_agl_m": 80.0,
+  "radar_agl_m": 0.5,
+  "mc_trials": 400,
+  "dem": {
+    "loaded": true,
+    "source": "profile:C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\profile\\RDF\\DemData\\GM_Eden tiles=8383",
+    "shape": [
+      2656,
+      3232
+    ],
+    "cell_m": 4.0,
+    "radar_terrain_y": 27.84,
+    "radar_surface": 6,
+    "radar_agl_m": 0.5,
+    "land_bearing_deg": 285.0,
+    "cache": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\scripts\\Game\\GBRS\\out\\eden_crop_radar.npz"
+  },
+  "uh1": {
+    "key": "{D03C0F6044DB5208}Prefabs/Vehicles/Helicopters/UH1H/UH1H_base.et",
+    "mean_rcs_m2": 16.4414,
+    "size_xyz_m": [
+      2.86572,
+      5.06917,
+      12.9736
+    ],
+    "swerling": 1,
+    "aspect_nose_m2": 3.632,
+    "aspect_broadside_m2": 16.441
+  },
+  "factions": {
+    "US_RPL5": {
+      "config": {
+        "dem_clutter_scale": 1.0,
+        "detection_snr_db": 8.0,
+        "range_m": 7000.0,
+        "update_interval_s": 0.08,
+        "scan_rpm": 10.0,
+        "beam_duty_cycle": 0.00694,
+        "enable_cfar": true,
+        "enable_atm": true
+      },
+      "uh1_signature_key": "{D03C0F6044DB5208}Prefabs/Vehicles/Helicopters/UH1H/UH1H_base.et",
+      "uh1_baked_mean_rcs_m2": 16.4414,
+      "uh1_aspect_rcs_nose_m2": 3.63,
+      "uh1_aspect_rcs_broadside_m2": 16.44,
+      "uh1_size_m": [
+        2.86572,
+        5.06917,
+        12.9736
+      ],
+      "uh1_swerling": 1,
+      "mti_vs_speed": [
+        {
+          "radial_ms": 0.0,
+          "doppler_hz": 0.0,
+          "mti_gain": 0.0,
+          "mti_gain_db": -120.0
+        },
+        {
+          "radial_ms": 5.0,
+          "doppler_hz": 300.2,
+          "mti_gain": 0.0546,
+          "mti_gain_db": -12.63
+        },
+        {
+          "radial_ms": 20.0,
+          "doppler_hz": 1200.8,
+          "mti_gain": 0.6551,
+          "mti_gain_db": -1.84
+        },
+        {
+          "radial_ms": 40.0,
+          "doppler_hz": 2401.7,
+          "mti_gain": 0.9037,
+          "mti_gain_db": -0.44
+        },
+        {
+          "radial_ms": 50.0,
+          "doppler_hz": 3002.1,
+          "mti_gain": 0.4984,
+          "mti_gain_db": -3.02
+        },
+        {
+          "radial_ms": 60.0,
+          "doppler_hz": 3602.5,
+          "mti_gain": 0.0943,
+          "mti_gain_db": -10.25
+        },
+        {
+          "radial_ms": 80.0,
+          "doppler_hz": 4803.3,
+          "mti_gain": 0.348,
+          "mti_gain_db": -4.58
+        }
+      ],
+      "scenarios_4km": {
+        "A_boresight_snr_only": {
+          "pd_snr": 1.0,
+          "pd_cfar": 1.0,
+          "mean_snr_db": 34.0437387007173,
+          "trials": 400
+        },
+        "B_boresight_cfar_swerling": {
+          "pd_snr": 0.9975,
+          "pd_cfar": 0.995,
+          "mean_snr_db": 31.82396737006302,
+          "trials": 400
+        },
+        "C_paint_in_beam": {
+          "pd_snr": 0.9975,
+          "pd_cfar": 0.99,
+          "mean_snr_db": 30.70285315043477,
+          "trials": 400
+        },
+        "D_random_update_tick": {
+          "pd_snr": 0.015,
+          "pd_cfar": 0.015,
+          "mean_snr_db": -295.00535846958786,
+          "trials": 400
+        },
+        "E_tangential_v0": {
+          "pd_snr": 0.0,
+          "pd_cfar": 0.0,
+          "mean_snr_db": -25.151541466312906,
+          "trials": 400
+        },
+        "F_broadside_aspect": {
+          "pd_snr": 0.9975,
+          "pd_cfar": 0.9975,
+          "mean_snr_db": 38.23060679019502,
+          "trials": 400
+        },
+        "G_nlos_bounce": {
+          "pd_snr": 0.9775,
+          "pd_cfar": 0.9475,
+          "mean_snr_db": 22.647618119675418,
+          "trials": 400
+        },
+        "H_nlos_knife20m": {
+          "pd_snr": 0.9875,
+          "pd_cfar": 0.955,
+          "mean_snr_db": 23.616718249755976,
+          "trials": 400
+        }
+      },
+      "pd_vs_range_scan_swerling_cfar": [
+        {
+          "range_km": 0.5,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 37.6
+        },
+        {
+          "range_km": 0.75,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 38.47
+        },
+        {
+          "range_km": 1.0,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 37.92
+        },
+        {
+          "range_km": 1.25,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 37.01
+        },
+        {
+          "range_km": 1.5,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 36.29
+        },
+        {
+          "range_km": 1.75,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 35.69
+        },
+        {
+          "range_km": 2.0,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 35.14
+        },
+        {
+          "range_km": 2.25,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 34.64
+        },
+        {
+          "range_km": 2.5,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 34.13
+        },
+        {
+          "range_km": 2.75,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 33.6
+        },
+        {
+          "range_km": 3.0,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.998,
+          "mean_snr_db": 33.07
+        },
+        {
+          "range_km": 3.25,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.995,
+          "mean_snr_db": 32.58
+        },
+        {
+          "range_km": 3.5,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.995,
+          "mean_snr_db": 32.03
+        },
+        {
+          "range_km": 3.75,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.995,
+          "mean_snr_db": 31.35
+        },
+        {
+          "range_km": 4.0,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.988,
+          "mean_snr_db": 30.69
+        },
+        {
+          "range_km": 4.25,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.98,
+          "mean_snr_db": 30.11
+        },
+        {
+          "range_km": 4.5,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.985,
+          "mean_snr_db": 29.41
+        },
+        {
+          "range_km": 4.75,
+          "pd_snr": 0.998,
+          "pd_cfar": 0.97,
+          "mean_snr_db": 28.7
+        },
+        {
+          "range_km": 5.0,
+          "pd_snr": 0.995,
+          "pd_cfar": 0.97,
+          "mean_snr_db": 28.12
+        },
+        {
+          "range_km": 5.25,
+          "pd_snr": 0.995,
+          "pd_cfar": 0.958,
+          "mean_snr_db": 27.38
+        },
+        {
+          "range_km": 5.5,
+          "pd_snr": 0.995,
+          "pd_cfar": 0.95,
+          "mean_snr_db": 26.8
+        },
+        {
+          "range_km": 5.75,
+          "pd_snr": 0.993,
+          "pd_cfar": 0.935,
+          "mean_snr_db": 26.08
+        },
+        {
+          "range_km": 6.0,
+          "pd_snr": 0.99,
+          "pd_cfar": 0.943,
+          "mean_snr_db": 25.63
+        },
+        {
+          "range_km": 6.25,
+          "pd_snr": 0.988,
+          "pd_cfar": 0.922,
+          "mean_snr_db": 24.94
+        },
+        {
+          "range_km": 6.5,
+          "pd_snr": 0.983,
+          "pd_cfar": 0.9,
+          "mean_snr_db": 24.3
+        },
+        {
+          "range_km": 6.75,
+          "pd_snr": 0.988,
+          "pd_cfar": 0.89,
+          "mean_snr_db": 23.84
+        },
+        {
+          "range_km": 7.0,
+          "pd_snr": 0.978,
+          "pd_cfar": 0.873,
+          "mean_snr_db": 23.08
+        }
+      ],
+      "snr_vs_range_boresight_radial50": [
+        {
+          "range_km": 0.5,
+          "snr_db": 38.5,
+          "pattern_gain": 0.4356,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 0.75,
+          "snr_db": 39.77,
+          "pattern_gain": 0.7688,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.0,
+          "snr_db": 39.44,
+          "pattern_gain": 0.9074,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.25,
+          "snr_db": 38.68,
+          "pattern_gain": 0.9642,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.5,
+          "snr_db": 38.09,
+          "pattern_gain": 0.988,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.75,
+          "snr_db": 37.6,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.0,
+          "snr_db": 37.17,
+          "pattern_gain": 0.9999,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.25,
+          "snr_db": 36.77,
+          "pattern_gain": 0.9994,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.5,
+          "snr_db": 36.39,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.75,
+          "snr_db": 36.02,
+          "pattern_gain": 0.9946,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 3.0,
+          "snr_db": 35.63,
+          "pattern_gain": 0.9916,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 3.25,
+          "snr_db": 35.22,
+          "pattern_gain": 0.9885,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 3.5,
+          "snr_db": 34.79,
+          "pattern_gain": 0.9855,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 3.75,
+          "snr_db": 34.33,
+          "pattern_gain": 0.9826,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 4.0,
+          "snr_db": 33.85,
+          "pattern_gain": 0.9799,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 4.25,
+          "snr_db": 33.34,
+          "pattern_gain": 0.9773,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 4.5,
+          "snr_db": 32.8,
+          "pattern_gain": 0.9749,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 4.75,
+          "snr_db": 32.25,
+          "pattern_gain": 0.9726,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 5.0,
+          "snr_db": 31.68,
+          "pattern_gain": 0.9705,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 5.25,
+          "snr_db": 31.1,
+          "pattern_gain": 0.9686,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 5.5,
+          "snr_db": 30.52,
+          "pattern_gain": 0.9667,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 5.75,
+          "snr_db": 29.93,
+          "pattern_gain": 0.965,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 6.0,
+          "snr_db": 29.34,
+          "pattern_gain": 0.9634,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 6.25,
+          "snr_db": 28.75,
+          "pattern_gain": 0.9619,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 6.5,
+          "snr_db": 28.18,
+          "pattern_gain": 0.9604,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 6.75,
+          "snr_db": 27.6,
+          "pattern_gain": 0.9591,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 7.0,
+          "snr_db": 27.04,
+          "pattern_gain": 0.9578,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 7.25,
+          "snr_db": 26.48,
+          "pattern_gain": 0.9566,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 7.5,
+          "snr_db": 25.94,
+          "pattern_gain": 0.9555,
+          "mti_gain": 0.4984,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        }
+      ],
+      "snr_vs_range_boresight_radial0": [
+        {
+          "range_km": 0.5,
+          "snr_db": -18.47,
+          "pattern_gain": 0.4356,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 0.75,
+          "snr_db": -17.21,
+          "pattern_gain": 0.7688,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.0,
+          "snr_db": -17.54,
+          "pattern_gain": 0.9074,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.25,
+          "snr_db": -18.29,
+          "pattern_gain": 0.9642,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.5,
+          "snr_db": -18.89,
+          "pattern_gain": 0.988,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.75,
+          "snr_db": -19.38,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.0,
+          "snr_db": -19.81,
+          "pattern_gain": 0.9999,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.25,
+          "snr_db": -20.2,
+          "pattern_gain": 0.9994,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.5,
+          "snr_db": -20.58,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.75,
+          "snr_db": -20.96,
+          "pattern_gain": 0.9946,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.0,
+          "snr_db": -21.35,
+          "pattern_gain": 0.9916,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.25,
+          "snr_db": -21.75,
+          "pattern_gain": 0.9885,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.5,
+          "snr_db": -22.18,
+          "pattern_gain": 0.9855,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.75,
+          "snr_db": -22.64,
+          "pattern_gain": 0.9826,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.0,
+          "snr_db": -23.13,
+          "pattern_gain": 0.9799,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.25,
+          "snr_db": -23.64,
+          "pattern_gain": 0.9773,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.5,
+          "snr_db": -24.17,
+          "pattern_gain": 0.9749,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.75,
+          "snr_db": -24.73,
+          "pattern_gain": 0.9726,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.0,
+          "snr_db": -25.3,
+          "pattern_gain": 0.9705,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.25,
+          "snr_db": -25.87,
+          "pattern_gain": 0.9686,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.5,
+          "snr_db": -26.46,
+          "pattern_gain": 0.9667,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.75,
+          "snr_db": -27.05,
+          "pattern_gain": 0.965,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.0,
+          "snr_db": -27.64,
+          "pattern_gain": 0.9634,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.25,
+          "snr_db": -28.22,
+          "pattern_gain": 0.9619,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.5,
+          "snr_db": -28.8,
+          "pattern_gain": 0.9604,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.75,
+          "snr_db": -29.37,
+          "pattern_gain": 0.9591,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.0,
+          "snr_db": -29.94,
+          "pattern_gain": 0.9578,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.25,
+          "snr_db": -30.49,
+          "pattern_gain": 0.9566,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.5,
+          "snr_db": -31.04,
+          "pattern_gain": 0.9555,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        }
+      ],
+      "hardware": {
+        "name": "US_RPL5",
+        "frequency_hz": 9000000000.0,
+        "az_beamwidth_deg": 2.5,
+        "prf_hz": 4000.0,
+        "processing_gain": 11.314,
+        "mti_clutter_floor": 0.0001
+      },
+      "dem_eden": {
+        "bearing_deg": 285.0,
+        "radar_xyz": [
+          4771.01,
+          27.8448,
+          11214.7
+        ],
+        "radar_agl_m": 0.5,
+        "scenarios_4km": {
+          "DEM_paint_radial50": {
+            "pd_snr": 0.9975,
+            "pd_cfar": 0.9975,
+            "mean_snr_db": 38.552341505720136,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_paint_force_clear": {
+            "pd_snr": 0.9975,
+            "pd_cfar": 0.9975,
+            "mean_snr_db": 38.552341505720136,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_tick": {
+            "pd_snr": 0.015,
+            "pd_cfar": 0.015,
+            "mean_snr_db": -294.8864145052464,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_tangential": {
+            "pd_snr": 0.0,
+            "pd_cfar": 0.0,
+            "mean_snr_db": -18.441221372529416,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_broadside": {
+            "pd_snr": 0.9975,
+            "pd_cfar": 0.995,
+            "mean_snr_db": 35.380915676906206,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_blocked_brg310": {
+            "pd_snr": 0.9925,
+            "pd_cfar": 0.955,
+            "mean_snr_db": 25.997762756870067,
+            "trials": 400,
+            "los_clear": false,
+            "los_blocked": true,
+            "hit_fraction": 0.214,
+            "max_h_obs_m": 3.07,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4000.6,
+            "target_xyz": [
+              7342.2,
+              97.1,
+              8150.5
+            ]
+          }
+        },
+        "pd_vs_range_paint_swerling_cfar": [
+          {
+            "range_km": 0.5,
+            "pd_snr": 1.0,
+            "pd_cfar": 1.0,
+            "mean_snr_db": 53.65,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 506.6
+          },
+          {
+            "range_km": 0.75,
+            "pd_snr": 1.0,
+            "pd_cfar": 1.0,
+            "mean_snr_db": 51.77,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 755.7
+          },
+          {
+            "range_km": 1.0,
+            "pd_snr": 1.0,
+            "pd_cfar": 1.0,
+            "mean_snr_db": 50.35,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1002.9
+          },
+          {
+            "range_km": 1.25,
+            "pd_snr": 1.0,
+            "pd_cfar": 1.0,
+            "mean_snr_db": 49.2,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1252.6
+          },
+          {
+            "range_km": 1.5,
+            "pd_snr": 1.0,
+            "pd_cfar": 1.0,
+            "mean_snr_db": 48.1,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1501.9
+          },
+          {
+            "range_km": 1.75,
+            "pd_snr": 1.0,
+            "pd_cfar": 1.0,
+            "mean_snr_db": 47.12,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1751.4
+          },
+          {
+            "range_km": 2.0,
+            "pd_snr": 1.0,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 46.13,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2001.6
+          },
+          {
+            "range_km": 2.25,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 45.13,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2251.0
+          },
+          {
+            "range_km": 2.5,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 44.14,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2500.8
+          },
+          {
+            "range_km": 2.75,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 43.12,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2750.5
+          },
+          {
+            "range_km": 3.0,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 42.19,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3001.3
+          },
+          {
+            "range_km": 3.25,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 41.36,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3252.6
+          },
+          {
+            "range_km": 3.5,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 40.49,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3504.6
+          },
+          {
+            "range_km": 3.75,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 39.47,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3756.9
+          },
+          {
+            "range_km": 4.0,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 38.54,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 4010.0
+          },
+          {
+            "range_km": 4.25,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 37.74,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 4258.7
+          },
+          {
+            "range_km": 4.5,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.998,
+            "mean_snr_db": 36.83,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 4506.0
+          },
+          {
+            "range_km": 4.75,
+            "pd_snr": 0.998,
+            "pd_cfar": 0.973,
+            "mean_snr_db": 29.83,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 4754.7
+          },
+          {
+            "range_km": 5.0,
+            "pd_snr": 0.995,
+            "pd_cfar": 0.973,
+            "mean_snr_db": 28.88,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5004.5
+          },
+          {
+            "range_km": 5.25,
+            "pd_snr": 0.995,
+            "pd_cfar": 0.955,
+            "mean_snr_db": 27.67,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5253.4
+          },
+          {
+            "range_km": 5.5,
+            "pd_snr": 0.995,
+            "pd_cfar": 0.94,
+            "mean_snr_db": 26.51,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5501.9
+          },
+          {
+            "range_km": 5.75,
+            "pd_snr": 0.99,
+            "pd_cfar": 0.927,
+            "mean_snr_db": 25.5,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5751.7
+          },
+          {
+            "range_km": 6.0,
+            "pd_snr": 0.99,
+            "pd_cfar": 0.93,
+            "mean_snr_db": 24.83,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6001.9
+          },
+          {
+            "range_km": 6.25,
+            "pd_snr": 0.985,
+            "pd_cfar": 0.907,
+            "mean_snr_db": 23.89,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6251.7
+          },
+          {
+            "range_km": 6.5,
+            "pd_snr": 0.983,
+            "pd_cfar": 0.875,
+            "mean_snr_db": 23.0,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6501.5
+          },
+          {
+            "range_km": 6.75,
+            "pd_snr": 0.948,
+            "pd_cfar": 0.693,
+            "mean_snr_db": 18.22,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6750.8
+          },
+          {
+            "range_km": 7.0,
+            "pd_snr": 0.925,
+            "pd_cfar": 0.67,
+            "mean_snr_db": 17.73,
+            "los_clear": false,
+            "surface": "water",
+            "slant_m": 7000.2
+          }
+        ]
+      }
+    },
+    "USSR_TPN19": {
+      "config": {
+        "dem_clutter_scale": 0.25,
+        "detection_snr_db": 6.0,
+        "range_m": 10000.0,
+        "update_interval_s": 0.12,
+        "scan_rpm": 6.0,
+        "beam_duty_cycle": 0.01667,
+        "enable_cfar": true,
+        "enable_atm": true
+      },
+      "uh1_signature_key": "{D03C0F6044DB5208}Prefabs/Vehicles/Helicopters/UH1H/UH1H_base.et",
+      "uh1_baked_mean_rcs_m2": 16.4414,
+      "uh1_aspect_rcs_nose_m2": 3.63,
+      "uh1_aspect_rcs_broadside_m2": 16.44,
+      "uh1_size_m": [
+        2.86572,
+        5.06917,
+        12.9736
+      ],
+      "uh1_swerling": 1,
+      "mti_vs_speed": [
+        {
+          "radial_ms": 0.0,
+          "doppler_hz": 0.0,
+          "mti_gain": 0.0,
+          "mti_gain_db": -120.0
+        },
+        {
+          "radial_ms": 5.0,
+          "doppler_hz": 5.3,
+          "mti_gain": 0.007,
+          "mti_gain_db": -21.54
+        },
+        {
+          "radial_ms": 20.0,
+          "doppler_hz": 21.3,
+          "mti_gain": 0.1083,
+          "mti_gain_db": -9.65
+        },
+        {
+          "radial_ms": 40.0,
+          "doppler_hz": 42.7,
+          "mti_gain": 0.3863,
+          "mti_gain_db": -4.13
+        },
+        {
+          "radial_ms": 50.0,
+          "doppler_hz": 53.4,
+          "mti_gain": 0.5528,
+          "mti_gain_db": -2.57
+        },
+        {
+          "radial_ms": 60.0,
+          "doppler_hz": 64.0,
+          "mti_gain": 0.7135,
+          "mti_gain_db": -1.47
+        },
+        {
+          "radial_ms": 80.0,
+          "doppler_hz": 85.4,
+          "mti_gain": 0.9483,
+          "mti_gain_db": -0.23
+        }
+      ],
+      "scenarios_4km": {
+        "A_boresight_snr_only": {
+          "pd_snr": 0.0,
+          "pd_cfar": 0.0,
+          "mean_snr_db": 5.523286427636736,
+          "trials": 400
+        },
+        "B_boresight_cfar_swerling": {
+          "pd_snr": 0.355,
+          "pd_cfar": 0.355,
+          "mean_snr_db": 3.303515096982258,
+          "trials": 400
+        },
+        "C_paint_in_beam": {
+          "pd_snr": 0.355,
+          "pd_cfar": 0.355,
+          "mean_snr_db": 3.3035020578702547,
+          "trials": 400
+        },
+        "D_random_update_tick": {
+          "pd_snr": 0.0125,
+          "pd_cfar": 0.0125,
+          "mean_snr_db": -293.9329021845002,
+          "trials": 400
+        },
+        "E_tangential_v0": {
+          "pd_snr": 0.0,
+          "pd_cfar": 0.0,
+          "mean_snr_db": -54.122487239934706,
+          "trials": 400
+        },
+        "F_broadside_aspect": {
+          "pd_snr": 0.79,
+          "pd_cfar": 0.79,
+          "mean_snr_db": 9.71015451711424,
+          "trials": 400
+        },
+        "G_nlos_bounce": {
+          "pd_snr": 0.0,
+          "pd_cfar": 0.0,
+          "mean_snr_db": -5.872834153405335,
+          "trials": 400
+        },
+        "H_nlos_knife20m": {
+          "pd_snr": 0.0025,
+          "pd_cfar": 0.0025,
+          "mean_snr_db": -4.903734023324774,
+          "trials": 400
+        }
+      },
+      "pd_vs_range_scan_swerling_cfar": [
+        {
+          "range_km": 0.5,
+          "pd_snr": 0.703,
+          "pd_cfar": 0.703,
+          "mean_snr_db": 7.87
+        },
+        {
+          "range_km": 0.75,
+          "pd_snr": 0.672,
+          "pd_cfar": 0.672,
+          "mean_snr_db": 7.39
+        },
+        {
+          "range_km": 1.0,
+          "pd_snr": 0.642,
+          "pd_cfar": 0.642,
+          "mean_snr_db": 6.87
+        },
+        {
+          "range_km": 1.25,
+          "pd_snr": 0.583,
+          "pd_cfar": 0.583,
+          "mean_snr_db": 6.02
+        },
+        {
+          "range_km": 1.5,
+          "pd_snr": 0.537,
+          "pd_cfar": 0.537,
+          "mean_snr_db": 5.38
+        },
+        {
+          "range_km": 1.75,
+          "pd_snr": 0.5,
+          "pd_cfar": 0.5,
+          "mean_snr_db": 4.89
+        },
+        {
+          "range_km": 2.0,
+          "pd_snr": 0.47,
+          "pd_cfar": 0.47,
+          "mean_snr_db": 4.51
+        },
+        {
+          "range_km": 2.25,
+          "pd_snr": 0.438,
+          "pd_cfar": 0.438,
+          "mean_snr_db": 4.21
+        },
+        {
+          "range_km": 2.5,
+          "pd_snr": 0.42,
+          "pd_cfar": 0.42,
+          "mean_snr_db": 3.97
+        },
+        {
+          "range_km": 2.75,
+          "pd_snr": 0.403,
+          "pd_cfar": 0.403,
+          "mean_snr_db": 3.77
+        },
+        {
+          "range_km": 3.0,
+          "pd_snr": 0.388,
+          "pd_cfar": 0.388,
+          "mean_snr_db": 3.62
+        },
+        {
+          "range_km": 3.25,
+          "pd_snr": 0.375,
+          "pd_cfar": 0.375,
+          "mean_snr_db": 3.5
+        },
+        {
+          "range_km": 3.5,
+          "pd_snr": 0.367,
+          "pd_cfar": 0.367,
+          "mean_snr_db": 3.41
+        },
+        {
+          "range_km": 3.75,
+          "pd_snr": 0.362,
+          "pd_cfar": 0.362,
+          "mean_snr_db": 3.35
+        },
+        {
+          "range_km": 4.0,
+          "pd_snr": 0.355,
+          "pd_cfar": 0.355,
+          "mean_snr_db": 3.3
+        },
+        {
+          "range_km": 4.25,
+          "pd_snr": 0.35,
+          "pd_cfar": 0.35,
+          "mean_snr_db": 3.28
+        },
+        {
+          "range_km": 4.5,
+          "pd_snr": 0.35,
+          "pd_cfar": 0.35,
+          "mean_snr_db": 3.27
+        },
+        {
+          "range_km": 4.75,
+          "pd_snr": 0.35,
+          "pd_cfar": 0.35,
+          "mean_snr_db": 3.27
+        },
+        {
+          "range_km": 5.0,
+          "pd_snr": 0.352,
+          "pd_cfar": 0.352,
+          "mean_snr_db": 3.29
+        },
+        {
+          "range_km": 5.25,
+          "pd_snr": 0.362,
+          "pd_cfar": 0.362,
+          "mean_snr_db": 3.32
+        },
+        {
+          "range_km": 5.5,
+          "pd_snr": 0.362,
+          "pd_cfar": 0.362,
+          "mean_snr_db": 3.36
+        },
+        {
+          "range_km": 5.75,
+          "pd_snr": 0.365,
+          "pd_cfar": 0.365,
+          "mean_snr_db": 3.41
+        },
+        {
+          "range_km": 6.0,
+          "pd_snr": 0.375,
+          "pd_cfar": 0.375,
+          "mean_snr_db": 3.47
+        },
+        {
+          "range_km": 6.25,
+          "pd_snr": 0.38,
+          "pd_cfar": 0.38,
+          "mean_snr_db": 3.53
+        },
+        {
+          "range_km": 6.5,
+          "pd_snr": 0.385,
+          "pd_cfar": 0.385,
+          "mean_snr_db": 3.61
+        },
+        {
+          "range_km": 6.75,
+          "pd_snr": 0.393,
+          "pd_cfar": 0.393,
+          "mean_snr_db": 3.69
+        },
+        {
+          "range_km": 7.0,
+          "pd_snr": 0.403,
+          "pd_cfar": 0.403,
+          "mean_snr_db": 3.77
+        },
+        {
+          "range_km": 7.25,
+          "pd_snr": 0.41,
+          "pd_cfar": 0.41,
+          "mean_snr_db": 3.86
+        },
+        {
+          "range_km": 7.5,
+          "pd_snr": 0.42,
+          "pd_cfar": 0.42,
+          "mean_snr_db": 3.96
+        }
+      ],
+      "snr_vs_range_boresight_radial50": [
+        {
+          "range_km": 0.5,
+          "snr_db": 8.77,
+          "pattern_gain": 0.4356,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 0.75,
+          "snr_db": 8.67,
+          "pattern_gain": 0.7688,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.0,
+          "snr_db": 8.37,
+          "pattern_gain": 0.9074,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.25,
+          "snr_db": 7.65,
+          "pattern_gain": 0.9642,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.5,
+          "snr_db": 7.1,
+          "pattern_gain": 0.988,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 1.75,
+          "snr_db": 6.68,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.0,
+          "snr_db": 6.35,
+          "pattern_gain": 0.9999,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.25,
+          "snr_db": 6.09,
+          "pattern_gain": 0.9994,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        },
+        {
+          "range_km": 2.5,
+          "snr_db": 5.88,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.75,
+          "snr_db": 5.71,
+          "pattern_gain": 0.9946,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.0,
+          "snr_db": 5.58,
+          "pattern_gain": 0.9916,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.25,
+          "snr_db": 5.48,
+          "pattern_gain": 0.9885,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.5,
+          "snr_db": 5.41,
+          "pattern_gain": 0.9855,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.75,
+          "snr_db": 5.36,
+          "pattern_gain": 0.9826,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.0,
+          "snr_db": 5.33,
+          "pattern_gain": 0.9799,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.25,
+          "snr_db": 5.31,
+          "pattern_gain": 0.9773,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.5,
+          "snr_db": 5.31,
+          "pattern_gain": 0.9749,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.75,
+          "snr_db": 5.33,
+          "pattern_gain": 0.9726,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.0,
+          "snr_db": 5.35,
+          "pattern_gain": 0.9705,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.25,
+          "snr_db": 5.39,
+          "pattern_gain": 0.9686,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.5,
+          "snr_db": 5.44,
+          "pattern_gain": 0.9667,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.75,
+          "snr_db": 5.49,
+          "pattern_gain": 0.965,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.0,
+          "snr_db": 5.56,
+          "pattern_gain": 0.9634,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.25,
+          "snr_db": 5.63,
+          "pattern_gain": 0.9619,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.5,
+          "snr_db": 5.7,
+          "pattern_gain": 0.9604,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.75,
+          "snr_db": 5.79,
+          "pattern_gain": 0.9591,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.0,
+          "snr_db": 5.88,
+          "pattern_gain": 0.9578,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.25,
+          "snr_db": 5.98,
+          "pattern_gain": 0.9566,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.5,
+          "snr_db": 6.08,
+          "pattern_gain": 0.9555,
+          "mti_gain": 0.5528,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": true,
+          "detected_cfar": true
+        }
+      ],
+      "snr_vs_range_boresight_radial0": [
+        {
+          "range_km": 0.5,
+          "snr_db": -48.65,
+          "pattern_gain": 0.4356,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 0.75,
+          "snr_db": -48.76,
+          "pattern_gain": 0.7688,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.0,
+          "snr_db": -49.06,
+          "pattern_gain": 0.9074,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.25,
+          "snr_db": -49.78,
+          "pattern_gain": 0.9642,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.5,
+          "snr_db": -50.32,
+          "pattern_gain": 0.988,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 1.75,
+          "snr_db": -50.74,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.0,
+          "snr_db": -51.08,
+          "pattern_gain": 0.9999,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.25,
+          "snr_db": -51.34,
+          "pattern_gain": 0.9994,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.5,
+          "snr_db": -51.55,
+          "pattern_gain": 0.9973,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 2.75,
+          "snr_db": -51.71,
+          "pattern_gain": 0.9946,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.0,
+          "snr_db": -51.84,
+          "pattern_gain": 0.9916,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.25,
+          "snr_db": -51.94,
+          "pattern_gain": 0.9885,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.5,
+          "snr_db": -52.01,
+          "pattern_gain": 0.9855,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 3.75,
+          "snr_db": -52.07,
+          "pattern_gain": 0.9826,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.0,
+          "snr_db": -52.1,
+          "pattern_gain": 0.9799,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.25,
+          "snr_db": -52.11,
+          "pattern_gain": 0.9773,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.5,
+          "snr_db": -52.11,
+          "pattern_gain": 0.9749,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 4.75,
+          "snr_db": -52.1,
+          "pattern_gain": 0.9726,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.0,
+          "snr_db": -52.07,
+          "pattern_gain": 0.9705,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.25,
+          "snr_db": -52.04,
+          "pattern_gain": 0.9686,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.5,
+          "snr_db": -51.99,
+          "pattern_gain": 0.9667,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 5.75,
+          "snr_db": -51.93,
+          "pattern_gain": 0.965,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.0,
+          "snr_db": -51.87,
+          "pattern_gain": 0.9634,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.25,
+          "snr_db": -51.8,
+          "pattern_gain": 0.9619,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.5,
+          "snr_db": -51.72,
+          "pattern_gain": 0.9604,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 6.75,
+          "snr_db": -51.64,
+          "pattern_gain": 0.9591,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.0,
+          "snr_db": -51.55,
+          "pattern_gain": 0.9578,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.25,
+          "snr_db": -51.45,
+          "pattern_gain": 0.9566,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        },
+        {
+          "range_km": 7.5,
+          "snr_db": -51.35,
+          "pattern_gain": 0.9555,
+          "mti_gain": 0.0,
+          "multipath": 1.0,
+          "rcs_m2": 3.63,
+          "beam": "low",
+          "detected_snr": false,
+          "detected_cfar": false
+        }
+      ],
+      "hardware": {
+        "name": "USSR_TPN19",
+        "frequency_hz": 160000000.0,
+        "az_beamwidth_deg": 6.0,
+        "prf_hz": 200.0,
+        "processing_gain": 2.828,
+        "mti_clutter_floor": 0.01
+      },
+      "dem_eden": {
+        "bearing_deg": 285.0,
+        "radar_xyz": [
+          4771.01,
+          27.8448,
+          11214.7
+        ],
+        "radar_agl_m": 0.5,
+        "scenarios_4km": {
+          "DEM_paint_radial50": {
+            "pd_snr": 0.8975,
+            "pd_cfar": 0.8975,
+            "mean_snr_db": 13.427112776249684,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_paint_force_clear": {
+            "pd_snr": 0.8975,
+            "pd_cfar": 0.8975,
+            "mean_snr_db": 13.427112776249684,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_tick": {
+            "pd_snr": 0.0175,
+            "pd_cfar": 0.0175,
+            "mean_snr_db": -293.7253149638507,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_tangential": {
+            "pd_snr": 0.0,
+            "pd_cfar": 0.0,
+            "mean_snr_db": -43.998893247353664,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_broadside": {
+            "pd_snr": 0.8125,
+            "pd_cfar": 0.8125,
+            "mean_snr_db": 10.255686969088872,
+            "trials": 400,
+            "los_clear": true,
+            "los_blocked": false,
+            "hit_fraction": 1.0,
+            "max_h_obs_m": 0.0,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4010.0,
+            "target_xyz": [
+              5806.3,
+              311.0,
+              7351.0
+            ]
+          },
+          "DEM_blocked_brg310": {
+            "pd_snr": 0.5625,
+            "pd_cfar": 0.5625,
+            "mean_snr_db": 5.716420139836391,
+            "trials": 400,
+            "los_clear": false,
+            "los_blocked": true,
+            "hit_fraction": 0.214,
+            "max_h_obs_m": 3.07,
+            "surface_class": 3,
+            "surface_name": "soil",
+            "slant_m": 4000.6,
+            "target_xyz": [
+              7342.2,
+              97.1,
+              8150.5
+            ]
+          }
+        },
+        "pd_vs_range_paint_swerling_cfar": [
+          {
+            "range_km": 0.5,
+            "pd_snr": 0.988,
+            "pd_cfar": 0.988,
+            "mean_snr_db": 22.6,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 506.6
+          },
+          {
+            "range_km": 0.75,
+            "pd_snr": 0.978,
+            "pd_cfar": 0.978,
+            "mean_snr_db": 20.79,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 755.7
+          },
+          {
+            "range_km": 1.0,
+            "pd_snr": 0.973,
+            "pd_cfar": 0.973,
+            "mean_snr_db": 19.48,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1002.9
+          },
+          {
+            "range_km": 1.25,
+            "pd_snr": 0.97,
+            "pd_cfar": 0.97,
+            "mean_snr_db": 18.48,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1252.6
+          },
+          {
+            "range_km": 1.5,
+            "pd_snr": 0.96,
+            "pd_cfar": 0.96,
+            "mean_snr_db": 17.66,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1501.9
+          },
+          {
+            "range_km": 1.75,
+            "pd_snr": 0.953,
+            "pd_cfar": 0.953,
+            "mean_snr_db": 16.97,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 1751.4
+          },
+          {
+            "range_km": 2.0,
+            "pd_snr": 0.945,
+            "pd_cfar": 0.945,
+            "mean_snr_db": 16.39,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2001.6
+          },
+          {
+            "range_km": 2.25,
+            "pd_snr": 0.94,
+            "pd_cfar": 0.94,
+            "mean_snr_db": 15.86,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2251.0
+          },
+          {
+            "range_km": 2.5,
+            "pd_snr": 0.935,
+            "pd_cfar": 0.935,
+            "mean_snr_db": 15.39,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2500.8
+          },
+          {
+            "range_km": 2.75,
+            "pd_snr": 0.927,
+            "pd_cfar": 0.927,
+            "mean_snr_db": 14.96,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 2750.5
+          },
+          {
+            "range_km": 3.0,
+            "pd_snr": 0.92,
+            "pd_cfar": 0.92,
+            "mean_snr_db": 14.6,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3001.3
+          },
+          {
+            "range_km": 3.25,
+            "pd_snr": 0.917,
+            "pd_cfar": 0.917,
+            "mean_snr_db": 14.28,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3252.6
+          },
+          {
+            "range_km": 3.5,
+            "pd_snr": 0.907,
+            "pd_cfar": 0.907,
+            "mean_snr_db": 13.97,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3504.6
+          },
+          {
+            "range_km": 3.75,
+            "pd_snr": 0.905,
+            "pd_cfar": 0.905,
+            "mean_snr_db": 13.69,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 3756.9
+          },
+          {
+            "range_km": 4.0,
+            "pd_snr": 0.897,
+            "pd_cfar": 0.897,
+            "mean_snr_db": 13.43,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 4010.0
+          },
+          {
+            "range_km": 4.25,
+            "pd_snr": 0.89,
+            "pd_cfar": 0.89,
+            "mean_snr_db": 13.15,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 4258.7
+          },
+          {
+            "range_km": 4.5,
+            "pd_snr": 0.882,
+            "pd_cfar": 0.882,
+            "mean_snr_db": 12.88,
+            "los_clear": true,
+            "surface": "soil",
+            "slant_m": 4506.0
+          },
+          {
+            "range_km": 4.75,
+            "pd_snr": 0.623,
+            "pd_cfar": 0.623,
+            "mean_snr_db": 6.52,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 4754.7
+          },
+          {
+            "range_km": 5.0,
+            "pd_snr": 0.585,
+            "pd_cfar": 0.585,
+            "mean_snr_db": 6.04,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5004.5
+          },
+          {
+            "range_km": 5.25,
+            "pd_snr": 0.547,
+            "pd_cfar": 0.547,
+            "mean_snr_db": 5.47,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5253.4
+          },
+          {
+            "range_km": 5.5,
+            "pd_snr": 0.487,
+            "pd_cfar": 0.487,
+            "mean_snr_db": 4.76,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5501.9
+          },
+          {
+            "range_km": 5.75,
+            "pd_snr": 0.45,
+            "pd_cfar": 0.45,
+            "mean_snr_db": 4.34,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 5751.7
+          },
+          {
+            "range_km": 6.0,
+            "pd_snr": 0.42,
+            "pd_cfar": 0.42,
+            "mean_snr_db": 3.99,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6001.9
+          },
+          {
+            "range_km": 6.25,
+            "pd_snr": 0.385,
+            "pd_cfar": 0.385,
+            "mean_snr_db": 3.6,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6251.7
+          },
+          {
+            "range_km": 6.5,
+            "pd_snr": 0.347,
+            "pd_cfar": 0.347,
+            "mean_snr_db": 3.21,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6501.5
+          },
+          {
+            "range_km": 6.75,
+            "pd_snr": 0.05,
+            "pd_cfar": 0.05,
+            "mean_snr_db": -1.16,
+            "los_clear": false,
+            "surface": "soil",
+            "slant_m": 6750.8
+          },
+          {
+            "range_km": 7.0,
+            "pd_snr": 0.79,
+            "pd_cfar": 0.79,
+            "mean_snr_db": 9.7,
+            "los_clear": false,
+            "surface": "water",
+            "slant_m": 7000.2
+          },
+          {
+            "range_km": 7.25,
+            "pd_snr": 0.782,
+            "pd_cfar": 0.782,
+            "mean_snr_db": 9.54,
+            "los_clear": false,
+            "surface": "water",
+            "slant_m": 7250.2
+          },
+          {
+            "range_km": 7.5,
+            "pd_snr": 0.775,
+            "pd_cfar": 0.775,
+            "mean_snr_db": 9.39,
+            "los_clear": false,
+            "surface": "water",
+            "slant_m": 7500.2
+          }
+        ]
+      }
+    }
+  },
+  "png_files": [
+    "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\scripts\\Game\\GBRS\\out\\clutter_mti_us_rpl5.png",
+    "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\scripts\\Game\\GBRS\\out\\clutter_mti_ussr_tpn19.png"
+  ]
+}
