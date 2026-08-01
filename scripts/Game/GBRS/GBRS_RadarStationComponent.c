@@ -1175,7 +1175,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             }
             else if (m_DebugProbe.m_VehicleInConeCount <= 0)
             {
-                Print("[GBRS-DEBUG] HINT: vehicle in range but outside 3D cone this dwell"
+                Print("[GBRS-DEBUG] HINT: vehicle in range but outside azimuth beam this dwell"
                     + " (vehDot=" + m_DebugProbe.m_NearestVehicleDot.ToString()
                     + " need>=" + needDot.ToString()
                     + " elDeg=" + m_DebugProbe.m_NearestVehicleElDeg.ToString()

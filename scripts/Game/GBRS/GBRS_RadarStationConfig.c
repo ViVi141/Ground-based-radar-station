@@ -30,12 +30,28 @@ class GBRS_RadarStationConfig
         hw.Validate();
     }
 
+    // Enables RDF channel and environment effects appropriate for air search.
+    // Projectile/WLR features remain disabled because this station searches
+    // aircraft and radar emitters rather than locating artillery fire.
+    static void ApplyFullFidelity(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.ApplyRealisticChannel();
+        settings.m_EnableDemClutter = true;
+        settings.m_EnableDemSpanOcclusion = true;
+        settings.m_EnableCoarseRd = true;
+    }
+
     // US RPL-5: SHORAD pulse-Doppler search (~7 km).
     static RDF_RadarSettings CreateUsSearch()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(64);
         settings.m_Range = 7000.0;
-        settings.m_UpdateInterval = 0.08;
+        // At 10 RPM the stock 2.5-degree azimuth beam moves 4.8 degrees in
+        // 80 ms, leaving permanent scan gaps. 20 ms dwells move 1.2 degrees.
+        settings.m_UpdateInterval = 0.02;
         settings.m_SectorHalfAngleDeg = 180.0;
         settings.m_EnableMechanicalScan = true;
         settings.m_UseBoundsCenter = false;
@@ -57,8 +73,6 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 8.0;
         settings.m_KeepUndetected = false;
         settings.m_KeepEntityTruth = false;
-        // RDF SamEngage / ManualDemo PD: DEM clutter off for wide-beam PPI.
-        settings.m_EnableDemClutter = false;
 
         if (settings.m_Hardware)
         {
@@ -69,6 +83,7 @@ class GBRS_RadarStationConfig
             settings.m_Hardware.AddElevationBeam("high", 40.0, 30.0, -1.0);
             settings.m_Hardware.Validate();
         }
+        ApplyFullFidelity(settings);
         settings.Validate();
         return settings;
     }
@@ -78,7 +93,9 @@ class GBRS_RadarStationConfig
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(96);
         settings.m_Range = 10000.0;
-        settings.m_UpdateInterval = 0.12;
+        // At 6 RPM the stock 2.5-degree azimuth beam moves 4.32 degrees in
+        // 120 ms, leaving permanent scan gaps. 40 ms dwells move 1.44 degrees.
+        settings.m_UpdateInterval = 0.04;
         settings.m_SectorHalfAngleDeg = 180.0;
         settings.m_EnableMechanicalScan = true;
         settings.m_UseBoundsCenter = false;
@@ -100,7 +117,6 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 6.0;
         settings.m_KeepUndetected = false;
         settings.m_KeepEntityTruth = false;
-        settings.m_EnableDemClutter = false;
 
         // P-18 RF front-end, then re-apply stock PD MTI (CreateP18Like is TwoPulse).
         RDF_RadarHardware hw = RDF_RadarHardware.CreateP18Like();
@@ -116,6 +132,7 @@ class GBRS_RadarStationConfig
         hw.Validate();
         settings.m_Hardware = hw;
 
+        ApplyFullFidelity(settings);
         settings.Validate();
         return settings;
     }

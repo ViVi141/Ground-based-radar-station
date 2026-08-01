@@ -94,12 +94,18 @@ class GBRS_RadarDebugProbe
         m_CandidateCount = m_CandidateCount + 1;
         float dist = Math.Sqrt(distSq);
         vector toNorm = toTarget * (1.0 / dist);
-        float dot = m_Forward[0] * toNorm[0]
-            + m_Forward[1] * toNorm[1]
-            + m_Forward[2] * toNorm[2];
 
         float horiz = Math.Sqrt(toNorm[0] * toNorm[0] + toNorm[2] * toNorm[2]);
         float elDeg = Math.Atan2(toNorm[1], Math.Max(0.001, horiz)) * Math.RAD2DEG;
+        float dot = -2.0;
+        if (horiz > 0.001)
+        {
+            float invHoriz = 1.0 / horiz;
+            // Match RDF scanner dwell filtering: test azimuth separately
+            // from elevation beams.
+            dot = m_Forward[0] * toNorm[0] * invHoriz
+                + m_Forward[2] * toNorm[2] * invHoriz;
+        }
 
         bool inCone = false;
         if (dot >= m_CosHalf)

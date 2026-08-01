@@ -1,7 +1,6 @@
-// Scan-beam debug draw matching RDF mechanical-scan gating.
-// RDF uses a 3D cone test: dot(scanForward, toTarget) >= cos(halfAngle),
-// where halfAngle = AzimuthBeamwidthDeg/2 and scanForward is horizontal.
-// The old az×el box was misleading for aircraft (looked inside, failed cone).
+// Scan-beam debug draw for RDF mechanical scanning.
+// The hard gate is horizontal azimuth. Elevation is evaluated separately
+// by the configured elevation beams in physical detection.
 class GBRS_RadarScanFrustumVisual
 {
     protected static const float DEG_TO_RAD = 0.017453292519943295;
@@ -20,7 +19,7 @@ class GBRS_RadarScanFrustumVisual
     {
         DrawCone(origin, forward, rangeM, coneHalfDeg, colourEdge, colourCore);
 
-        // Optional elevation-beam hint (not the hard gate): thin wedge on boresight.
+        // Optional elevation-beam hint: thin wedge on boresight.
         if (elevationHalfDeg > 0.1)
             DrawElevationHint(
                 origin,
