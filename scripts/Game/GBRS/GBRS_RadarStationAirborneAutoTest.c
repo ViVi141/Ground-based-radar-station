@@ -10,7 +10,7 @@
 //   GBRS_RadarStationAirborneAutoTest.StartKeepTarget();
 //   GBRS_RadarStationAirborneAutoTest.Stop();
 //
-// Scan path stays registry-only (no UseSphereQuery), matching production GBRS.
+// Production path: RDF_RADAR_MODE_PULSE_DOPPLER + ScattererRegistry only.
 class GBRS_RadarStationAirborneAutoTest
 {
     protected static ref GBRS_RadarStationAirborneAutoTest s_Instance;
@@ -313,8 +313,6 @@ class GBRS_RadarStationAirborneAutoTest
         m_PrevSettings = sensor.GetSettings();
 
         RDF_RadarSettings cfg = GBRS_RadarStationConfig.CreateUsSearch();
-        cfg.m_UseScattererRegistry = true;
-        cfg.m_UseSphereQuery = false;
         cfg.m_IncludeVehicles = true;
         cfg.m_IncludeProjectiles = false;
         cfg.m_IncludeRadarEmitters = false;
@@ -322,12 +320,14 @@ class GBRS_RadarStationAirborneAutoTest
         cfg.m_KeepUndetected = true;
         cfg.m_DetectionSnrDb = -40.0;
         cfg.m_EnableDemClutter = false;
+        cfg.m_EnableClutterMap = false;
         cfg.m_EnableCfarGate = false;
         cfg.m_KeepEntityTruth = true;
         cfg.m_ScattererClassifyPerTick = 256;
         cfg.m_ScattererRefreshPerTick = 512;
         cfg.m_ScattererMaxEntries = 2048;
         cfg.m_ScattererDiscoveryIntervalS = 0.25;
+        // Ideal overlay: keep PD mode stamp but open the gate (no MTI / clutter map).
         if (cfg.m_Hardware)
             cfg.m_Hardware.m_EnableMti = false;
 
@@ -337,8 +337,9 @@ class GBRS_RadarStationAirborneAutoTest
         cfg.Validate();
 
         sensor.SetForceLocalScan(true);
+        sensor.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(cfg);
-        Print("[GBRS AirTest] applied ideal overlay (CFAR/DEM off, SNR=-40).");
+        Print("[GBRS AirTest] applied ideal overlay (PD mode, CFAR/DEM/MTI off, SNR=-40).");
     }
 
     protected void OnTick()

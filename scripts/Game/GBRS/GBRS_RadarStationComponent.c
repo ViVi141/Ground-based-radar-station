@@ -343,7 +343,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
     }
 
-    // Push faction search preset onto RDF sensor/network without changing power.
+    // Push faction pulse-Doppler preset onto RDF sensor/network without changing power.
     protected void ApplySearchSettings(IEntity owner)
     {
         if (!owner)
@@ -366,7 +366,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!sensor)
             return;
 
+        // SetMode(ConfigureMode) stamps product mode PD, then Configure overlays
+        // GBRS faction settings without resetting m_Mode.
         sensor.SetForceLocalScan(true);
+        m_Radar.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(settings);
         m_Radar.SetEventMask(owner, EntityEvent.FRAME);
 
@@ -384,10 +387,24 @@ class GBRS_RadarStationComponent : ScriptComponent
             string projFlag = "0";
             if (settings.m_IncludeProjectiles)
                 projFlag = "1";
-            Print("[GBRS-DEBUG] SearchSettings range=" + settings.m_Range.ToString()
+            string mtiMode = "off";
+            if (settings.m_Hardware && settings.m_Hardware.m_EnableMti)
+            {
+                if (settings.m_Hardware.m_MtiMode == ERDF_MtiMode.RDF_MTI_MTD_BANK)
+                    mtiMode = "MTD";
+                else if (settings.m_Hardware.m_MtiMode == ERDF_MtiMode.RDF_MTI_THREE_PULSE)
+                    mtiMode = "3P";
+                else
+                    mtiMode = "2P";
+            }
+            Print("[GBRS-DEBUG] PdSettings mode=" + ((int)sensor.GetMode()).ToString()
+                + " range=" + settings.m_Range.ToString()
                 + " interval=" + settings.m_UpdateInterval.ToString()
                 + " minDist=" + settings.m_MinDistance.ToString()
                 + " projectiles=" + projFlag
+                + " mti=" + mtiMode
+                + " clutterMap=" + BoolDebugFlag(settings.m_EnableClutterMap)
+                + " coast=" + BoolDebugFlag(settings.m_TrackCoastOnMiss)
                 + " cfar=" + BoolDebugFlag(settings.m_EnableCfarGate)
                 + " nlos=" + BoolDebugFlag(settings.m_EnableNlosMultipath)
                 + " snrGate=" + settings.m_DetectionSnrDb.ToString(), LogLevel.WARNING);
@@ -897,27 +914,43 @@ class GBRS_RadarStationComponent : ScriptComponent
             float azBw = 0.0;
             float rpm = 0.0;
             bool mti = false;
+            int dopplerBins = 0;
             int elBeams = 0;
+            string mtiMode = "off";
             if (settings.m_Hardware)
             {
                 azBw = settings.m_Hardware.m_AzimuthBeamwidthDeg;
                 rpm = settings.m_Hardware.m_ScanRpm;
                 mti = settings.m_Hardware.m_EnableMti;
+                dopplerBins = settings.m_Hardware.m_DopplerBinCount;
                 if (settings.m_Hardware.m_ElevationBeams)
                     elBeams = settings.m_Hardware.m_ElevationBeams.Count();
+                if (mti)
+                {
+                    if (settings.m_Hardware.m_MtiMode == ERDF_MtiMode.RDF_MTI_MTD_BANK)
+                        mtiMode = "MTD";
+                    else if (settings.m_Hardware.m_MtiMode == ERDF_MtiMode.RDF_MTI_THREE_PULSE)
+                        mtiMode = "3P";
+                    else
+                        mtiMode = "2P";
+                }
             }
 
             Print("[GBRS-DEBUG] range=" + settings.m_Range.ToString()
                 + " interval=" + settings.m_UpdateInterval.ToString()
                 + " mechScan=" + BoolDebugFlag(settings.m_EnableMechanicalScan)
-                + " registry=" + BoolDebugFlag(settings.m_UseScattererRegistry)
-                + " sphereQ=" + BoolDebugFlag(settings.m_UseSphereQuery)
+                + " discInt=" + settings.m_ScattererDiscoveryIntervalS.ToString()
+                + " maxEnt=" + settings.m_ScattererMaxEntries.ToString()
                 + " cfar=" + BoolDebugFlag(settings.m_EnableCfarGate)
                 + " snrDb=" + settings.m_DetectionSnrDb.ToString(), LogLevel.WARNING);
             Print("[GBRS-DEBUG] rpm=" + rpm.ToString()
                 + " azBeamW=" + azBw.ToString()
                 + " coneHalf=" + (azBw * 0.5).ToString()
                 + " mti=" + BoolDebugFlag(mti)
+                + " mtiMode=" + mtiMode
+                + " dopBins=" + dopplerBins.ToString()
+                + " clutterMap=" + BoolDebugFlag(settings.m_EnableClutterMap)
+                + " coast=" + BoolDebugFlag(settings.m_TrackCoastOnMiss)
                 + " elBeams=" + elBeams.ToString()
                 + " maxLos=" + settings.m_MaxLosTracesPerScan.ToString(), LogLevel.WARNING);
             Print("[GBRS-DEBUG] originOffset=" + settings.m_OriginOffset.ToString()
@@ -1065,6 +1098,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             + " forceLocal=" + BoolDebugFlag(sensor.IsForceLocalScan())
             + " durMs=" + sensor.GetLastScanDurationMs().ToString()
             + " ---", LogLevel.WARNING);
+        Print("[GBRS-DEBUG] status=" + sensor.GetStatusShort(), LogLevel.WARNING);
 
         Print("[GBRS-DEBUG] origin=" + origin.ToString()
             + " forward=" + forward.ToString()

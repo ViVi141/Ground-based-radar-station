@@ -76,7 +76,7 @@ class GBRS_RadarStationPpiController
         ClearPersist();
 
         RDF_RadarHUD.Show();
-        RDF_RadarHUD.SetMode("PPI | E");
+        RDF_RadarHUD.SetMode("PD | E");
 
         StartListeners();
         StartFeed();
@@ -377,6 +377,13 @@ class GBRS_RadarStationPpiController
         dst.m_ProcessedPowerW = src.m_ProcessedPowerW;
         dst.m_DopplerHz = src.m_DopplerHz;
         dst.m_MtiGain = src.m_MtiGain;
+        dst.m_DopplerBin = src.m_DopplerBin;
+        dst.m_PrfIndex = src.m_PrfIndex;
+        dst.m_RotorTipSpeedMs = src.m_RotorTipSpeedMs;
+        dst.m_BladeCount = src.m_BladeCount;
+        dst.m_RotorRcsFraction = src.m_RotorRcsFraction;
+        dst.m_HubWidthMs = src.m_HubWidthMs;
+        dst.m_RotorSidebandUsed = src.m_RotorSidebandUsed;
         dst.m_DemSurfaceClass = src.m_DemSurfaceClass;
         dst.m_DemSampleValid = src.m_DemSampleValid;
         dst.m_ClutterPowerW = src.m_ClutterPowerW;
@@ -507,7 +514,7 @@ class GBRS_RadarStationPpiController
         BuildClusteredDisplayPlots();
 
         RDF_RadarHUD.SetDisplayRange(hudRange);
-        RDF_RadarHUD.SetMode("PPI | E");
+        RDF_RadarHUD.SetMode("PD | E");
         RDF_RadarHUD.FeedScan(
             m_DisplayPlots,
             hudOrigin,
