@@ -366,8 +366,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!sensor)
             return;
 
-        // SetMode(ConfigureMode) stamps product mode PD, then Configure overlays
-        // GBRS faction settings without resetting m_Mode.
+        // Stamp product mode, then overlay station geometry/range preset.
+        // Configure replaces the stock ConfigureMode settings object.
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(settings);
@@ -403,6 +403,8 @@ class GBRS_RadarStationComponent : ScriptComponent
                 + " minDist=" + settings.m_MinDistance.ToString()
                 + " projectiles=" + projFlag
                 + " mti=" + mtiMode
+                + " coherent=" + BoolDebugFlag(settings.m_Hardware && settings.m_Hardware.m_CoherentIntegration)
+                + " demClutter=" + BoolDebugFlag(settings.m_EnableDemClutter)
                 + " clutterMap=" + BoolDebugFlag(settings.m_EnableClutterMap)
                 + " coast=" + BoolDebugFlag(settings.m_TrackCoastOnMiss)
                 + " cfar=" + BoolDebugFlag(settings.m_EnableCfarGate)
@@ -1113,6 +1115,30 @@ class GBRS_RadarStationComponent : ScriptComponent
             + " bestDist=" + bestDist.ToString()
             + " bestBeam=" + bestBeam, LogLevel.WARNING);
 
+        // Live RDF physics samples (parity check vs offline calib_pd_full.py).
+        if (plots)
+        {
+            int shown = 0;
+            int piPhys = 0;
+            while (piPhys < plots.Count() && shown < 3)
+            {
+                RDF_RadarTarget pt = plots.Get(piPhys);
+                piPhys = piPhys + 1;
+                if (!pt || !pt.m_Detected)
+                    continue;
+                Print("[GBRS-DEBUG] plotPhys dist=" + pt.m_Distance.ToString()
+                    + " snrDb=" + pt.m_SnrDb.ToString()
+                    + " mtiG=" + pt.m_MtiGain.ToString()
+                    + " dopBin=" + pt.m_DopplerBin.ToString()
+                    + " clutterW=" + pt.m_ClutterPowerW.ToString()
+                    + " cnrDb=" + pt.m_ClutterToNoiseDb.ToString()
+                    + " losBlk=" + BoolDebugFlag(pt.m_LosBlocked)
+                    + " mp=" + pt.m_MultipathFactor.ToString()
+                    + " beam=" + pt.m_BeamName, LogLevel.WARNING);
+                shown = shown + 1;
+            }
+        }
+
         Print("[GBRS-DEBUG] registry=" + RDF_RadarScattererRegistry.GetStatsLine(), LogLevel.WARNING);
 
         string nearDistStr = "none";
@@ -1137,76 +1163,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             + " nearestVehDot=" + m_DebugProbe.m_NearestVehicleDot.ToString()
             + " nearestVehElDeg=" + m_DebugProbe.m_NearestVehicleElDeg.ToString()
             + " nearestVeh=" + m_DebugProbe.m_NearestVehicleName, LogLevel.WARNING);
-
-        string demLosFlag = "-";
-        string officialLosFlag = "-";
-        string rdfLosFlag = "-";
-        float officialFrac = -1.0;
-        float rdfFrac = -1.0;
-        string officialHit = "-";
-        string rdfHit = "-";
-        int demPlotBlocked = 0;
-        BaseWorld demWorld = GetGame().GetWorld();
-        if (m_DebugProbe.m_bHasNearestVehicle && demWorld)
-        {
-            if (GBRS_RadarTerrainLos.IsClear(
-                demWorld, origin, m_DebugProbe.m_NearestVehicleLosEnd))
-            {
-                demLosFlag = "1";
-            }
-            else
-            {
-                demLosFlag = "0";
-            }
-
-            bool officialClear = GBRS_RadarTerrainLos.TraceOfficialClear(
-                demWorld,
-                owner,
-                m_DebugProbe.m_NearestVehicleEntity,
-                origin,
-                m_DebugProbe.m_NearestVehicleLosEnd,
-                officialFrac,
-                officialHit);
-            if (officialClear)
-                officialLosFlag = "1";
-            else
-                officialLosFlag = "0";
-
-            bool rdfClear = GBRS_RadarTerrainLos.TraceRdfStyleClear(
-                demWorld,
-                owner,
-                m_DebugProbe.m_NearestVehicleEntity,
-                origin,
-                m_DebugProbe.m_NearestVehicleLosEnd,
-                rdfFrac,
-                rdfHit);
-            if (rdfClear)
-                rdfLosFlag = "1";
-            else
-                rdfLosFlag = "0";
-        }
-        if (plots && demWorld)
-        {
-            int pi = 0;
-            while (pi < plots.Count())
-            {
-                RDF_RadarTarget pt = plots.Get(pi);
-                pi = pi + 1;
-                if (!pt || pt.m_IsFalsePlot)
-                    continue;
-                if (!GBRS_RadarTerrainLos.IsClear(demWorld, origin, pt.m_Position))
-                    demPlotBlocked = demPlotBlocked + 1;
-            }
-        }
-        Print("[GBRS-DEBUG] demLos=" + demLosFlag
-            + " officialTrace=" + officialLosFlag
-            + " frac=" + officialFrac.ToString()
-            + " hit=" + officialHit
-            + " rdfTrace=" + rdfLosFlag
-            + " frac=" + rdfFrac.ToString()
-            + " hit=" + rdfHit
-            + " demPlotBlocked=" + demPlotBlocked.ToString(),
-            LogLevel.WARNING);
 
         if (m_DebugProbe.m_CandidateCount > 0)
         {

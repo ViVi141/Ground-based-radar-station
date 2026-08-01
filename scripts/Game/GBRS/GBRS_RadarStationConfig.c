@@ -1,46 +1,36 @@
-// Faction-specific RDF_RadarSettings for ground radar stations.
-// Product mode: RDF_RADAR_MODE_PULSE_DOPPLER (MTD + rotor sidebands + PRF
-// stagger + track coast). ScattererRegistry is the only candidate source.
+// Faction station presets: thin wrappers around RDF product mode
+// RDF_RADAR_MODE_PULSE_DOPPLER / CreatePulseDopplerSettings.
 //
-// Fidelity: ApplyRealisticChannel + DEM clutter + NLOS multipath + knife-edge.
-// Projectiles OFF: mounted Hydra carry ProjectileMoveComponent and RDF
-// classifies them as separate PROJECTILE scatterers (not the airframe).
+// Do not invent a second detection channel. Station code only sets geometry,
+// range, and include filters. Channel physics (MTD, PRF stagger, coast,
+// HwCalib) stays with RDF.
+//
+// DEM clutter stays off for mechanical-scan SHORAD / EW — same as RDF
+// SamEngage / ManualDemo PD (wide beams bury skin returns in DEM cells).
 class GBRS_RadarStationConfig
 {
-    // Shared PD channel knobs (matches RDF_RadarSensor.CreatePulseDopplerSettings).
-    // Call after replacing Hardware so P18 / SHORAD both keep MTD behaviour.
-    static void ApplyPulseDopplerChannel(RDF_RadarSettings settings)
+    // Re-stamp PD MTI after swapping Hardware (e.g. P-18 RF front-end).
+    // Mirrors RDF_RadarSensor.CreatePulseDopplerSettings hardware block.
+    static void ApplyPulseDopplerHardware(RDF_RadarHardware hw)
     {
-        if (!settings)
+        if (!hw)
             return;
 
-        if (settings.m_Hardware)
-        {
-            settings.m_Hardware.m_EnableMti = true;
-            settings.m_Hardware.m_MtiMode = ERDF_MtiMode.RDF_MTI_MTD_BANK;
-            settings.m_Hardware.m_DopplerBinCount = 16;
-            settings.m_Hardware.m_MtiClutterFloor = 0.0001;
-            settings.m_Hardware.m_MtdClutterLeakage = 0.000001;
-            settings.m_Hardware.m_ClutterSigmaVrMs = 0.5;
-            settings.m_Hardware.m_DeriveMtdLeakageFromSigmaVr = true;
-            settings.m_Hardware.m_LoadHwCalibFromProfile = true;
-            settings.m_Hardware.m_PrfStaggerRatio = 1.2;
-            settings.m_Hardware.m_MtiStaggerDeblind = true;
-            settings.m_Hardware.m_CoherentIntegration = true;
-        }
-
-        settings.m_EnableClutterMap = true;
-        settings.m_ClutterMapAlpha = 0.15;
-        settings.m_EnableCoarseRd = false;
-        settings.m_TrackCoastOnMiss = true;
-        settings.m_TrackCoastOnDopplerNull = true;
-        settings.m_TrackCoastGateGrowPerMiss = 0.25;
-        settings.m_TrackCoastMaxSec = 8.0;
-        settings.m_TrackMaxMisses = 6;
-        settings.m_EnableEsmReceive = true;
+        hw.m_EnableMti = true;
+        hw.m_MtiMode = ERDF_MtiMode.RDF_MTI_MTD_BANK;
+        hw.m_DopplerBinCount = 16;
+        hw.m_MtiClutterFloor = 0.0001;
+        hw.m_MtdClutterLeakage = 0.000001;
+        hw.m_ClutterSigmaVrMs = 0.5;
+        hw.m_DeriveMtdLeakageFromSigmaVr = true;
+        hw.m_LoadHwCalibFromProfile = true;
+        hw.m_PrfStaggerRatio = 1.2;
+        hw.m_MtiStaggerDeblind = true;
+        hw.m_CoherentIntegration = true;
+        hw.Validate();
     }
 
-    // US RPL-5: ~7 km SHORAD / low-air pulse-Doppler search.
+    // US RPL-5: SHORAD pulse-Doppler search (~7 km).
     static RDF_RadarSettings CreateUsSearch()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(64);
@@ -63,24 +53,16 @@ class GBRS_RadarStationConfig
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
         settings.m_MinDistance = 40.0;
-
-        settings.ApplyRealisticChannel();
+        settings.m_EnablePhysicalDetection = true;
         settings.m_DetectionSnrDb = 8.0;
         settings.m_KeepUndetected = false;
         settings.m_KeepEntityTruth = false;
-        settings.m_EnableDemClutter = true;
-        // X-band + 2.5 deg + MTD: full scale=1 keeps Pd high to ~7.5 km
-        // for radial movers; coast covers CPA / vr≈0.
-        settings.m_DemClutterScale = 1.0;
-        settings.m_EnableNlosMultipath = true;
-        settings.m_EnableKnifeEdgeDiffraction = true;
-
-        ApplyPulseDopplerChannel(settings);
+        // RDF SamEngage / ManualDemo PD: DEM clutter off for wide-beam PPI.
+        settings.m_EnableDemClutter = false;
 
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_ScanRpm = 10.0;
-            // Shorad default az (~2.5 deg); do not widen to showcase cone.
             settings.m_Hardware.ClearElevationBeams();
             settings.m_Hardware.AddElevationBeam("low", 2.0, 16.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mid", 18.0, 24.0, 0.0);
@@ -91,7 +73,7 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // USSR TPN-19 / P-18-like: ~10 km VHF early-warning pulse-Doppler search.
+    // USSR TPN-19 / P-18-like: VHF early-warning pulse-Doppler (~10 km).
     static RDF_RadarSettings CreateUssrSearch()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(96);
@@ -114,32 +96,26 @@ class GBRS_RadarStationConfig
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
         settings.m_MinDistance = 40.0;
-
-        settings.ApplyRealisticChannel();
+        settings.m_EnablePhysicalDetection = true;
         settings.m_DetectionSnrDb = 6.0;
         settings.m_KeepUndetected = false;
         settings.m_KeepEntityTruth = false;
-        settings.m_EnableDemClutter = true;
-        // VHF + 6 deg: scale 0.25 keeps Rmax usable under DEM clutter.
-        settings.m_DemClutterScale = 0.25;
-        settings.m_EnableNlosMultipath = true;
-        settings.m_EnableKnifeEdgeDiffraction = true;
+        settings.m_EnableDemClutter = false;
 
-        // Keep P-18 RF front-end, then re-apply PD / MTD knobs on top.
+        // P-18 RF front-end, then re-apply stock PD MTI (CreateP18Like is TwoPulse).
         RDF_RadarHardware hw = RDF_RadarHardware.CreateP18Like();
+        hw.m_ScanRpm = 6.0;
+        hw.ClearElevationBeams();
+        hw.AddElevationBeam("low", 2.0, 16.0, 0.0);
+        hw.AddElevationBeam("mid", 18.0, 24.0, 0.0);
+        hw.AddElevationBeam("high", 42.0, 30.0, -1.0);
+        ApplyPulseDopplerHardware(hw);
+        // Do not load SHORAD profile HwCalib over VHF RF; keep P-18 bin-0 floor.
+        hw.m_LoadHwCalibFromProfile = false;
+        hw.m_MtiClutterFloor = 0.01;
+        hw.Validate();
         settings.m_Hardware = hw;
-        ApplyPulseDopplerChannel(settings);
 
-        if (settings.m_Hardware)
-        {
-            settings.m_Hardware.m_ScanRpm = 6.0;
-            // P18-like default az (~6 deg); keep GBRS three-beam elevation stack.
-            settings.m_Hardware.ClearElevationBeams();
-            settings.m_Hardware.AddElevationBeam("low", 2.0, 16.0, 0.0);
-            settings.m_Hardware.AddElevationBeam("mid", 18.0, 24.0, 0.0);
-            settings.m_Hardware.AddElevationBeam("high", 42.0, 30.0, -1.0);
-            settings.m_Hardware.Validate();
-        }
         settings.Validate();
         return settings;
     }

@@ -37,8 +37,6 @@ class GBRS_RadarDetectVisual
         if (!m_Blips)
             m_Blips = new array<ref GBRS_RadarDetectBlip>();
 
-        BaseWorld world = GetGame().GetWorld();
-
         int i = 0;
         while (i < plots.Count())
         {
@@ -46,11 +44,6 @@ class GBRS_RadarDetectVisual
             i = i + 1;
             if (!t || !t.m_Detected)
                 continue;
-            if (!t.m_IsFalsePlot)
-            {
-                if (!GBRS_RadarTerrainLos.IsClear(world, origin, t.m_Position))
-                    continue;
-            }
 
             GBRS_RadarDetectBlip blip = Alloc();
             if (!blip)
@@ -76,8 +69,7 @@ class GBRS_RadarDetectVisual
         if (life > LIFE_SEC_MAX)
             life = LIFE_SEC_MAX;
 
-        BaseWorld world = GetGame().GetWorld();
-        ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP;
+            ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP;
 
         int i = 0;
         while (i < m_Blips.Count())
@@ -90,12 +82,6 @@ class GBRS_RadarDetectVisual
             float age = nowS - blip.m_BirthS;
             if (age < 0.0 || age > life)
                 continue;
-
-            if (!GBRS_RadarTerrainLos.IsClear(world, origin, blip.m_Pos))
-            {
-                blip.m_BirthS = nowS - life - 1.0;
-                continue;
-            }
 
             float fade = 1.0 - (age / life);
             if (fade < 0.15)

@@ -243,8 +243,6 @@ class GBRS_RadarStationPpiController
         if (!live)
             return;
 
-        BaseWorld world = GetGame().GetWorld();
-
         int i = 0;
         while (i < live.Count())
         {
@@ -254,11 +252,6 @@ class GBRS_RadarStationPpiController
                 continue;
             if (!src.m_Detected)
                 continue;
-            if (!src.m_IsFalsePlot)
-            {
-                if (!GBRS_RadarTerrainLos.IsClear(world, origin, src.m_Position))
-                    continue;
-            }
 
             RDF_RadarTarget existing = FindPersistMatch(src);
             if (existing)
@@ -273,37 +266,6 @@ class GBRS_RadarStationPpiController
             RDF_RadarTarget created = new RDF_RadarTarget();
             CopyPlot(src, created, nowS);
             m_PersistPlots.Insert(created);
-        }
-    }
-
-    // Drop phosphor afterglow as soon as terrain occludes the last known blip.
-    protected void PruneTerrainBlocked(vector origin)
-    {
-        if (!m_PersistPlots)
-            return;
-
-        BaseWorld world = GetGame().GetWorld();
-        int i = m_PersistPlots.Count() - 1;
-        while (i >= 0)
-        {
-            RDF_RadarTarget t = m_PersistPlots.Get(i);
-            if (!t)
-            {
-                m_PersistPlots.Remove(i);
-                i = i - 1;
-                continue;
-            }
-
-            if (t.m_IsFalsePlot)
-            {
-                i = i - 1;
-                continue;
-            }
-
-            if (!GBRS_RadarTerrainLos.IsClear(world, origin, t.m_Position))
-                m_PersistPlots.Remove(i);
-
-            i = i - 1;
         }
     }
 
@@ -509,7 +471,6 @@ class GBRS_RadarStationPpiController
         }
 
         IngestLivePlots(sensor.GetPlots(), hudOrigin, nowS);
-        PruneTerrainBlocked(hudOrigin);
         PrunePersist(nowS, lifeS);
         BuildClusteredDisplayPlots();
 
