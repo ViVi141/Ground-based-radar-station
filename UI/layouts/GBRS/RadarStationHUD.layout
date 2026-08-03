@@ -1,0 +1,1317 @@
+FrameWidgetClass {
+ Name "rootFrame"
+ Slot FrameWidgetSlot "{69FCEDCEB0010101}" {
+  Anchor 0 0 0 0
+  PositionX 208
+  OffsetLeft 208
+  PositionY 160
+  OffsetTop 160
+  SizeX 1504
+  OffsetRight -1712
+  SizeY 760
+  OffsetBottom -920
+  Alignment 0 0
+ }
+ "Z Order" 120
+ Clipping False
+ {
+  ImageWidgetClass "{69FCEDCEB0010102}" {
+   Name "Dimmer"
+   Slot FrameWidgetSlot "{69FCEDCEB0010103}" {
+    Anchor 0 0 1 1
+    OffsetLeft 0
+    OffsetTop 0
+    OffsetRight 0
+    OffsetBottom 0
+   }
+   Color 0.02 0.05 0.08 0.55
+   Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+   Size 1 1
+   Progress 1
+  }
+  HorizontalLayoutWidgetClass "{69FCEDCEB00101A0}" {
+   Name "ModeBar"
+   Slot FrameWidgetSlot "{69FCEDCEB00101A1}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 44
+    OffsetBottom -44
+    Alignment 0 0
+   }
+   Clipping False
+   {
+    HorizontalLayoutWidgetClass "{69FCEDCEB00101D0}" {
+     Name "ModeTabs"
+     Slot LayoutSlot "{69FCEDCEB00101D1}" {
+      Padding 0 0 8 0
+     }
+     {
+      ButtonWidgetClass "{69FCEDCEB00101A2}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
+       Name "ModeTabPd"
+       Slot LayoutSlot "{69FCEDCEB00101A3}" {
+        Padding 0 0 8 0
+       }
+       components {
+        SCR_ButtonTextComponent "{69FCEDCEB00101B0}" {
+         m_sText "PD SEARCH"
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB00101A4}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
+       Name "ModeTabWlr"
+       Slot LayoutSlot "{69FCEDCEB00101A5}" {
+        Padding 0 0 8 0
+       }
+       components {
+        SCR_ButtonTextComponent "{69FCEDCEB00101B1}" {
+         m_sText "WLR"
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB00101A6}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
+       Name "ModeTabLock"
+       Slot LayoutSlot "{69FCEDCEB00101A7}" {
+        Padding 0 0 0 0
+       }
+       components {
+        SCR_ButtonTextComponent "{69FCEDCEB00101B2}" {
+         m_sText "LOCK"
+        }
+       }
+       {
+       }
+      }
+     }
+    }
+    HorizontalLayoutWidgetClass "{69FCEDCEB00101E0}" {
+     Name "NavHints"
+     Slot LayoutSlot "{69FCEDCEB00101E1}" {
+      SizeMode Fill
+      HorizontalAlign 2
+     }
+     "Fill Origin" Right
+     {
+      ButtonWidgetClass "{69FCEDCEB00101E2}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintTabPrev"
+       Slot LayoutSlot "{69FCEDCEB00101E3}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB00101F0}" {
+         m_sActionName "MenuTabLeft"
+         m_sLabel "Mode"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB00101E4}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintTabNext"
+       Slot LayoutSlot "{69FCEDCEB00101E5}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB00101F1}" {
+         m_sActionName "MenuTabRight"
+         m_sLabel "Mode"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB00101E6}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintSelect"
+       Slot LayoutSlot "{69FCEDCEB00101E7}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB00101F2}" {
+         m_sActionName "MenuSelect"
+         m_sLabel "Select"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB00101E8}" : "{0114A06AD44D49BD}UI/layouts/WidgetLibrary/Buttons/DialogButtonCancel.layout" {
+       Name "HintClose"
+       Slot LayoutSlot "{69FCEDCEB00101E9}" {
+        Padding 0 0 0 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB00101F3}" {
+         m_sActionName "MenuBack"
+         m_sLabel "Close"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+     }
+    }
+   }
+  }
+  HorizontalLayoutWidgetClass "{69FCEDCEB0010110}" {
+   Name "StationRow"
+   Slot FrameWidgetSlot "{69FCEDCEB0010111}" {
+    Anchor 0 0 1 1
+    OffsetLeft 0
+    OffsetTop 48
+    OffsetRight 0
+    OffsetBottom 0
+   }
+   Clipping False
+   {
+    SizeLayoutWidgetClass "{69FCEDCEB0010200}" {
+     Name "LeftColumnSize"
+     Slot LayoutSlot "{69FCEDCEB0010201}" {
+      VerticalAlign 3
+      Padding 0 0 12 0
+     }
+     AllowWidthOverride 1
+     WidthOverride 360
+     AllowHeightOverride 1
+     HeightOverride 720
+     {
+      VerticalLayoutWidgetClass "{69FCEDCEB0010202}" {
+       Name "LeftColumn"
+       Slot AlignableSlot "{69FCEDCEB0010203}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping False
+       {
+        SizeLayoutWidgetClass "{69FCEDCEB0010210}" {
+         Name "OpticsSlot"
+         Slot LayoutSlot "{69FCEDCEB0010211}" {
+          Padding 0 0 0 12
+         }
+         AllowWidthOverride 1
+         WidthOverride 360
+         AllowHeightOverride 1
+         HeightOverride 280
+         {
+          OverlayWidgetClass "{69FCEDCEB0010220}" {
+           Name "OpticsPanel"
+           Slot AlignableSlot "{69FCEDCEB0010221}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping False
+           {
+            SmartPanelWidgetClass "{69FCEDCEB0010222}" {
+             Name "OpticsBezel"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010223}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             Color 0.25 0.55 0.78 0.95
+             style outline_rounded_2px
+            }
+            SmartPanelWidgetClass "{69FCEDCEB0010224}" {
+             Name "OpticsInnerBg"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010225}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+              Padding 2 2 2 2
+             }
+             Color 0.01 0.04 0.07 0.98
+             style rounded_2px
+            }
+            VerticalLayoutWidgetClass "{69FCEDCEB0010230}" {
+             Name "OpticsInner"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010231}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+              Padding 8 6 8 8
+             }
+             Clipping False
+             {
+              HorizontalLayoutWidgetClass "{69FCEDCEB0010232}" {
+               Name "OpticsHeader"
+               Slot LayoutSlot "{69FCEDCEB0010233}" {
+                Padding 0 0 0 6
+               }
+               {
+                TextWidgetClass "{69FCEDCEB0010234}" {
+                 Name "OpticsTitle"
+                 Slot LayoutSlot "{69FCEDCEB0010235}" {
+                  SizeMode Fill
+                  FillWeight 1
+                 }
+                 Color 0.75 0.9 1 0.95
+                 Text "OPTICAL SIGHT"
+                 "Font Size" 13
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00102F1}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0010236}" {
+                 Name "OpticsInfo"
+                 Slot LayoutSlot "{69FCEDCEB0010237}" {
+                  SizeMode Fill
+                  FillWeight 1
+                 }
+                 Color 0.55 0.75 0.9 0.8
+                 Text "AZ --  EL --"
+                 "Font Size" 11
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00102F2}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+               }
+              }
+              OverlayWidgetClass "{69FCEDCEB0010240}" {
+               Name "OpticsView"
+               Slot LayoutSlot "{69FCEDCEB0010241}" {
+                SizeMode Fill
+               }
+               {
+                ImageWidgetClass "{69FCEDCEB0010242}" {
+                 Name "OpticsPlaceholder"
+                 Slot OverlayWidgetSlot "{69FCEDCEB0010243}" {
+                  HorizontalAlign 3
+                  VerticalAlign 3
+                 }
+                 Color 0.04 0.1 0.14 1
+                 Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                 Size 1 1
+                 Progress 1
+                }
+                RenderTargetWidgetClass "{69FCEDCEB0010244}" {
+                 Name "OpticsRenderTarget"
+                 Slot OverlayWidgetSlot "{69FCEDCEB0010245}" {
+                  HorizontalAlign 3
+                  VerticalAlign 3
+                 }
+                 "Use Engine Scale" 0
+                 "Use clear color" 1
+                 "Clear Color" 0 0 0 1
+                 "Blend mode" Blend
+                 camera 16
+                 Format "HDR High"
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+        SizeLayoutWidgetClass "{69FCEDCEB0010300}" {
+         Name "AzElSlot"
+         Slot LayoutSlot "{69FCEDCEB0010301}" {
+         }
+         AllowWidthOverride 1
+         WidthOverride 360
+         AllowHeightOverride 1
+         HeightOverride 468
+         {          OverlayWidgetClass "{69FCEDCEB0010310}" {
+           Name "AzElPanel"
+           Slot AlignableSlot "{69FCEDCEB0010311}" {
+            HorizontalAlign 3
+            VerticalAlign 3
+           }
+           Clipping False
+           {
+            SmartPanelWidgetClass "{69FCEDCEB0010312}" {
+             Name "AzElBezel"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010313}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             Color 0.18 0.42 0.62 0.95
+             style outline_rounded_2px
+            }
+            SmartPanelWidgetClass "{69FCEDCEB0010314}" {
+             Name "AzElInnerBg"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010315}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+              Padding 2 2 2 2
+             }
+             Color 0.02 0.05 0.08 0.98
+             style rounded_2px
+            }
+            VerticalLayoutWidgetClass "{69FCEDCEB0010320}" {
+             Name "AzElInner"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010321}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+              Padding 8 8 8 8
+             }
+             Clipping False
+             {
+              TextWidgetClass "{69FCEDCEB0010322}" {
+               Name "AzElTitle"
+               Slot LayoutSlot "{69FCEDCEB0010323}" {
+                Padding 2 0 0 6
+               }
+               Color 0.75 0.9 1 0.95
+               Text "ELEVATION-AZIMUTH"
+               "Font Size" 13
+               "Vertical Alignment" Center
+               FontProperties FontProperties "{69FCEDCEB00103F1}" {
+                Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+               }
+              }
+              HorizontalLayoutWidgetClass "{69FCEDCEB0010330}" {
+               Name "AzElPlotRow"
+               Slot LayoutSlot "{69FCEDCEB0010331}" {
+                SizeMode Fill
+               }
+               Clipping False
+               {
+                SizeLayoutWidgetClass "{69FCEDCEB0010332}" {
+                 Name "AzElLabelColSize"
+                 Slot LayoutSlot "{69FCEDCEB0010333}" {
+                  Padding 0 0 6 0
+                 }
+                 AllowWidthOverride 1
+                 WidthOverride 36
+                 {
+                  VerticalLayoutWidgetClass "{69FCEDCEB0010334}" {
+                   Name "AzElLabelCol"
+                   Slot AlignableSlot "{69FCEDCEB0010335}" {
+                    HorizontalAlign 3
+                    VerticalAlign 3
+                   }
+                   {
+                    TextWidgetClass "{69FCEDCEB0010340}" {
+                     Name "AzElEl0"
+                     Slot LayoutSlot "{69FCEDCEB0010341}" {
+                      SizeMode Fill
+                     }
+                     Color 0.75 0.92 1 1
+                     Text "55"
+                     "Font Size" 12
+                     "Horizontal Alignment" Right
+                     "Vertical Alignment" Top
+                     FontProperties FontProperties "{69FCEDCEB00103F2}" {
+                      Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                     }
+                    }
+                    TextWidgetClass "{69FCEDCEB0010342}" {
+                     Name "AzElEl1"
+                     Slot LayoutSlot "{69FCEDCEB0010343}" {
+                      SizeMode Fill
+                     }
+                     Color 0.75 0.92 1 1
+                     Text "40"
+                     "Font Size" 12
+                     "Horizontal Alignment" Right
+                     "Vertical Alignment" Center
+                     FontProperties FontProperties "{69FCEDCEB00103F3}" {
+                      Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                     }
+                    }
+                    TextWidgetClass "{69FCEDCEB0010344}" {
+                     Name "AzElEl2"
+                     Slot LayoutSlot "{69FCEDCEB0010345}" {
+                      SizeMode Fill
+                     }
+                     Color 0.75 0.92 1 1
+                     Text "25"
+                     "Font Size" 12
+                     "Horizontal Alignment" Right
+                     "Vertical Alignment" Center
+                     FontProperties FontProperties "{69FCEDCEB00103F4}" {
+                      Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                     }
+                    }
+                    TextWidgetClass "{69FCEDCEB0010346}" {
+                     Name "AzElEl3"
+                     Slot LayoutSlot "{69FCEDCEB0010347}" {
+                      SizeMode Fill
+                     }
+                     Color 0.75 0.92 1 1
+                     Text "10"
+                     "Font Size" 12
+                     "Horizontal Alignment" Right
+                     "Vertical Alignment" Center
+                     FontProperties FontProperties "{69FCEDCEB00103F5}" {
+                      Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                     }
+                    }
+                    TextWidgetClass "{69FCEDCEB0010348}" {
+                     Name "AzElEl4"
+                     Slot LayoutSlot "{69FCEDCEB0010349}" {
+                      SizeMode Fill
+                     }
+                     Color 0.75 0.92 1 1
+                     Text "-5"
+                     "Font Size" 12
+                     "Horizontal Alignment" Right
+                     "Vertical Alignment" Bottom
+                     FontProperties FontProperties "{69FCEDCEB00103F6}" {
+                      Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+                SizeLayoutWidgetClass "{69FCEDCEB0010350}" {
+                 Name "AzElCanvasSize"
+                 Slot LayoutSlot "{69FCEDCEB0010351}" {
+                  VerticalAlign 3
+                 }
+                 AllowWidthOverride 1
+                 WidthOverride 300
+                 AllowHeightOverride 1
+                 HeightOverride 400
+                 {
+                  FrameWidgetClass "{69FCEDCEB0010354}" {
+                   Name "AzElPlotFrame"
+                   Slot AlignableSlot "{69FCEDCEB0010355}" {
+                    HorizontalAlign 3
+                    VerticalAlign 3
+                   }
+                   Clipping False
+                   {
+                    ImageWidgetClass "{69FCEDCEB0010356}" {
+                     Name "AzElFaceBg"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010357}" {
+                      Anchor 0 0 1 1
+                      OffsetLeft 0
+                      OffsetTop 0
+                      OffsetRight 0
+                      OffsetBottom 0
+                     }
+                     Color 0.016 0.039 0.063 1
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010600}" {
+                     Name "AzElGridV0"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010601}" {
+                      Anchor 0 0 0 1
+                      PositionX 0
+                      OffsetLeft 0
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -1
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010602}" {
+                     Name "AzElGridV1"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010603}" {
+                      Anchor 0 0 0 1
+                      PositionX 50
+                      OffsetLeft 50
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -51
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010604}" {
+                     Name "AzElGridV2"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010605}" {
+                      Anchor 0 0 0 1
+                      PositionX 100
+                      OffsetLeft 100
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -101
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010606}" {
+                     Name "AzElGridV3"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010607}" {
+                      Anchor 0 0 0 1
+                      PositionX 150
+                      OffsetLeft 150
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -151
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010608}" {
+                     Name "AzElGridV4"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010609}" {
+                      Anchor 0 0 0 1
+                      PositionX 200
+                      OffsetLeft 200
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -201
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB001060A}" {
+                     Name "AzElGridV5"
+                     Slot FrameWidgetSlot "{69FCEDCEB001060B}" {
+                      Anchor 0 0 0 1
+                      PositionX 250
+                      OffsetLeft 250
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -251
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB001060C}" {
+                     Name "AzElGridV6"
+                     Slot FrameWidgetSlot "{69FCEDCEB001060D}" {
+                      Anchor 0 0 0 1
+                      PositionX 299
+                      OffsetLeft 299
+                      OffsetTop 0
+                      SizeX 1
+                      OffsetRight -300
+                      OffsetBottom 0
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010610}" {
+                     Name "AzElGridH0"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010611}" {
+                      Anchor 0 0 1 0
+                      OffsetLeft 0
+                      PositionY 0
+                      OffsetTop 0
+                      OffsetRight 0
+                      SizeY 1
+                      OffsetBottom -1
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010612}" {
+                     Name "AzElGridH1"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010613}" {
+                      Anchor 0 0 1 0
+                      OffsetLeft 0
+                      PositionY 100
+                      OffsetTop 100
+                      OffsetRight 0
+                      SizeY 1
+                      OffsetBottom -101
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010614}" {
+                     Name "AzElGridH2"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010615}" {
+                      Anchor 0 0 1 0
+                      OffsetLeft 0
+                      PositionY 200
+                      OffsetTop 200
+                      OffsetRight 0
+                      SizeY 1
+                      OffsetBottom -201
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010616}" {
+                     Name "AzElGridH3"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010617}" {
+                      Anchor 0 0 1 0
+                      OffsetLeft 0
+                      PositionY 300
+                      OffsetTop 300
+                      OffsetRight 0
+                      SizeY 1
+                      OffsetBottom -301
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    ImageWidgetClass "{69FCEDCEB0010618}" {
+                     Name "AzElGridH4"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010619}" {
+                      Anchor 0 0 1 0
+                      OffsetLeft 0
+                      PositionY 399
+                      OffsetTop 399
+                      OffsetRight 0
+                      SizeY 1
+                      OffsetBottom -400
+                     }
+                     Color 0.275 0.549 0.706 0.35
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                    CanvasWidgetClass "{69FCEDCEB0010352}" {
+                     Name "AzElCanvas"
+                     Slot FrameWidgetSlot "{69FCEDCEB0010353}" {
+                      Anchor 0 0 1 1
+                      OffsetLeft 0
+                      OffsetTop 0
+                      OffsetRight 0
+                      OffsetBottom 0
+                     }
+                     Clipping False
+                     SizeInUnits 300 400
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+              HorizontalLayoutWidgetClass "{69FCEDCEB0010360}" {
+               Name "AzElAzRow"
+               Slot LayoutSlot "{69FCEDCEB0010361}" {
+                Padding 42 4 0 0
+               }
+               {
+                TextWidgetClass "{69FCEDCEB0010362}" {
+                 Name "AzElAz0"
+                 Slot LayoutSlot "{69FCEDCEB0010363}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "0"
+                 "Font Size" 12
+                 "Horizontal Alignment" Left
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A0}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0010364}" {
+                 Name "AzElAz1"
+                 Slot LayoutSlot "{69FCEDCEB0010365}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "60"
+                 "Font Size" 12
+                 "Horizontal Alignment" Center
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A1}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0010366}" {
+                 Name "AzElAz2"
+                 Slot LayoutSlot "{69FCEDCEB0010367}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "120"
+                 "Font Size" 12
+                 "Horizontal Alignment" Center
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A2}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0010368}" {
+                 Name "AzElAz3"
+                 Slot LayoutSlot "{69FCEDCEB0010369}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "180"
+                 "Font Size" 12
+                 "Horizontal Alignment" Center
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A3}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB001036A}" {
+                 Name "AzElAz4"
+                 Slot LayoutSlot "{69FCEDCEB001036B}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "240"
+                 "Font Size" 12
+                 "Horizontal Alignment" Center
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A4}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB001036C}" {
+                 Name "AzElAz5"
+                 Slot LayoutSlot "{69FCEDCEB001036D}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "300"
+                 "Font Size" 12
+                 "Horizontal Alignment" Center
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A5}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB001036E}" {
+                 Name "AzElAz6"
+                 Slot LayoutSlot "{69FCEDCEB001036F}" {
+                  SizeMode Fill
+                 }
+                 Color 0.75 0.92 1 1
+                 Text "360"
+                 "Font Size" 12
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Center
+                 FontProperties FontProperties "{69FCEDCEB00103A6}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    SizeLayoutWidgetClass "{69FCEDCEB0010400}" {
+     Name "PpiSlot"
+     Slot LayoutSlot "{69FCEDCEB0010401}" {
+      VerticalAlign 3
+      Padding 0 0 12 0
+     }
+     AllowWidthOverride 1
+     WidthOverride 760
+     AllowHeightOverride 1
+     HeightOverride 720
+     {
+      OverlayWidgetClass "{69FCEDCEB0010410}" {
+       Name "PpiPanel"
+       Slot AlignableSlot "{69FCEDCEB0010411}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping False
+       {
+        SmartPanelWidgetClass "{69FCEDCEB0010412}" {
+         Name "PpiBezel"
+         Slot OverlayWidgetSlot "{69FCEDCEB0010413}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 0.12 0.48 0.28 0.95
+         style outline_rounded_2px
+        }
+        SmartPanelWidgetClass "{69FCEDCEB0010414}" {
+         Name "PpiInnerBg"
+         Slot OverlayWidgetSlot "{69FCEDCEB0010415}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          Padding 2 2 2 2
+         }
+         Color 0.01 0.05 0.03 0.98
+         style rounded_2px
+        }
+        VerticalLayoutWidgetClass "{69FCEDCEB0010420}" {
+         Name "PpiInner"
+         Slot OverlayWidgetSlot "{69FCEDCEB0010421}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          Padding 14 8 14 8
+         }
+         Clipping False
+         {
+          HorizontalLayoutWidgetClass "{69FCEDCEB0010422}" {
+           Name "PpiHeader"
+           Slot LayoutSlot "{69FCEDCEB0010423}" {
+            Padding 0 0 0 4
+           }
+           {
+            TextWidgetClass "{69FCEDCEB0010424}" {
+             Name "PpiTitle"
+             Slot LayoutSlot "{69FCEDCEB0010425}" {
+              SizeMode Fill
+              FillWeight 2
+             }
+             Color 0.45 1 0.62 0.95
+             Text "PLAN POSITION INDICATOR"
+             "Font Size" 15
+             "Vertical Alignment" Center
+             FontProperties FontProperties "{69FCEDCEB00104F1}" {
+              Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+              ShadowSize 16
+              ShadowOpacity 0.55
+             }
+            }
+            TextWidgetClass "{69FCEDCEB0010426}" {
+             Name "PpiMode"
+             Slot LayoutSlot "{69FCEDCEB0010427}" {
+              Padding 8 0 8 0
+             }
+             Color 0.35 0.85 0.5 0.85
+             Text "PD SEARCH"
+             "Font Size" 13
+             "Horizontal Alignment" Right
+             "Vertical Alignment" Center
+             FontProperties FontProperties "{69FCEDCEB00104F2}" {
+              Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+             }
+            }
+            TextWidgetClass "{69FCEDCEB0010428}" {
+             Name "PpiRange"
+             Slot LayoutSlot "{69FCEDCEB0010429}" {
+             }
+             Color 0.4 0.9 0.55 0.9
+             Text "7.0km"
+             "Font Size" 13
+             "Horizontal Alignment" Right
+             "Vertical Alignment" Center
+             FontProperties FontProperties "{69FCEDCEB00104F3}" {
+              Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+             }
+            }
+           }
+          }
+          OverlayWidgetClass "{69FCEDCEB0010430}" {
+           Name "PpiCanvasHost"
+           Slot LayoutSlot "{69FCEDCEB0010431}" {
+            SizeMode Fill
+           }
+           Clipping False
+           {
+            SizeLayoutWidgetClass "{69FCEDCEB0010432}" {
+             Name "PpiCanvasSize"
+             Slot OverlayWidgetSlot "{69FCEDCEB0010433}" {
+              HorizontalAlign 1
+              VerticalAlign 1
+             }
+             AllowWidthOverride 1
+             WidthOverride 640
+             AllowHeightOverride 1
+             HeightOverride 640
+             {
+              FrameWidgetClass "{69FCEDCEB0010436}" {
+               Name "PpiCanvasFrame"
+               Slot AlignableSlot "{69FCEDCEB0010437}" {
+                HorizontalAlign 3
+                VerticalAlign 3
+               }
+               Clipping False
+               {
+                OverlayWidgetClass "{69FCEDCEB0010620}" {
+                 Name "PpiFaceHost"
+                 Slot FrameWidgetSlot "{69FCEDCEB0010621}" {
+                  Anchor 0 0 0 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 640
+                  OffsetRight -640
+                  SizeY 640
+                  OffsetBottom -640
+                  Alignment 0 0
+                 }
+                 Clipping False
+                 {
+                  ImageWidgetClass "{69FCEDCEB0010622}" {
+                   Name "PpiDiscBg"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010623}" {
+                    HorizontalAlign 3
+                    VerticalAlign 3
+                   }
+                   Color 0.008 0.055 0.031 1
+                   Texture "{73B3D8BBB785B5B9}UI/Textures/Common/circleFull.edds"
+                   Size 64 64
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB0010624}" {
+                   Name "PpiMapSize"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010625}" {
+                    HorizontalAlign 1
+                    VerticalAlign 1
+                   }
+                   AllowWidthOverride 1
+                   WidthOverride 552
+                   AllowHeightOverride 1
+                   HeightOverride 552
+                   {
+                    ImageWidgetClass "{69FCEDCEB0010626}" {
+                     Name "PpiMapDisc"
+                     Slot AlignableSlot "{69FCEDCEB0010627}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.016 0.086 0.047 1
+                     Texture "{73B3D8BBB785B5B9}UI/Textures/Common/circleFull.edds"
+                     Size 64 64
+                    }
+                   }
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB0010628}" {
+                   Name "PpiRing25Size"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010629}" {
+                    HorizontalAlign 1
+                    VerticalAlign 1
+                   }
+                   AllowWidthOverride 1
+                   WidthOverride 150
+                   AllowHeightOverride 1
+                   HeightOverride 150
+                   {
+                    ImageWidgetClass "{69FCEDCEB001062A}" {
+                     Name "PpiRing25"
+                     Slot AlignableSlot "{69FCEDCEB001062B}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.157 0.627 0.392 0.27
+                     Texture "{3262679C50EF4F01}UI/Textures/Icons/icons_wrapperUI.imageset"
+                     Image "careerCircleOutlineThin"
+                     Size 64 64
+                    }
+                   }
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB001062C}" {
+                   Name "PpiRing50Size"
+                   Slot OverlayWidgetSlot "{69FCEDCEB001062D}" {
+                    HorizontalAlign 1
+                    VerticalAlign 1
+                   }
+                   AllowWidthOverride 1
+                   WidthOverride 300
+                   AllowHeightOverride 1
+                   HeightOverride 300
+                   {
+                    ImageWidgetClass "{69FCEDCEB001062E}" {
+                     Name "PpiRing50"
+                     Slot AlignableSlot "{69FCEDCEB001062F}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.157 0.627 0.392 0.27
+                     Texture "{3262679C50EF4F01}UI/Textures/Icons/icons_wrapperUI.imageset"
+                     Image "careerCircleOutlineThin"
+                     Size 64 64
+                    }
+                   }
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB0010630}" {
+                   Name "PpiRing75Size"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010631}" {
+                    HorizontalAlign 1
+                    VerticalAlign 1
+                   }
+                   AllowWidthOverride 1
+                   WidthOverride 450
+                   AllowHeightOverride 1
+                   HeightOverride 450
+                   {
+                    ImageWidgetClass "{69FCEDCEB0010632}" {
+                     Name "PpiRing75"
+                     Slot AlignableSlot "{69FCEDCEB0010633}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.157 0.627 0.392 0.27
+                     Texture "{3262679C50EF4F01}UI/Textures/Icons/icons_wrapperUI.imageset"
+                     Image "careerCircleOutlineThin"
+                     Size 64 64
+                    }
+                   }
+                  }
+                  ImageWidgetClass "{69FCEDCEB0010634}" {
+                   Name "PpiRing100"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010635}" {
+                    HorizontalAlign 3
+                    VerticalAlign 3
+                   }
+                   Color 0.235 0.902 0.549 0.55
+                   Texture "{3262679C50EF4F01}UI/Textures/Icons/icons_wrapperUI.imageset"
+                   Image "careerCircleOutlineThin"
+                   Size 64 64
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB0010638}" {
+                   Name "PpiCrossHSize"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010639}" {
+                    HorizontalAlign 3
+                    VerticalAlign 1
+                    Padding 6 0 6 0
+                   }
+                   AllowHeightOverride 1
+                   HeightOverride 2
+                   {
+                    ImageWidgetClass "{69FCEDCEB001063A}" {
+                     Name "PpiCrossHLine"
+                     Slot AlignableSlot "{69FCEDCEB001063B}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.196 0.706 0.471 0.31
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                   }
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB001063C}" {
+                   Name "PpiCrossVSize"
+                   Slot OverlayWidgetSlot "{69FCEDCEB001063D}" {
+                    HorizontalAlign 1
+                    VerticalAlign 3
+                    Padding 0 6 0 6
+                   }
+                   AllowWidthOverride 1
+                   WidthOverride 2
+                   {
+                    ImageWidgetClass "{69FCEDCEB001063E}" {
+                     Name "PpiCrossVLine"
+                     Slot AlignableSlot "{69FCEDCEB001063F}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.196 0.706 0.471 0.31
+                     Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+                     Size 1 1
+                     Progress 1
+                    }
+                   }
+                  }
+                  SizeLayoutWidgetClass "{69FCEDCEB0010640}" {
+                   Name "PpiCoreSize"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010641}" {
+                    HorizontalAlign 1
+                    VerticalAlign 1
+                   }
+                   AllowWidthOverride 1
+                   WidthOverride 8
+                   AllowHeightOverride 1
+                   HeightOverride 8
+                   {
+                    ImageWidgetClass "{69FCEDCEB0010642}" {
+                     Name "PpiCore"
+                     Slot AlignableSlot "{69FCEDCEB0010643}" {
+                      HorizontalAlign 3
+                      VerticalAlign 3
+                     }
+                     Color 0.275 1 0.627 1
+                     Texture "{73B3D8BBB785B5B9}UI/Textures/Common/circleFull.edds"
+                     Size 64 64
+                    }
+                   }
+                  }
+                  ImageWidgetClass "{69FCEDCEB0010644}" {
+                   Name "PpiFaceImage"
+                   Slot OverlayWidgetSlot "{69FCEDCEB0010645}" {
+                    HorizontalAlign 3
+                    VerticalAlign 3
+                   }
+                   Texture "{F2196E35CB708A41}UI/Textures/GBRS/GBRS_PpiFace.edds"
+                   Size 640 640
+                  }
+                 }
+                }
+                CanvasWidgetClass "{69FCEDCEB0010434}" {
+                 Name "PpiCanvas"
+                 Slot FrameWidgetSlot "{69FCEDCEB0010435}" {
+                  Anchor 0 0 0 0
+                  PositionX 0
+                  OffsetLeft 0
+                  PositionY 0
+                  OffsetTop 0
+                  SizeX 640
+                  OffsetRight -640
+                  SizeY 640
+                  OffsetBottom -640
+                  Alignment 0 0
+                 }
+                 Clipping False
+                 SizeInUnits 640 640
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+          TextWidgetClass "{69FCEDCEB0010440}" {
+           Name "PpiHint"
+           Slot LayoutSlot "{69FCEDCEB0010441}" {
+            Padding 0 4 0 0
+           }
+           Color 0.35 0.7 0.45 0.7
+           Text "north-up AZ/EL"
+           "Font Size" 11
+           FontProperties FontProperties "{69FCEDCEB00104F4}" {
+            Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+    SizeLayoutWidgetClass "{69FCEDCEB0010500}" {
+     Name "ListSlot"
+     Slot LayoutSlot "{69FCEDCEB0010501}" {
+      VerticalAlign 3
+     }
+     AllowWidthOverride 1
+     WidthOverride 360
+     AllowHeightOverride 1
+     HeightOverride 720
+     {
+      OverlayWidgetClass "{69FCEDCEB0010510}" {
+       Name "ListPanel"
+       Slot AlignableSlot "{69FCEDCEB0010511}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       Clipping False
+       {
+        SmartPanelWidgetClass "{69FCEDCEB0010512}" {
+         Name "ListBezel"
+         Slot OverlayWidgetSlot "{69FCEDCEB0010513}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
+         Color 0.2 0.36 0.55 0.95
+         style outline_rounded_2px
+        }
+        SmartPanelWidgetClass "{69FCEDCEB0010514}" {
+         Name "ListInnerBg"
+         Slot OverlayWidgetSlot "{69FCEDCEB0010515}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          Padding 2 2 2 2
+         }
+         Color 0.02 0.05 0.09 0.98
+         style rounded_2px
+        }
+        VerticalLayoutWidgetClass "{69FCEDCEB0010520}" {
+         Name "ListInner"
+         Slot OverlayWidgetSlot "{69FCEDCEB0010521}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          Padding 14 8 14 8
+         }
+         Clipping False
+         {
+          TextWidgetClass "{69FCEDCEB0010522}" {
+           Name "ListTitle"
+           Slot LayoutSlot "{69FCEDCEB0010523}" {
+            Padding 0 0 0 8
+           }
+           Color 0.8 0.92 1 0.95
+           Text "TRACKED CONTACTS"
+           "Font Size" 15
+           FontProperties FontProperties "{69FCEDCEB00105F1}" {
+            Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+           }
+          }
+          TextWidgetClass "{69FCEDCEB0010524}" {
+           Name "ListHeader"
+           Slot LayoutSlot "{69FCEDCEB0010525}" {
+            Padding 0 0 0 6
+           }
+           Color 0.55 0.72 0.88 0.85
+           Text "NR  AZ      RNG     ALT     SPD     TYPE     SNR"
+           "Font Size" 12
+           FontProperties FontProperties "{69FCEDCEB00105F2}" {
+            Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+           }
+          }
+          TextWidgetClass "{69FCEDCEB0010526}" {
+           Name "ListBody"
+           Slot LayoutSlot "{69FCEDCEB0010527}" {
+            SizeMode Fill
+           }
+           Color 0.7 0.88 1 0.92
+           Text "(no contacts)"
+           "Font Size" 13
+           "Vertical Alignment" Top
+           FontProperties FontProperties "{69FCEDCEB00105F3}" {
+            Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+           }
+          }
+          TextWidgetClass "{69FCEDCEB0010528}" {
+           Name "ListFooter"
+           Slot LayoutSlot "{69FCEDCEB0010529}" {
+            Padding 0 6 0 0
+           }
+           Color 0.45 0.65 0.8 0.75
+           Text "DET 0   TRK 0"
+           "Font Size" 12
+           FontProperties FontProperties "{69FCEDCEB00105F4}" {
+            Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+ }
+}

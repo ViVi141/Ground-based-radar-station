@@ -1,12 +1,13 @@
-// Faction station presets: thin wrappers around RDF product mode
-// RDF_RADAR_MODE_PULSE_DOPPLER / CreatePulseDopplerSettings.
+// Faction station presets: thin wrappers around RDF product modes
+// RDF_RADAR_MODE_PULSE_DOPPLER (air search / lock) and RDF_RADAR_MODE_WLR.
 //
 // Do not invent a second detection channel. Station code only sets geometry,
 // range, and include filters. Channel physics (MTD, PRF stagger, coast,
 // HwCalib) stays with RDF.
 //
-// DEM clutter stays off for mechanical-scan SHORAD / EW — same as RDF
-// SamEngage / ManualDemo PD (wide beams bury skin returns in DEM cells).
+// Balance intent:
+//   US  = precise SHORAD (7 km PD / 8 km WLR, 10 RPM search, 2.5 deg beam).
+//   USSR = early-warning (10 km PD/WLR, 6 RPM search, 6 deg beam, VHF DEM 0.25).
 class GBRS_RadarStationConfig
 {
     // Re-stamp PD MTI after swapping Hardware (e.g. P-18 RF front-end).
@@ -31,8 +32,6 @@ class GBRS_RadarStationConfig
     }
 
     // Enables RDF channel and environment effects appropriate for air search.
-    // Projectile/WLR features remain disabled because this station searches
-    // aircraft and radar emitters rather than locating artillery fire.
     static void ApplyFullFidelity(RDF_RadarSettings settings)
     {
         if (!settings)
@@ -93,8 +92,8 @@ class GBRS_RadarStationConfig
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(96);
         settings.m_Range = 10000.0;
-        // At 6 RPM the stock 2.5-degree azimuth beam moves 4.32 degrees in
-        // 120 ms, leaving permanent scan gaps. 40 ms dwells move 1.44 degrees.
+        // At 6 RPM the P-18-like 6-degree azimuth beam moves 1.44 degrees in
+        // 40 ms, so dwells stay continuous across the beam.
         settings.m_UpdateInterval = 0.04;
         settings.m_SectorHalfAngleDeg = 180.0;
         settings.m_EnableMechanicalScan = true;
@@ -114,13 +113,18 @@ class GBRS_RadarStationConfig
         settings.m_IncludeRadarEmitters = true;
         settings.m_MinDistance = 40.0;
         settings.m_EnablePhysicalDetection = true;
-        settings.m_DetectionSnrDb = 6.0;
+        // Wider EW beam + VHF clutter: slightly softer gate than US SHORAD.
+        settings.m_DetectionSnrDb = 5.0;
         settings.m_KeepUndetected = false;
         settings.m_KeepEntityTruth = false;
 
         // P-18 RF front-end, then re-apply stock PD MTI (CreateP18Like is TwoPulse).
         RDF_RadarHardware hw = RDF_RadarHardware.CreateP18Like();
         hw.m_ScanRpm = 6.0;
+        // Mild early-warning RF uplift; Pd remains clutter-limited on Eden DEM.
+        hw.m_PeakPowerW = 350000.0;
+        hw.m_AntennaGainDbi = 20.0;
+        hw.m_PulsesIntegrated = 12;
         hw.ClearElevationBeams();
         hw.AddElevationBeam("low", 2.0, 16.0, 0.0);
         hw.AddElevationBeam("mid", 18.0, 24.0, 0.0);
@@ -133,6 +137,92 @@ class GBRS_RadarStationConfig
         settings.m_Hardware = hw;
 
         ApplyFullFidelity(settings);
+        // VHF surface returns are weaker than X-band SHORAD clutter cells.
+        settings.m_DemClutterScale = 0.25;
+        settings.Validate();
+        return settings;
+    }
+
+    // Shared WLR geometry: stare sector, projectile-only, mortar elevation beams.
+    // Do not ApplyFullFidelity — DEM clutter would bury shell returns.
+    static void ApplyWlrProductFlags(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.m_SectorHalfAngleDeg = 180.0;
+        settings.m_UpdateInterval = 0.15;
+        settings.m_IncludeVehicles = false;
+        settings.m_IncludeRadarEmitters = false;
+        settings.m_IncludeProjectiles = true;
+        settings.m_EnableMechanicalScan = false;
+        settings.m_EnableBallisticPrediction = true;
+        settings.m_EnableWeaponLocate = true;
+        settings.m_EnableDemGroundForWlr = true;
+        settings.m_WeaponLocateMinHits = 5;
+        settings.m_WeaponLocateMinSpanS = 1.0;
+        settings.m_TrackConfirmHits = 2;
+        settings.m_KeepEntityTruth = false;
+        settings.m_UseBoundsCenter = false;
+        settings.m_UseLocalOffset = false;
+        settings.m_OriginOffset = "0 0 0";
+        settings.m_MinDistance = 40.0;
+        settings.m_EnablePhysicalDetection = true;
+        settings.m_KeepUndetected = false;
+        settings.m_EnableDemClutter = false;
+        settings.m_EnableDemSpanOcclusion = false;
+        settings.m_EnableCoarseRd = false;
+
+        if (settings.m_Hardware)
+        {
+            settings.m_Hardware.m_ScanRpm = 0.0;
+            settings.m_Hardware.m_EnableMti = false;
+            settings.m_Hardware.ClearElevationBeams();
+            settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
+            settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 30.0, 0.0);
+            settings.m_Hardware.AddElevationBeam("mortar_high", 55.0, 28.0, -0.5);
+            settings.m_Hardware.Validate();
+        }
+    }
+
+    // US counter-battery WLR (~8 km stare).
+    static RDF_RadarSettings CreateUsWlr()
+    {
+        RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
+        settings.m_Range = 8000.0;
+        settings.m_MaxLosTracesPerScan = 96;
+        settings.m_FreshUpdateBudgetMin = 48;
+        settings.m_FreshUpdateBudgetMax = 96;
+        settings.m_ScattererDiscoveryIntervalS = 0.25;
+        settings.m_ScattererDiscoveryRangeScale = 1.25;
+        settings.m_ScattererClassifyPerTick = 128;
+        settings.m_ScattererRefreshPerTick = 256;
+        settings.m_ScattererMaxEntries = 1024;
+        settings.m_DetectionSnrDb = 6.0;
+        if (settings.m_Hardware)
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 25.0;
+        ApplyWlrProductFlags(settings);
+        settings.Validate();
+        return settings;
+    }
+
+    // USSR counter-battery WLR (~10 km stare, wider beam).
+    static RDF_RadarSettings CreateUssrWlr()
+    {
+        RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
+        settings.m_Range = 10000.0;
+        settings.m_MaxLosTracesPerScan = 96;
+        settings.m_FreshUpdateBudgetMin = 48;
+        settings.m_FreshUpdateBudgetMax = 96;
+        settings.m_ScattererDiscoveryIntervalS = 0.25;
+        settings.m_ScattererDiscoveryRangeScale = 1.25;
+        settings.m_ScattererClassifyPerTick = 128;
+        settings.m_ScattererRefreshPerTick = 256;
+        settings.m_ScattererMaxEntries = 1024;
+        settings.m_DetectionSnrDb = 5.0;
+        if (settings.m_Hardware)
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
+        ApplyWlrProductFlags(settings);
         settings.Validate();
         return settings;
     }

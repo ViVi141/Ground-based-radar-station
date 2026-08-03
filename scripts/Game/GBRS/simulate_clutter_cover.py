@@ -220,7 +220,7 @@ def make_us() -> tuple[Hardware, Settings]:
         pulse_width_s=5.0e-7,
         bandwidth_hz=4.0e6,
         pulses_integrated=32,
-        coherent_integration=False,
+        coherent_integration=True,
         enable_mti=True,
         mti_clutter_floor=1.0e-4,
         prf_hz=4000.0,
@@ -233,7 +233,7 @@ def make_us() -> tuple[Hardware, Settings]:
     )
     settings = Settings(
         range_m=7000.0,
-        update_interval_s=0.08,
+        update_interval_s=0.02,
         detection_snr_db=8.0,
         dem_clutter_scale=1.0,
     )
@@ -244,15 +244,15 @@ def make_ussr() -> tuple[Hardware, Settings]:
     hw = Hardware(
         name="USSR_TPN19",
         frequency_hz=1.6e8,
-        peak_power_w=250000.0,
-        antenna_gain_dbi=18.0,
+        peak_power_w=350000.0,
+        antenna_gain_dbi=20.0,
         az_beamwidth_deg=6.0,
         system_loss_db=8.0,
         noise_figure_db=6.0,
         pulse_width_s=6.0e-6,
         bandwidth_hz=166666.0,
-        pulses_integrated=8,
-        coherent_integration=False,
+        pulses_integrated=12,
+        coherent_integration=True,
         enable_mti=True,
         mti_clutter_floor=0.01,
         prf_hz=200.0,
@@ -265,8 +265,8 @@ def make_ussr() -> tuple[Hardware, Settings]:
     )
     settings = Settings(
         range_m=10000.0,
-        update_interval_s=0.12,
-        detection_snr_db=6.0,
+        update_interval_s=0.04,
+        detection_snr_db=5.0,
         dem_clutter_scale=0.25,
     )
     return hw, settings

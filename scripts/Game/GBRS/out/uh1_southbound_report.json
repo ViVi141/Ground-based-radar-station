@@ -4949,9 +4949,9 @@
       "paint": {
         "faction": "USSR_TPN19",
         "scale": 0.25,
-        "gate_db": 6.0,
+        "gate_db": 5.0,
         "paint_mode": true,
-        "pd_cfar_track": 0.5211726384364821,
+        "pd_cfar_track": 0.5570032573289903,
         "samples": [
           {
             "t_s": 0.0,
@@ -6182,8 +6182,8 @@
             "rcs_m2": 0.58,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 38.5,
@@ -6374,8 +6374,8 @@
             "rcs_m2": 0.6,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 44.5,
@@ -6802,7 +6802,7 @@
             "uh_agl_m": 80.0,
             "slant_km": 2.247,
             "radial_ms": -49.9,
-            "snr_db": 9.08,
+            "snr_db": 9.09,
             "rcs_m2": 2.16,
             "los_clear": true,
             "in_beam": true,
@@ -6838,8 +6838,8 @@
             "rcs_m2": 3.49,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 59.0,
@@ -6870,8 +6870,8 @@
             "rcs_m2": 1.03,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 60.0,
@@ -7654,8 +7654,8 @@
             "rcs_m2": 1.51,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 84.5,
@@ -7846,8 +7846,8 @@
             "rcs_m2": 1.56,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 90.5,
@@ -8342,8 +8342,8 @@
             "rcs_m2": 2.14,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 106.0,
@@ -8630,8 +8630,8 @@
             "rcs_m2": 2.1,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 115.0,
@@ -8822,8 +8822,8 @@
             "rcs_m2": 2.11,
             "los_clear": true,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 121.0,
@@ -9174,8 +9174,8 @@
             "rcs_m2": 1.02,
             "los_clear": false,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 132.0,
@@ -9414,8 +9414,8 @@
             "rcs_m2": 16.5,
             "los_clear": false,
             "in_beam": true,
-            "detected_snr": false,
-            "detected_cfar": false
+            "detected_snr": true,
+            "detected_cfar": true
           },
           {
             "t_s": 139.5,
@@ -9554,7 +9554,7 @@
             "uh_agl_m": 80.0,
             "slant_km": 6.544,
             "radial_ms": -50.0,
-            "snr_db": 0.34,
+            "snr_db": 0.35,
             "rcs_m2": 5.24,
             "los_clear": false,
             "in_beam": true,
@@ -9650,7 +9650,7 @@
             "uh_agl_m": 80.0,
             "slant_km": 6.694,
             "radial_ms": -50.0,
-            "snr_db": -6.89,
+            "snr_db": -6.88,
             "rcs_m2": 1.05,
             "los_clear": false,
             "in_beam": true,

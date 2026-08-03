@@ -1,7 +1,7 @@
-// Opens the local RDF PPI HUD for a powered GBRS radar station.
+// Opens the GBRS radar workstation menu (PD SEARCH v1).
 class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
 {
-    [Attribute("Open PPI", UIWidgets.EditBox, "Shown when the radar is powered", "")]
+    [Attribute("Open Workstation", UIWidgets.EditBox, "Shown when the radar is powered", "")]
     protected LocalizedString m_sOpenPpiName;
 
     [Attribute("Radar must be powered on", UIWidgets.EditBox, "Shown when the radar is off", "")]
@@ -52,7 +52,7 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation.IsPowered())
             return false;
 
-        if (GBRS_RadarStationPpiController.IsOpenFor(m_RadarStation))
+        if (GBRS_RadarStationMenu.IsOpenFor(m_RadarStation))
             return false;
 
         return true;
@@ -82,7 +82,7 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation.IsPowered())
             return;
 
-        GBRS_RadarStationPpiController.OpenFor(m_RadarStation);
+        GBRS_RadarStationMenu.OpenFor(m_RadarStation);
     }
 
     override bool GetActionNameScript(out string outName)

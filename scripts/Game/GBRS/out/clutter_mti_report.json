@@ -36,7 +36,7 @@
         "dem_clutter_scale": 1.0,
         "detection_snr_db": 8.0,
         "range_m": 7000.0,
-        "update_interval_s": 0.08,
+        "update_interval_s": 0.02,
         "scan_rpm": 10.0,
         "beam_duty_cycle": 0.00694,
         "enable_cfar": true,
@@ -957,7 +957,7 @@
         "frequency_hz": 9000000000.0,
         "az_beamwidth_deg": 2.5,
         "prf_hz": 4000.0,
-        "processing_gain": 11.314,
+        "processing_gain": 64.0,
         "mti_clutter_floor": 0.0001
       },
       "dem_eden": {
@@ -972,7 +972,7 @@
           "DEM_paint_radial50": {
             "pd_snr": 0.9975,
             "pd_cfar": 0.9975,
-            "mean_snr_db": 38.552341505720136,
+            "mean_snr_db": 38.55234150572013,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -990,7 +990,7 @@
           "DEM_paint_force_clear": {
             "pd_snr": 0.9975,
             "pd_cfar": 0.9975,
-            "mean_snr_db": 38.552341505720136,
+            "mean_snr_db": 38.55234150572013,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -1328,9 +1328,9 @@
     "USSR_TPN19": {
       "config": {
         "dem_clutter_scale": 0.25,
-        "detection_snr_db": 6.0,
+        "detection_snr_db": 5.0,
         "range_m": 10000.0,
-        "update_interval_s": 0.12,
+        "update_interval_s": 0.04,
         "scan_rpm": 6.0,
         "beam_duty_cycle": 0.01667,
         "enable_cfar": true,
@@ -1392,227 +1392,227 @@
       ],
       "scenarios_4km": {
         "A_boresight_snr_only": {
-          "pd_snr": 0.0,
-          "pd_cfar": 0.0,
-          "mean_snr_db": 5.523286427636736,
+          "pd_snr": 1.0,
+          "pd_cfar": 1.0,
+          "mean_snr_db": 5.523299631227918,
           "trials": 400
         },
         "B_boresight_cfar_swerling": {
-          "pd_snr": 0.355,
-          "pd_cfar": 0.355,
-          "mean_snr_db": 3.303515096982258,
+          "pd_snr": 0.4475,
+          "pd_cfar": 0.4475,
+          "mean_snr_db": 3.303528300573434,
           "trials": 400
         },
         "C_paint_in_beam": {
-          "pd_snr": 0.355,
-          "pd_cfar": 0.355,
-          "mean_snr_db": 3.3035020578702547,
+          "pd_snr": 0.4475,
+          "pd_cfar": 0.4475,
+          "mean_snr_db": 3.3035245315585997,
           "trials": 400
         },
         "D_random_update_tick": {
           "pd_snr": 0.0125,
           "pd_cfar": 0.0125,
-          "mean_snr_db": -293.9329021845002,
+          "mean_snr_db": -293.9329017174287,
           "trials": 400
         },
         "E_tangential_v0": {
           "pd_snr": 0.0,
           "pd_cfar": 0.0,
-          "mean_snr_db": -54.122487239934706,
+          "mean_snr_db": -54.12247403634354,
           "trials": 400
         },
         "F_broadside_aspect": {
-          "pd_snr": 0.79,
-          "pd_cfar": 0.79,
-          "mean_snr_db": 9.71015451711424,
+          "pd_snr": 0.8275,
+          "pd_cfar": 0.8275,
+          "mean_snr_db": 9.710167720705421,
           "trials": 400
         },
         "G_nlos_bounce": {
-          "pd_snr": 0.0,
-          "pd_cfar": 0.0,
-          "mean_snr_db": -5.872834153405335,
+          "pd_snr": 0.0025,
+          "pd_cfar": 0.0025,
+          "mean_snr_db": -5.872820949814153,
           "trials": 400
         },
         "H_nlos_knife20m": {
-          "pd_snr": 0.0025,
-          "pd_cfar": 0.0025,
-          "mean_snr_db": -4.903734023324774,
+          "pd_snr": 0.01,
+          "pd_cfar": 0.01,
+          "mean_snr_db": -4.90372081973359,
           "trials": 400
         }
       },
       "pd_vs_range_scan_swerling_cfar": [
         {
           "range_km": 0.5,
-          "pd_snr": 0.703,
-          "pd_cfar": 0.703,
+          "pd_snr": 0.75,
+          "pd_cfar": 0.75,
           "mean_snr_db": 7.87
         },
         {
           "range_km": 0.75,
-          "pd_snr": 0.672,
-          "pd_cfar": 0.672,
+          "pd_snr": 0.725,
+          "pd_cfar": 0.725,
           "mean_snr_db": 7.39
         },
         {
           "range_km": 1.0,
-          "pd_snr": 0.642,
-          "pd_cfar": 0.642,
+          "pd_snr": 0.703,
+          "pd_cfar": 0.703,
           "mean_snr_db": 6.87
         },
         {
           "range_km": 1.25,
-          "pd_snr": 0.583,
-          "pd_cfar": 0.583,
+          "pd_snr": 0.652,
+          "pd_cfar": 0.652,
           "mean_snr_db": 6.02
         },
         {
           "range_km": 1.5,
-          "pd_snr": 0.537,
-          "pd_cfar": 0.537,
+          "pd_snr": 0.61,
+          "pd_cfar": 0.61,
           "mean_snr_db": 5.38
         },
         {
           "range_km": 1.75,
-          "pd_snr": 0.5,
-          "pd_cfar": 0.5,
+          "pd_snr": 0.575,
+          "pd_cfar": 0.575,
           "mean_snr_db": 4.89
         },
         {
           "range_km": 2.0,
-          "pd_snr": 0.47,
-          "pd_cfar": 0.47,
+          "pd_snr": 0.547,
+          "pd_cfar": 0.547,
           "mean_snr_db": 4.51
         },
         {
           "range_km": 2.25,
-          "pd_snr": 0.438,
-          "pd_cfar": 0.438,
+          "pd_snr": 0.522,
+          "pd_cfar": 0.522,
           "mean_snr_db": 4.21
         },
         {
           "range_km": 2.5,
-          "pd_snr": 0.42,
-          "pd_cfar": 0.42,
+          "pd_snr": 0.502,
+          "pd_cfar": 0.502,
           "mean_snr_db": 3.97
         },
         {
           "range_km": 2.75,
-          "pd_snr": 0.403,
-          "pd_cfar": 0.403,
+          "pd_snr": 0.49,
+          "pd_cfar": 0.49,
           "mean_snr_db": 3.77
         },
         {
           "range_km": 3.0,
-          "pd_snr": 0.388,
-          "pd_cfar": 0.388,
+          "pd_snr": 0.477,
+          "pd_cfar": 0.477,
           "mean_snr_db": 3.62
         },
         {
           "range_km": 3.25,
-          "pd_snr": 0.375,
-          "pd_cfar": 0.375,
+          "pd_snr": 0.47,
+          "pd_cfar": 0.47,
           "mean_snr_db": 3.5
         },
         {
           "range_km": 3.5,
-          "pd_snr": 0.367,
-          "pd_cfar": 0.367,
+          "pd_snr": 0.46,
+          "pd_cfar": 0.46,
           "mean_snr_db": 3.41
         },
         {
           "range_km": 3.75,
-          "pd_snr": 0.362,
-          "pd_cfar": 0.362,
+          "pd_snr": 0.45,
+          "pd_cfar": 0.45,
           "mean_snr_db": 3.35
         },
         {
           "range_km": 4.0,
-          "pd_snr": 0.355,
-          "pd_cfar": 0.355,
+          "pd_snr": 0.448,
+          "pd_cfar": 0.448,
           "mean_snr_db": 3.3
         },
         {
           "range_km": 4.25,
-          "pd_snr": 0.35,
-          "pd_cfar": 0.35,
+          "pd_snr": 0.448,
+          "pd_cfar": 0.448,
           "mean_snr_db": 3.28
         },
         {
           "range_km": 4.5,
-          "pd_snr": 0.35,
-          "pd_cfar": 0.35,
+          "pd_snr": 0.448,
+          "pd_cfar": 0.448,
           "mean_snr_db": 3.27
         },
         {
           "range_km": 4.75,
-          "pd_snr": 0.35,
-          "pd_cfar": 0.35,
+          "pd_snr": 0.448,
+          "pd_cfar": 0.448,
           "mean_snr_db": 3.27
         },
         {
           "range_km": 5.0,
-          "pd_snr": 0.352,
-          "pd_cfar": 0.352,
+          "pd_snr": 0.448,
+          "pd_cfar": 0.448,
           "mean_snr_db": 3.29
         },
         {
           "range_km": 5.25,
-          "pd_snr": 0.362,
-          "pd_cfar": 0.362,
+          "pd_snr": 0.448,
+          "pd_cfar": 0.448,
           "mean_snr_db": 3.32
         },
         {
           "range_km": 5.5,
-          "pd_snr": 0.362,
-          "pd_cfar": 0.362,
+          "pd_snr": 0.455,
+          "pd_cfar": 0.455,
           "mean_snr_db": 3.36
         },
         {
           "range_km": 5.75,
-          "pd_snr": 0.365,
-          "pd_cfar": 0.365,
+          "pd_snr": 0.46,
+          "pd_cfar": 0.46,
           "mean_snr_db": 3.41
         },
         {
           "range_km": 6.0,
-          "pd_snr": 0.375,
-          "pd_cfar": 0.375,
+          "pd_snr": 0.465,
+          "pd_cfar": 0.465,
           "mean_snr_db": 3.47
         },
         {
           "range_km": 6.25,
-          "pd_snr": 0.38,
-          "pd_cfar": 0.38,
+          "pd_snr": 0.47,
+          "pd_cfar": 0.47,
           "mean_snr_db": 3.53
         },
         {
           "range_km": 6.5,
-          "pd_snr": 0.385,
-          "pd_cfar": 0.385,
+          "pd_snr": 0.477,
+          "pd_cfar": 0.477,
           "mean_snr_db": 3.61
         },
         {
           "range_km": 6.75,
-          "pd_snr": 0.393,
-          "pd_cfar": 0.393,
+          "pd_snr": 0.485,
+          "pd_cfar": 0.485,
           "mean_snr_db": 3.69
         },
         {
           "range_km": 7.0,
-          "pd_snr": 0.403,
-          "pd_cfar": 0.403,
+          "pd_snr": 0.49,
+          "pd_cfar": 0.49,
           "mean_snr_db": 3.77
         },
         {
           "range_km": 7.25,
-          "pd_snr": 0.41,
-          "pd_cfar": 0.41,
-          "mean_snr_db": 3.86
+          "pd_snr": 0.495,
+          "pd_cfar": 0.495,
+          "mean_snr_db": 3.87
         },
         {
           "range_km": 7.5,
-          "pd_snr": 0.42,
-          "pd_cfar": 0.42,
+          "pd_snr": 0.502,
+          "pd_cfar": 0.502,
           "mean_snr_db": 3.96
         }
       ],
@@ -1713,8 +1713,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 2.75,
@@ -1724,8 +1724,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 3.0,
@@ -1735,8 +1735,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 3.25,
@@ -1746,8 +1746,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 3.5,
@@ -1757,8 +1757,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 3.75,
@@ -1768,8 +1768,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 4.0,
@@ -1779,8 +1779,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 4.25,
@@ -1790,8 +1790,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 4.5,
@@ -1801,8 +1801,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 4.75,
@@ -1812,8 +1812,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 5.0,
@@ -1823,8 +1823,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 5.25,
@@ -1834,8 +1834,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 5.5,
@@ -1845,8 +1845,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 5.75,
@@ -1856,8 +1856,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 6.0,
@@ -1867,8 +1867,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 6.25,
@@ -1878,8 +1878,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 6.5,
@@ -1889,8 +1889,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 6.75,
@@ -1900,8 +1900,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 7.0,
@@ -1911,8 +1911,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 7.25,
@@ -1922,8 +1922,8 @@
           "multipath": 1.0,
           "rcs_m2": 3.63,
           "beam": "low",
-          "detected_snr": false,
-          "detected_cfar": false
+          "detected_snr": true,
+          "detected_cfar": true
         },
         {
           "range_km": 7.5,
@@ -2263,7 +2263,7 @@
         "frequency_hz": 160000000.0,
         "az_beamwidth_deg": 6.0,
         "prf_hz": 200.0,
-        "processing_gain": 2.828,
+        "processing_gain": 12.0,
         "mti_clutter_floor": 0.01
       },
       "dem_eden": {
@@ -2276,9 +2276,9 @@
         "radar_agl_m": 0.5,
         "scenarios_4km": {
           "DEM_paint_radial50": {
-            "pd_snr": 0.8975,
-            "pd_cfar": 0.8975,
-            "mean_snr_db": 13.427112776249684,
+            "pd_snr": 0.9175,
+            "pd_cfar": 0.9175,
+            "mean_snr_db": 13.427163130683905,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -2294,9 +2294,9 @@
             ]
           },
           "DEM_paint_force_clear": {
-            "pd_snr": 0.8975,
-            "pd_cfar": 0.8975,
-            "mean_snr_db": 13.427112776249684,
+            "pd_snr": 0.9175,
+            "pd_cfar": 0.9175,
+            "mean_snr_db": 13.427163130683905,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -2314,7 +2314,7 @@
           "DEM_tick": {
             "pd_snr": 0.0175,
             "pd_cfar": 0.0175,
-            "mean_snr_db": -293.7253149638507,
+            "mean_snr_db": -293.7253139102413,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -2332,7 +2332,7 @@
           "DEM_tangential": {
             "pd_snr": 0.0,
             "pd_cfar": 0.0,
-            "mean_snr_db": -43.998893247353664,
+            "mean_snr_db": -43.99884011119178,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -2348,9 +2348,9 @@
             ]
           },
           "DEM_broadside": {
-            "pd_snr": 0.8125,
-            "pd_cfar": 0.8125,
-            "mean_snr_db": 10.255686969088872,
+            "pd_snr": 0.845,
+            "pd_cfar": 0.845,
+            "mean_snr_db": 10.25573728396826,
             "trials": 400,
             "los_clear": true,
             "los_blocked": false,
@@ -2366,9 +2366,9 @@
             ]
           },
           "DEM_blocked_brg310": {
-            "pd_snr": 0.5625,
-            "pd_cfar": 0.5625,
-            "mean_snr_db": 5.716420139836391,
+            "pd_snr": 0.63,
+            "pd_cfar": 0.63,
+            "mean_snr_db": 5.716472037827868,
             "trials": 400,
             "los_clear": false,
             "los_blocked": true,
@@ -2396,8 +2396,8 @@
           },
           {
             "range_km": 0.75,
-            "pd_snr": 0.978,
-            "pd_cfar": 0.978,
+            "pd_snr": 0.988,
+            "pd_cfar": 0.988,
             "mean_snr_db": 20.79,
             "los_clear": true,
             "surface": "soil",
@@ -2405,8 +2405,8 @@
           },
           {
             "range_km": 1.0,
-            "pd_snr": 0.973,
-            "pd_cfar": 0.973,
+            "pd_snr": 0.978,
+            "pd_cfar": 0.978,
             "mean_snr_db": 19.48,
             "los_clear": true,
             "surface": "soil",
@@ -2414,8 +2414,8 @@
           },
           {
             "range_km": 1.25,
-            "pd_snr": 0.97,
-            "pd_cfar": 0.97,
+            "pd_snr": 0.975,
+            "pd_cfar": 0.975,
             "mean_snr_db": 18.48,
             "los_clear": true,
             "surface": "soil",
@@ -2423,8 +2423,8 @@
           },
           {
             "range_km": 1.5,
-            "pd_snr": 0.96,
-            "pd_cfar": 0.96,
+            "pd_snr": 0.97,
+            "pd_cfar": 0.97,
             "mean_snr_db": 17.66,
             "los_clear": true,
             "surface": "soil",
@@ -2432,8 +2432,8 @@
           },
           {
             "range_km": 1.75,
-            "pd_snr": 0.953,
-            "pd_cfar": 0.953,
+            "pd_snr": 0.96,
+            "pd_cfar": 0.96,
             "mean_snr_db": 16.97,
             "los_clear": true,
             "surface": "soil",
@@ -2441,8 +2441,8 @@
           },
           {
             "range_km": 2.0,
-            "pd_snr": 0.945,
-            "pd_cfar": 0.945,
+            "pd_snr": 0.96,
+            "pd_cfar": 0.96,
             "mean_snr_db": 16.39,
             "los_clear": true,
             "surface": "soil",
@@ -2450,8 +2450,8 @@
           },
           {
             "range_km": 2.25,
-            "pd_snr": 0.94,
-            "pd_cfar": 0.94,
+            "pd_snr": 0.953,
+            "pd_cfar": 0.953,
             "mean_snr_db": 15.86,
             "los_clear": true,
             "surface": "soil",
@@ -2459,8 +2459,8 @@
           },
           {
             "range_km": 2.5,
-            "pd_snr": 0.935,
-            "pd_cfar": 0.935,
+            "pd_snr": 0.945,
+            "pd_cfar": 0.945,
             "mean_snr_db": 15.39,
             "los_clear": true,
             "surface": "soil",
@@ -2468,8 +2468,8 @@
           },
           {
             "range_km": 2.75,
-            "pd_snr": 0.927,
-            "pd_cfar": 0.927,
+            "pd_snr": 0.943,
+            "pd_cfar": 0.943,
             "mean_snr_db": 14.96,
             "los_clear": true,
             "surface": "soil",
@@ -2477,8 +2477,8 @@
           },
           {
             "range_km": 3.0,
-            "pd_snr": 0.92,
-            "pd_cfar": 0.92,
+            "pd_snr": 0.935,
+            "pd_cfar": 0.935,
             "mean_snr_db": 14.6,
             "los_clear": true,
             "surface": "soil",
@@ -2486,8 +2486,8 @@
           },
           {
             "range_km": 3.25,
-            "pd_snr": 0.917,
-            "pd_cfar": 0.917,
+            "pd_snr": 0.932,
+            "pd_cfar": 0.932,
             "mean_snr_db": 14.28,
             "los_clear": true,
             "surface": "soil",
@@ -2495,8 +2495,8 @@
           },
           {
             "range_km": 3.5,
-            "pd_snr": 0.907,
-            "pd_cfar": 0.907,
+            "pd_snr": 0.927,
+            "pd_cfar": 0.927,
             "mean_snr_db": 13.97,
             "los_clear": true,
             "surface": "soil",
@@ -2504,8 +2504,8 @@
           },
           {
             "range_km": 3.75,
-            "pd_snr": 0.905,
-            "pd_cfar": 0.905,
+            "pd_snr": 0.925,
+            "pd_cfar": 0.925,
             "mean_snr_db": 13.69,
             "los_clear": true,
             "surface": "soil",
@@ -2513,8 +2513,8 @@
           },
           {
             "range_km": 4.0,
-            "pd_snr": 0.897,
-            "pd_cfar": 0.897,
+            "pd_snr": 0.917,
+            "pd_cfar": 0.917,
             "mean_snr_db": 13.43,
             "los_clear": true,
             "surface": "soil",
@@ -2522,8 +2522,8 @@
           },
           {
             "range_km": 4.25,
-            "pd_snr": 0.89,
-            "pd_cfar": 0.89,
+            "pd_snr": 0.915,
+            "pd_cfar": 0.915,
             "mean_snr_db": 13.15,
             "los_clear": true,
             "surface": "soil",
@@ -2531,8 +2531,8 @@
           },
           {
             "range_km": 4.5,
-            "pd_snr": 0.882,
-            "pd_cfar": 0.882,
+            "pd_snr": 0.907,
+            "pd_cfar": 0.907,
             "mean_snr_db": 12.88,
             "los_clear": true,
             "surface": "soil",
@@ -2540,8 +2540,8 @@
           },
           {
             "range_km": 4.75,
-            "pd_snr": 0.623,
-            "pd_cfar": 0.623,
+            "pd_snr": 0.68,
+            "pd_cfar": 0.68,
             "mean_snr_db": 6.52,
             "los_clear": false,
             "surface": "soil",
@@ -2549,8 +2549,8 @@
           },
           {
             "range_km": 5.0,
-            "pd_snr": 0.585,
-            "pd_cfar": 0.585,
+            "pd_snr": 0.652,
+            "pd_cfar": 0.652,
             "mean_snr_db": 6.04,
             "los_clear": false,
             "surface": "soil",
@@ -2558,8 +2558,8 @@
           },
           {
             "range_km": 5.25,
-            "pd_snr": 0.547,
-            "pd_cfar": 0.547,
+            "pd_snr": 0.61,
+            "pd_cfar": 0.61,
             "mean_snr_db": 5.47,
             "los_clear": false,
             "surface": "soil",
@@ -2567,8 +2567,8 @@
           },
           {
             "range_km": 5.5,
-            "pd_snr": 0.487,
-            "pd_cfar": 0.487,
+            "pd_snr": 0.562,
+            "pd_cfar": 0.562,
             "mean_snr_db": 4.76,
             "los_clear": false,
             "surface": "soil",
@@ -2576,8 +2576,8 @@
           },
           {
             "range_km": 5.75,
-            "pd_snr": 0.45,
-            "pd_cfar": 0.45,
+            "pd_snr": 0.537,
+            "pd_cfar": 0.537,
             "mean_snr_db": 4.34,
             "los_clear": false,
             "surface": "soil",
@@ -2585,8 +2585,8 @@
           },
           {
             "range_km": 6.0,
-            "pd_snr": 0.42,
-            "pd_cfar": 0.42,
+            "pd_snr": 0.505,
+            "pd_cfar": 0.505,
             "mean_snr_db": 3.99,
             "los_clear": false,
             "surface": "soil",
@@ -2594,8 +2594,8 @@
           },
           {
             "range_km": 6.25,
-            "pd_snr": 0.385,
-            "pd_cfar": 0.385,
+            "pd_snr": 0.477,
+            "pd_cfar": 0.477,
             "mean_snr_db": 3.6,
             "los_clear": false,
             "surface": "soil",
@@ -2603,8 +2603,8 @@
           },
           {
             "range_km": 6.5,
-            "pd_snr": 0.347,
-            "pd_cfar": 0.347,
+            "pd_snr": 0.438,
+            "pd_cfar": 0.438,
             "mean_snr_db": 3.21,
             "los_clear": false,
             "surface": "soil",
@@ -2612,17 +2612,17 @@
           },
           {
             "range_km": 6.75,
-            "pd_snr": 0.05,
-            "pd_cfar": 0.05,
-            "mean_snr_db": -1.16,
+            "pd_snr": 0.092,
+            "pd_cfar": 0.092,
+            "mean_snr_db": -1.15,
             "los_clear": false,
             "surface": "soil",
             "slant_m": 6750.8
           },
           {
             "range_km": 7.0,
-            "pd_snr": 0.79,
-            "pd_cfar": 0.79,
+            "pd_snr": 0.828,
+            "pd_cfar": 0.828,
             "mean_snr_db": 9.7,
             "los_clear": false,
             "surface": "water",
@@ -2630,8 +2630,8 @@
           },
           {
             "range_km": 7.25,
-            "pd_snr": 0.782,
-            "pd_cfar": 0.782,
+            "pd_snr": 0.82,
+            "pd_cfar": 0.82,
             "mean_snr_db": 9.54,
             "los_clear": false,
             "surface": "water",
@@ -2639,9 +2639,9 @@
           },
           {
             "range_km": 7.5,
-            "pd_snr": 0.775,
-            "pd_cfar": 0.775,
-            "mean_snr_db": 9.39,
+            "pd_snr": 0.812,
+            "pd_cfar": 0.812,
+            "mean_snr_db": 9.4,
             "los_clear": false,
             "surface": "water",
             "slant_m": 7500.2

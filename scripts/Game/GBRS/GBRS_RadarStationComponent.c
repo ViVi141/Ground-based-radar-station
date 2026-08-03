@@ -78,6 +78,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected bool m_bTraceIgnoreActive;
     protected int m_iAntennaResolveAttempts;
     protected float m_fScanRpm;
+    protected string m_WorkstationMode;
     protected float m_fAntennaBasePitch;
     protected float m_fAntennaBaseRoll;
     protected float m_fVisualAzHalfDeg;
@@ -122,7 +123,7 @@ class GBRS_RadarStationComponent : ScriptComponent
 
     override void OnDelete(IEntity owner)
     {
-        GBRS_RadarStationPpiController.CloseIfBound(this);
+        GBRS_RadarStationMenu.CloseIfBound(this);
         StopSupplyDrain();
         StopAntennaResolveRetry();
         SetAntennaSpinning(false);
@@ -164,6 +165,53 @@ class GBRS_RadarStationComponent : ScriptComponent
     RDF_RadarComponent GetRadarComponent()
     {
         return m_Radar;
+    }
+
+    EGBRS_RadarFactionPreset GetFactionPreset()
+    {
+        return m_eFactionPreset;
+    }
+
+    string GetWorkstationMode()
+    {
+        return m_WorkstationMode;
+    }
+
+    // Reconfigure sensor for PD SEARCH / WLR / LOCK. Returns false if unknown.
+    bool ApplyWorkstationMode(string mode)
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return false;
+
+        if (!m_Radar)
+            m_Radar = RDF_RadarComponent.Cast(owner.FindComponent(RDF_RadarComponent));
+        if (!m_Radar)
+            return false;
+
+        if (mode == "WLR")
+        {
+            ApplyWlrSettings(owner);
+            m_WorkstationMode = "WLR";
+            return true;
+        }
+
+        if (mode == "LOCK")
+        {
+            ApplyLockSettings(owner);
+            m_WorkstationMode = "LOCK";
+            return true;
+        }
+
+        if (mode == "PD SEARCH")
+        {
+            ApplySearchSettings(owner);
+            ConfigureLockLayer(false);
+            m_WorkstationMode = "PD SEARCH";
+            return true;
+        }
+
+        return false;
     }
 
     float GetScanRpm()
@@ -286,6 +334,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             // Re-push latest GBRS preset on every power-on so script reloads
             // take effect without respawning the composition.
             ApplySearchSettings(GetOwner());
+            ConfigureLockLayer(false);
 
             m_bPowered = true;
             RDF_RadarSensor poweredSensor = m_Radar.GetSensor();
@@ -310,7 +359,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             SetAntennaSpinning(false);
             SetTraceIgnoreActive(false);
             StopSupplyDrain();
-            GBRS_RadarStationPpiController.CloseIfBound(this);
+            GBRS_RadarStationMenu.CloseIfBound(this);
         }
     }
 
@@ -371,6 +420,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(settings);
+        sensor.ResetSession();
         m_Radar.SetEventMask(owner, EntityEvent.FRAME);
 
         RDF_RadarNetworkAPI networkApi =
@@ -381,6 +431,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_fScanRpm = 0.0;
         if (settings.m_Hardware)
             m_fScanRpm = settings.m_Hardware.m_ScanRpm;
+
+        m_WorkstationMode = "PD SEARCH";
 
         if (m_bDebugLog)
         {
@@ -411,6 +463,104 @@ class GBRS_RadarStationComponent : ScriptComponent
                 + " nlos=" + BoolDebugFlag(settings.m_EnableNlosMultipath)
                 + " snrGate=" + settings.m_DetectionSnrDb.ToString(), LogLevel.WARNING);
         }
+    }
+
+    // Counter-battery WLR: projectile-only stare with launch/impact solves.
+    protected void ApplyWlrSettings(IEntity owner)
+    {
+        if (!owner)
+            return;
+
+        if (!m_Radar)
+            m_Radar = RDF_RadarComponent.Cast(owner.FindComponent(RDF_RadarComponent));
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSettings settings;
+        if (m_eFactionPreset == EGBRS_RadarFactionPreset.USSR)
+            settings = GBRS_RadarStationConfig.CreateUssrWlr();
+        else
+            settings = GBRS_RadarStationConfig.CreateUsWlr();
+
+        // Keep mortar elevation layout; do not overlay air-search beam overrides.
+        PushSensorSettings(owner, settings, ERDF_RadarSensorMode.RDF_RADAR_MODE_WLR);
+        ConfigureLockLayer(false);
+
+        if (m_bDebugLog)
+        {
+            Print("[GBRS-DEBUG] WlrSettings range=" + settings.m_Range.ToString()
+                + " projectiles=1 wlr=1", LogLevel.WARNING);
+        }
+    }
+
+    // Air search PD plus lock-manager auto-acquire for vehicles.
+    protected void ApplyLockSettings(IEntity owner)
+    {
+        ApplySearchSettings(owner);
+        ConfigureLockLayer(true);
+    }
+
+    protected void PushSensorSettings(
+        IEntity owner,
+        RDF_RadarSettings settings,
+        ERDF_RadarSensorMode mode)
+    {
+        if (!owner || !settings || !m_Radar)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        sensor.SetForceLocalScan(true);
+        m_Radar.SetMode(mode);
+        sensor.Configure(settings);
+        sensor.ResetSession();
+        m_Radar.SetEventMask(owner, EntityEvent.FRAME);
+
+        RDF_RadarNetworkAPI networkApi =
+            RDF_RadarNetworkAPI.Cast(owner.FindComponent(RDF_RadarNetworkAPI));
+        if (networkApi)
+            networkApi.SetConfig(settings);
+
+        m_fScanRpm = 0.0;
+        if (settings.m_Hardware)
+            m_fScanRpm = settings.m_Hardware.m_ScanRpm;
+    }
+
+    // When enabled: auto-acquire vehicles. When disabled: clear any held lock.
+    protected void ConfigureLockLayer(bool enableAutoLock)
+    {
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        RDF_RadarLockManager lockMgr = sensor.GetLockManager();
+        if (!lockMgr)
+            return;
+
+        if (!enableAutoLock)
+        {
+            lockMgr.SetAutoAcquire(false);
+            lockMgr.Unlock();
+            return;
+        }
+
+        RDF_RadarSettings settings = sensor.GetSettings();
+        float maxRange = 3000.0;
+        if (settings && settings.m_Range > 0.0)
+            maxRange = settings.m_Range;
+
+        lockMgr.Unlock();
+        lockMgr.SetAutoAcquire(true);
+        lockMgr.SetTypeFilter(true, false, false);
+        lockMgr.SetMaxLockRange(maxRange);
+        lockMgr.SetLockSector(0.0);
+        lockMgr.SetAcquireHits(2);
+        lockMgr.SetCoastMaxSec(3.0);
     }
 
     protected void ApplyElevationToSettings(RDF_RadarSettings settings)
