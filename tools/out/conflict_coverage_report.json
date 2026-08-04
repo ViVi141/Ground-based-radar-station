@@ -1,0 +1,1002 @@
+{
+  "ent": "C:\\Users\\74738\\Documents\\arma_reforger_code\\worlds\\MP\\CTI_Campaign_Eden.ent",
+  "base_count": 36,
+  "bases": [
+    {
+      "name": "MainBaseNorth",
+      "kind": "MOB",
+      "x": 4405.80517578125,
+      "y": 1.6430000066757202,
+      "z": 11035.3173828125
+    },
+    {
+      "name": "MainBaseSouth",
+      "kind": "MOB",
+      "x": 10172.6494140625,
+      "y": 2.628000020980835,
+      "z": 1539.541015625
+    },
+    {
+      "name": "MajorBaseChotain",
+      "kind": "major",
+      "x": 7472.81396484375,
+      "y": 7.866000175476074,
+      "z": 6697.97998046875
+    },
+    {
+      "name": "MajorBaseLamentin",
+      "kind": "major",
+      "x": 1089.4610595703125,
+      "y": 2.7809998989105225,
+      "z": 6029.31884765625
+    },
+    {
+      "name": "MajorBaseMorton",
+      "kind": "major",
+      "x": 4982.4638671875,
+      "y": 2.187000036239624,
+      "z": 3846.8740234375
+    },
+    {
+      "name": "MilitaryBaseAirfield",
+      "kind": "military",
+      "x": 4980.05517578125,
+      "y": 28.2810001373291,
+      "z": 11947.7041015625
+    },
+    {
+      "name": "MilitaryBaseLevie",
+      "kind": "military",
+      "x": 7449.1298828125,
+      "y": 164.56199645996094,
+      "z": 4306.380859375
+    },
+    {
+      "name": "MilitaryBaseVilleneuf",
+      "kind": "military",
+      "x": 3512.012939453125,
+      "y": 181.9149932861328,
+      "z": 5816.2822265625
+    },
+    {
+      "name": "SmallBaseAndresBeacon",
+      "kind": "small",
+      "x": 6852.68994140625,
+      "y": 83.06700134277344,
+      "z": 8200.0859375
+    },
+    {
+      "name": "SmallBaseBlackLake",
+      "kind": "small",
+      "x": 9452.4990234375,
+      "y": 209.47999572753906,
+      "z": 2946.152099609375
+    },
+    {
+      "name": "SmallBaseGoatbay",
+      "kind": "small",
+      "x": 6635.18505859375,
+      "y": 5.9019999504089355,
+      "z": 3119.35888671875
+    },
+    {
+      "name": "SmallBaseHornbeamValley",
+      "kind": "small",
+      "x": 5376.89111328125,
+      "y": 25.4689998626709,
+      "z": 8334.04296875
+    },
+    {
+      "name": "SmallBaseLake",
+      "kind": "small",
+      "x": 4439.67919921875,
+      "y": 58.71799850463867,
+      "z": 6237.203125
+    },
+    {
+      "name": "SmallBaseMaidensBay",
+      "kind": "small",
+      "x": 5228.62109375,
+      "y": 34.428001403808594,
+      "z": 10701.9404296875
+    },
+    {
+      "name": "SmallBaseMine",
+      "kind": "small",
+      "x": 8793.41796875,
+      "y": 196.593994140625,
+      "z": 3897.4208984375
+    },
+    {
+      "name": "SmallBasePennantsPass",
+      "kind": "small",
+      "x": 8221.9638671875,
+      "y": 223.125,
+      "z": 2174.00390625
+    },
+    {
+      "name": "SmallBaseRichemont",
+      "kind": "small",
+      "x": 4539.22119140625,
+      "y": 64.0999984741211,
+      "z": 4993.6328125
+    },
+    {
+      "name": "SmallBaseShepherds",
+      "kind": "small",
+      "x": 3294.714111328125,
+      "y": 120.14700317382812,
+      "z": 4471.08984375
+    },
+    {
+      "name": "SmallBaseSimonsWood",
+      "kind": "small",
+      "x": 6579.462890625,
+      "y": 81.9990005493164,
+      "z": 5135.61083984375
+    },
+    {
+      "name": "SmallBaseTillersFind",
+      "kind": "small",
+      "x": 3789.5830078125,
+      "y": 59.78099822998047,
+      "z": 6997.68798828125
+    },
+    {
+      "name": "TownBaseChotain",
+      "kind": "town",
+      "x": 6991.033203125,
+      "y": 121.23600006103516,
+      "z": 6075.384765625
+    },
+    {
+      "name": "TownBaseDuras",
+      "kind": "town",
+      "x": 8895.6376953125,
+      "y": 96.28399658203125,
+      "z": 2709.18310546875
+    },
+    {
+      "name": "TownBaseEntre_Deux",
+      "kind": "town",
+      "x": 6014.630859375,
+      "y": 216.68899536132812,
+      "z": 7178.423828125
+    },
+    {
+      "name": "TownBaseFigari",
+      "kind": "town",
+      "x": 5125.88916015625,
+      "y": 52.66600036621094,
+      "z": 5495.6767578125
+    },
+    {
+      "name": "TownBaseGravette",
+      "kind": "town",
+      "x": 4011.6640625,
+      "y": 32.26599884033203,
+      "z": 7883.36181640625
+    },
+    {
+      "name": "TownBaseKermovan",
+      "kind": "town",
+      "x": 6436.89013671875,
+      "y": 10.086000442504883,
+      "z": 9667.345703125
+    },
+    {
+      "name": "TownBaseLaruns",
+      "kind": "town",
+      "x": 7403.19091796875,
+      "y": 114.35099792480469,
+      "z": 5281.078125
+    },
+    {
+      "name": "TownBaseLe_Moule",
+      "kind": "town",
+      "x": 2439.405029296875,
+      "y": 104.15899658203125,
+      "z": 5438.08984375
+    },
+    {
+      "name": "TownBaseLevie",
+      "kind": "town",
+      "x": 7459.73291015625,
+      "y": 131.28399658203125,
+      "z": 4816.251953125
+    },
+    {
+      "name": "TownBaseMeaux",
+      "kind": "town",
+      "x": 4511.35498046875,
+      "y": 20.993000030517578,
+      "z": 9770.458984375
+    },
+    {
+      "name": "TownBaseMontignac",
+      "kind": "town",
+      "x": 5124.3759765625,
+      "y": 175.5,
+      "z": 6980.6298828125
+    },
+    {
+      "name": "TownBaseProvins",
+      "kind": "town",
+      "x": 5573.916015625,
+      "y": 89.0790023803711,
+      "z": 5895.0732421875
+    },
+    {
+      "name": "TownBaseRegina",
+      "kind": "town",
+      "x": 7293.5458984375,
+      "y": 139.46200561523438,
+      "z": 2175.3330078125
+    },
+    {
+      "name": "TownBaseTyrone",
+      "kind": "town",
+      "x": 5007.14208984375,
+      "y": 49.292999267578125,
+      "z": 8921.314453125
+    },
+    {
+      "name": "TownBaseVernon",
+      "kind": "town",
+      "x": 9128.4833984375,
+      "y": 77.31999969482422,
+      "z": 2292.27294921875
+    },
+    {
+      "name": "TownBaseVileneuf",
+      "kind": "town",
+      "x": 2909.823974609375,
+      "y": 76.06300354003906,
+      "z": 6493.6640625
+    }
+  ],
+  "dem_cell_m": 32.0,
+  "land_area_km2": 51.508224,
+  "target_agl_m": 80.0,
+  "radar_mast_agl_m": 8.0,
+  "presets": {
+    "us": {
+      "label": "US RPL-5 PD SEARCH 7 km",
+      "range_m": 7000.0,
+      "union_covered_km2": 43.820032,
+      "land_coverage_pct": 85.0738553905489,
+      "max_overlap": 33,
+      "per_base": [
+        {
+          "name": "MainBaseNorth",
+          "kind": "MOB",
+          "origin": {
+            "x": 4405.80517578125,
+            "y": 9.59375,
+            "z": 11035.3173828125
+          },
+          "covered_km2": 3.062784
+        },
+        {
+          "name": "MainBaseSouth",
+          "kind": "MOB",
+          "origin": {
+            "x": 10172.6494140625,
+            "y": 10.5625,
+            "z": 1539.541015625
+          },
+          "covered_km2": 1.712128
+        },
+        {
+          "name": "MajorBaseChotain",
+          "kind": "major",
+          "origin": {
+            "x": 7472.81396484375,
+            "y": 15.875,
+            "z": 6697.97998046875
+          },
+          "covered_km2": 2.791424
+        },
+        {
+          "name": "MajorBaseLamentin",
+          "kind": "major",
+          "origin": {
+            "x": 1089.4610595703125,
+            "y": 10.71875,
+            "z": 6029.31884765625
+          },
+          "covered_km2": 0.555008
+        },
+        {
+          "name": "MajorBaseMorton",
+          "kind": "major",
+          "origin": {
+            "x": 4982.4638671875,
+            "y": 10.1875,
+            "z": 3846.8740234375
+          },
+          "covered_km2": 2.904064
+        },
+        {
+          "name": "MilitaryBaseAirfield",
+          "kind": "military",
+          "origin": {
+            "x": 4980.05517578125,
+            "y": 36.25,
+            "z": 11947.7041015625
+          },
+          "covered_km2": 3.582976
+        },
+        {
+          "name": "MilitaryBaseLevie",
+          "kind": "military",
+          "origin": {
+            "x": 7449.1298828125,
+            "y": 171.69500732421875,
+            "z": 4306.380859375
+          },
+          "covered_km2": 4.52608
+        },
+        {
+          "name": "MilitaryBaseVilleneuf",
+          "kind": "military",
+          "origin": {
+            "x": 3512.012939453125,
+            "y": 188.07200622558594,
+            "z": 5816.2822265625
+          },
+          "covered_km2": 8.116224
+        },
+        {
+          "name": "SmallBaseAndresBeacon",
+          "kind": "small",
+          "origin": {
+            "x": 6852.68994140625,
+            "y": 91.94940185546875,
+            "z": 8200.0859375
+          },
+          "covered_km2": 2.377728
+        },
+        {
+          "name": "SmallBaseBlackLake",
+          "kind": "small",
+          "origin": {
+            "x": 9452.4990234375,
+            "y": 218.7689971923828,
+            "z": 2946.152099609375
+          },
+          "covered_km2": 1.271808
+        },
+        {
+          "name": "SmallBaseGoatbay",
+          "kind": "small",
+          "origin": {
+            "x": 6635.18505859375,
+            "y": 13.050000190734863,
+            "z": 3119.35888671875
+          },
+          "covered_km2": 3.968
+        },
+        {
+          "name": "SmallBaseHornbeamValley",
+          "kind": "small",
+          "origin": {
+            "x": 5376.89111328125,
+            "y": 35.35059928894043,
+            "z": 8334.04296875
+          },
+          "covered_km2": 3.119104
+        },
+        {
+          "name": "SmallBaseLake",
+          "kind": "small",
+          "origin": {
+            "x": 4439.67919921875,
+            "y": 66.66360092163086,
+            "z": 6237.203125
+          },
+          "covered_km2": 4.33664
+        },
+        {
+          "name": "SmallBaseMaidensBay",
+          "kind": "small",
+          "origin": {
+            "x": 5228.62109375,
+            "y": 45.00450134277344,
+            "z": 10701.9404296875
+          },
+          "covered_km2": 4.765696
+        },
+        {
+          "name": "SmallBaseMine",
+          "kind": "small",
+          "origin": {
+            "x": 8793.41796875,
+            "y": 203.781005859375,
+            "z": 3897.4208984375
+          },
+          "covered_km2": 1.419264
+        },
+        {
+          "name": "SmallBasePennantsPass",
+          "kind": "small",
+          "origin": {
+            "x": 8221.9638671875,
+            "y": 231.13499450683594,
+            "z": 2174.00390625
+          },
+          "covered_km2": 1.38752
+        },
+        {
+          "name": "SmallBaseRichemont",
+          "kind": "small",
+          "origin": {
+            "x": 4539.22119140625,
+            "y": 72.04090118408203,
+            "z": 4993.6328125
+          },
+          "covered_km2": 4.606976
+        },
+        {
+          "name": "SmallBaseShepherds",
+          "kind": "small",
+          "origin": {
+            "x": 3294.714111328125,
+            "y": 126.625,
+            "z": 4471.08984375
+          },
+          "covered_km2": 3.680256
+        },
+        {
+          "name": "SmallBaseSimonsWood",
+          "kind": "small",
+          "origin": {
+            "x": 6579.462890625,
+            "y": 89.3364028930664,
+            "z": 5135.61083984375
+          },
+          "covered_km2": 4.195328
+        },
+        {
+          "name": "SmallBaseTillersFind",
+          "kind": "small",
+          "origin": {
+            "x": 3789.5830078125,
+            "y": 71.03120040893555,
+            "z": 6997.68798828125
+          },
+          "covered_km2": 3.898368
+        },
+        {
+          "name": "TownBaseChotain",
+          "kind": "town",
+          "origin": {
+            "x": 6991.033203125,
+            "y": 127.91400146484375,
+            "z": 6075.384765625
+          },
+          "covered_km2": 6.228992
+        },
+        {
+          "name": "TownBaseDuras",
+          "kind": "town",
+          "origin": {
+            "x": 8895.6376953125,
+            "y": 99.875,
+            "z": 2709.18310546875
+          },
+          "covered_km2": 2.276352
+        },
+        {
+          "name": "TownBaseEntre_Deux",
+          "kind": "town",
+          "origin": {
+            "x": 6014.630859375,
+            "y": 224.8459930419922,
+            "z": 7178.423828125
+          },
+          "covered_km2": 6.3488
+        },
+        {
+          "name": "TownBaseFigari",
+          "kind": "town",
+          "origin": {
+            "x": 5125.88916015625,
+            "y": 61.83409881591797,
+            "z": 5495.6767578125
+          },
+          "covered_km2": 4.574208
+        },
+        {
+          "name": "TownBaseGravette",
+          "kind": "town",
+          "origin": {
+            "x": 4011.6640625,
+            "y": 38.83180046081543,
+            "z": 7883.36181640625
+          },
+          "covered_km2": 3.124224
+        },
+        {
+          "name": "TownBaseKermovan",
+          "kind": "town",
+          "origin": {
+            "x": 6436.89013671875,
+            "y": 17.97840976715088,
+            "z": 9667.345703125
+          },
+          "covered_km2": 4.038656
+        },
+        {
+          "name": "TownBaseLaruns",
+          "kind": "town",
+          "origin": {
+            "x": 7403.19091796875,
+            "y": 124.9990005493164,
+            "z": 5281.078125
+          },
+          "covered_km2": 5.94432
+        },
+        {
+          "name": "TownBaseLe_Moule",
+          "kind": "town",
+          "origin": {
+            "x": 2439.405029296875,
+            "y": 114.16300201416016,
+            "z": 5438.08984375
+          },
+          "covered_km2": 3.892224
+        },
+        {
+          "name": "TownBaseLevie",
+          "kind": "town",
+          "origin": {
+            "x": 7459.73291015625,
+            "y": 140.80099487304688,
+            "z": 4816.251953125
+          },
+          "covered_km2": 5.527552
+        },
+        {
+          "name": "TownBaseMeaux",
+          "kind": "town",
+          "origin": {
+            "x": 4511.35498046875,
+            "y": 28.810199737548828,
+            "z": 9770.458984375
+          },
+          "covered_km2": 4.923392
+        },
+        {
+          "name": "TownBaseMontignac",
+          "kind": "town",
+          "origin": {
+            "x": 5124.3759765625,
+            "y": 183.54299926757812,
+            "z": 6980.6298828125
+          },
+          "covered_km2": 7.815168
+        },
+        {
+          "name": "TownBaseProvins",
+          "kind": "town",
+          "origin": {
+            "x": 5573.916015625,
+            "y": 96.61309814453125,
+            "z": 5895.0732421875
+          },
+          "covered_km2": 5.50912
+        },
+        {
+          "name": "TownBaseRegina",
+          "kind": "town",
+          "origin": {
+            "x": 7293.5458984375,
+            "y": 147.43299865722656,
+            "z": 2175.3330078125
+          },
+          "covered_km2": 1.421312
+        },
+        {
+          "name": "TownBaseTyrone",
+          "kind": "town",
+          "origin": {
+            "x": 5007.14208984375,
+            "y": 60.43980026245117,
+            "z": 8921.314453125
+          },
+          "covered_km2": 3.740672
+        },
+        {
+          "name": "TownBaseVernon",
+          "kind": "town",
+          "origin": {
+            "x": 9128.4833984375,
+            "y": 83.51419830322266,
+            "z": 2292.27294921875
+          },
+          "covered_km2": 2.213888
+        },
+        {
+          "name": "TownBaseVileneuf",
+          "kind": "town",
+          "origin": {
+            "x": 2909.823974609375,
+            "y": 84.0625,
+            "z": 6493.6640625
+          },
+          "covered_km2": 4.201472
+        }
+      ]
+    },
+    "ussr": {
+      "label": "USSR TPN-19 PD SEARCH 10 km",
+      "range_m": 10000.0,
+      "union_covered_km2": 43.942912,
+      "land_coverage_pct": 85.31241923619808,
+      "max_overlap": 33,
+      "per_base": [
+        {
+          "name": "MainBaseNorth",
+          "kind": "MOB",
+          "origin": {
+            "x": 4405.80517578125,
+            "y": 9.59375,
+            "z": 11035.3173828125
+          },
+          "covered_km2": 3.062784
+        },
+        {
+          "name": "MainBaseSouth",
+          "kind": "MOB",
+          "origin": {
+            "x": 10172.6494140625,
+            "y": 10.5625,
+            "z": 1539.541015625
+          },
+          "covered_km2": 1.712128
+        },
+        {
+          "name": "MajorBaseChotain",
+          "kind": "major",
+          "origin": {
+            "x": 7472.81396484375,
+            "y": 15.875,
+            "z": 6697.97998046875
+          },
+          "covered_km2": 2.791424
+        },
+        {
+          "name": "MajorBaseLamentin",
+          "kind": "major",
+          "origin": {
+            "x": 1089.4610595703125,
+            "y": 10.71875,
+            "z": 6029.31884765625
+          },
+          "covered_km2": 0.555008
+        },
+        {
+          "name": "MajorBaseMorton",
+          "kind": "major",
+          "origin": {
+            "x": 4982.4638671875,
+            "y": 10.1875,
+            "z": 3846.8740234375
+          },
+          "covered_km2": 2.904064
+        },
+        {
+          "name": "MilitaryBaseAirfield",
+          "kind": "military",
+          "origin": {
+            "x": 4980.05517578125,
+            "y": 36.25,
+            "z": 11947.7041015625
+          },
+          "covered_km2": 3.740672
+        },
+        {
+          "name": "MilitaryBaseLevie",
+          "kind": "military",
+          "origin": {
+            "x": 7449.1298828125,
+            "y": 171.69500732421875,
+            "z": 4306.380859375
+          },
+          "covered_km2": 4.52608
+        },
+        {
+          "name": "MilitaryBaseVilleneuf",
+          "kind": "military",
+          "origin": {
+            "x": 3512.012939453125,
+            "y": 188.07200622558594,
+            "z": 5816.2822265625
+          },
+          "covered_km2": 8.123392
+        },
+        {
+          "name": "SmallBaseAndresBeacon",
+          "kind": "small",
+          "origin": {
+            "x": 6852.68994140625,
+            "y": 91.94940185546875,
+            "z": 8200.0859375
+          },
+          "covered_km2": 2.377728
+        },
+        {
+          "name": "SmallBaseBlackLake",
+          "kind": "small",
+          "origin": {
+            "x": 9452.4990234375,
+            "y": 218.7689971923828,
+            "z": 2946.152099609375
+          },
+          "covered_km2": 1.271808
+        },
+        {
+          "name": "SmallBaseGoatbay",
+          "kind": "small",
+          "origin": {
+            "x": 6635.18505859375,
+            "y": 13.050000190734863,
+            "z": 3119.35888671875
+          },
+          "covered_km2": 3.968
+        },
+        {
+          "name": "SmallBaseHornbeamValley",
+          "kind": "small",
+          "origin": {
+            "x": 5376.89111328125,
+            "y": 35.35059928894043,
+            "z": 8334.04296875
+          },
+          "covered_km2": 3.122176
+        },
+        {
+          "name": "SmallBaseLake",
+          "kind": "small",
+          "origin": {
+            "x": 4439.67919921875,
+            "y": 66.66360092163086,
+            "z": 6237.203125
+          },
+          "covered_km2": 4.33664
+        },
+        {
+          "name": "SmallBaseMaidensBay",
+          "kind": "small",
+          "origin": {
+            "x": 5228.62109375,
+            "y": 45.00450134277344,
+            "z": 10701.9404296875
+          },
+          "covered_km2": 4.765696
+        },
+        {
+          "name": "SmallBaseMine",
+          "kind": "small",
+          "origin": {
+            "x": 8793.41796875,
+            "y": 203.781005859375,
+            "z": 3897.4208984375
+          },
+          "covered_km2": 1.419264
+        },
+        {
+          "name": "SmallBasePennantsPass",
+          "kind": "small",
+          "origin": {
+            "x": 8221.9638671875,
+            "y": 231.13499450683594,
+            "z": 2174.00390625
+          },
+          "covered_km2": 1.38752
+        },
+        {
+          "name": "SmallBaseRichemont",
+          "kind": "small",
+          "origin": {
+            "x": 4539.22119140625,
+            "y": 72.04090118408203,
+            "z": 4993.6328125
+          },
+          "covered_km2": 4.606976
+        },
+        {
+          "name": "SmallBaseShepherds",
+          "kind": "small",
+          "origin": {
+            "x": 3294.714111328125,
+            "y": 126.625,
+            "z": 4471.08984375
+          },
+          "covered_km2": 3.680256
+        },
+        {
+          "name": "SmallBaseSimonsWood",
+          "kind": "small",
+          "origin": {
+            "x": 6579.462890625,
+            "y": 89.3364028930664,
+            "z": 5135.61083984375
+          },
+          "covered_km2": 4.195328
+        },
+        {
+          "name": "SmallBaseTillersFind",
+          "kind": "small",
+          "origin": {
+            "x": 3789.5830078125,
+            "y": 71.03120040893555,
+            "z": 6997.68798828125
+          },
+          "covered_km2": 3.898368
+        },
+        {
+          "name": "TownBaseChotain",
+          "kind": "town",
+          "origin": {
+            "x": 6991.033203125,
+            "y": 127.91400146484375,
+            "z": 6075.384765625
+          },
+          "covered_km2": 6.255616
+        },
+        {
+          "name": "TownBaseDuras",
+          "kind": "town",
+          "origin": {
+            "x": 8895.6376953125,
+            "y": 99.875,
+            "z": 2709.18310546875
+          },
+          "covered_km2": 2.276352
+        },
+        {
+          "name": "TownBaseEntre_Deux",
+          "kind": "town",
+          "origin": {
+            "x": 6014.630859375,
+            "y": 224.8459930419922,
+            "z": 7178.423828125
+          },
+          "covered_km2": 6.362112
+        },
+        {
+          "name": "TownBaseFigari",
+          "kind": "town",
+          "origin": {
+            "x": 5125.88916015625,
+            "y": 61.83409881591797,
+            "z": 5495.6767578125
+          },
+          "covered_km2": 4.574208
+        },
+        {
+          "name": "TownBaseGravette",
+          "kind": "town",
+          "origin": {
+            "x": 4011.6640625,
+            "y": 38.83180046081543,
+            "z": 7883.36181640625
+          },
+          "covered_km2": 3.124224
+        },
+        {
+          "name": "TownBaseKermovan",
+          "kind": "town",
+          "origin": {
+            "x": 6436.89013671875,
+            "y": 17.97840976715088,
+            "z": 9667.345703125
+          },
+          "covered_km2": 4.038656
+        },
+        {
+          "name": "TownBaseLaruns",
+          "kind": "town",
+          "origin": {
+            "x": 7403.19091796875,
+            "y": 124.9990005493164,
+            "z": 5281.078125
+          },
+          "covered_km2": 6.012928
+        },
+        {
+          "name": "TownBaseLe_Moule",
+          "kind": "town",
+          "origin": {
+            "x": 2439.405029296875,
+            "y": 114.16300201416016,
+            "z": 5438.08984375
+          },
+          "covered_km2": 3.924992
+        },
+        {
+          "name": "TownBaseLevie",
+          "kind": "town",
+          "origin": {
+            "x": 7459.73291015625,
+            "y": 140.80099487304688,
+            "z": 4816.251953125
+          },
+          "covered_km2": 5.572608
+        },
+        {
+          "name": "TownBaseMeaux",
+          "kind": "town",
+          "origin": {
+            "x": 4511.35498046875,
+            "y": 28.810199737548828,
+            "z": 9770.458984375
+          },
+          "covered_km2": 4.95616
+        },
+        {
+          "name": "TownBaseMontignac",
+          "kind": "town",
+          "origin": {
+            "x": 5124.3759765625,
+            "y": 183.54299926757812,
+            "z": 6980.6298828125
+          },
+          "covered_km2": 7.815168
+        },
+        {
+          "name": "TownBaseProvins",
+          "kind": "town",
+          "origin": {
+            "x": 5573.916015625,
+            "y": 96.61309814453125,
+            "z": 5895.0732421875
+          },
+          "covered_km2": 5.50912
+        },
+        {
+          "name": "TownBaseRegina",
+          "kind": "town",
+          "origin": {
+            "x": 7293.5458984375,
+            "y": 147.43299865722656,
+            "z": 2175.3330078125
+          },
+          "covered_km2": 1.421312
+        },
+        {
+          "name": "TownBaseTyrone",
+          "kind": "town",
+          "origin": {
+            "x": 5007.14208984375,
+            "y": 60.43980026245117,
+            "z": 8921.314453125
+          },
+          "covered_km2": 3.748864
+        },
+        {
+          "name": "TownBaseVernon",
+          "kind": "town",
+          "origin": {
+            "x": 9128.4833984375,
+            "y": 83.51419830322266,
+            "z": 2292.27294921875
+          },
+          "covered_km2": 2.213888
+        },
+        {
+          "name": "TownBaseVileneuf",
+          "kind": "town",
+          "origin": {
+            "x": 2909.823974609375,
+            "y": 84.0625,
+            "z": 6493.6640625
+          },
+          "covered_km2": 4.201472
+        }
+      ]
+    }
+  }
+}

@@ -16,7 +16,7 @@
     "radar_surface": 6,
     "radar_agl_m": 0.5,
     "land_bearing_deg": 285.0,
-    "cache": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\scripts\\Game\\GBRS\\out\\eden_crop_radar.npz"
+    "cache": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\eden_crop_radar.npz"
   },
   "uh1": {
     "key": "{D03C0F6044DB5208}Prefabs/Vehicles/Helicopters/UH1H/UH1H_base.et",
@@ -2651,7 +2651,7 @@
     }
   },
   "png_files": [
-    "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\scripts\\Game\\GBRS\\out\\clutter_mti_us_rpl5.png",
-    "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\scripts\\Game\\GBRS\\out\\clutter_mti_ussr_tpn19.png"
+    "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\clutter_mti_us_rpl5.png",
+    "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\clutter_mti_ussr_tpn19.png"
   ]
 }

@@ -5,7 +5,7 @@ Source (game bake):
   Documents/My Games/ArmaReforgerWorkbench/profile/RDF/DemData/GM_Eden/
 
 Matches RDF_DemRuntimeCache sampling: cell_m, terrain_y, surface_class.
-Caches a NPZ crop under scripts/Game/GBRS/out/ for fast reloads.
+Caches a NPZ crop under tools/out/ for fast reloads.
 """
 
 from __future__ import annotations
@@ -219,6 +219,99 @@ def load_eden_crop(
             radar_x=np.float64(rx),
             radar_z=np.float64(rz),
             radius_m=np.float64(radius_m),
+        )
+    return crop
+
+
+def load_eden_full(
+    dem_root: Path | None = None,
+    cache_path: Path | None = None,
+    downsample: int = 1,
+) -> EdenDemCrop:
+    """Load the full GM_Eden DEM (optionally downsampled for island-wide maps).
+
+    downsample=4 turns native 4 m cells into 16 m cells.
+    """
+    root = dem_root if dem_root is not None else PROFILE_EDEN
+    if cache_path is not None and cache_path.is_file():
+        data = np.load(cache_path)
+        return EdenDemCrop(
+            terrain=np.asarray(data["terrain"], dtype=np.float32),
+            surface=np.asarray(data["surface"], dtype=np.uint8),
+            cell_m=float(data["cell_m"]),
+            bounds_min_x=float(data["bounds_min_x"]),
+            bounds_min_z=float(data["bounds_min_z"]),
+            origin_ix=int(data["origin_ix"]),
+            origin_iz=int(data["origin_iz"]),
+            source=str(data["source"]) if "source" in data.files else str(cache_path),
+        )
+
+    if downsample < 1:
+        downsample = 1
+
+    man = _parse_manifest(root / "manifest.csv")
+    cell_m = float(man["cell_m"])
+    tile_cells = int(man["tile_cells"])
+    bmin_x = float(man["bounds_min_x"])
+    bmin_z = float(man["bounds_min_z"])
+    tile_count_x = int(man["tile_count_x"])
+    tile_count_z = int(man["tile_count_z"])
+    full_w = tile_count_x * tile_cells
+    full_h = tile_count_z * tile_cells
+    out_w = (full_w + downsample - 1) // downsample
+    out_h = (full_h + downsample - 1) // downsample
+
+    terrain = np.full((out_h, out_w), np.nan, dtype=np.float32)
+    surface = np.zeros((out_h, out_w), dtype=np.uint8)
+    tiles_dir = root / "tiles"
+    loaded = 0
+    for tiz in range(tile_count_z):
+        for tix in range(tile_count_x):
+            path = tiles_dir / ("tile_%d_%d.csv" % (tix, tiz))
+            if not path.is_file():
+                continue
+            arrays = _load_tile_arrays(path, tile_cells)
+            if arrays is None:
+                continue
+            t_arr, s_arr = arrays
+            t_ds = t_arr[::downsample, ::downsample]
+            s_ds = s_arr[::downsample, ::downsample]
+            row0 = (tiz * tile_cells) // downsample
+            col0 = (tix * tile_cells) // downsample
+            row1 = row0 + t_ds.shape[0]
+            col1 = col0 + t_ds.shape[1]
+            if row1 > out_h:
+                row1 = out_h
+            if col1 > out_w:
+                col1 = out_w
+            rh = row1 - row0
+            cw = col1 - col0
+            terrain[row0:row1, col0:col1] = t_ds[:rh, :cw]
+            surface[row0:row1, col0:col1] = s_ds[:rh, :cw]
+            loaded += 1
+
+    crop = EdenDemCrop(
+        terrain=terrain,
+        surface=surface,
+        cell_m=cell_m * float(downsample),
+        bounds_min_x=bmin_x,
+        bounds_min_z=bmin_z,
+        origin_ix=0,
+        origin_iz=0,
+        source="profile_full:%s tiles=%d ds=%d" % (root, loaded, downsample),
+    )
+    if cache_path is not None:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            cache_path,
+            terrain=terrain,
+            surface=surface,
+            cell_m=np.float64(crop.cell_m),
+            bounds_min_x=np.float64(bmin_x),
+            bounds_min_z=np.float64(bmin_z),
+            origin_ix=np.int32(0),
+            origin_iz=np.int32(0),
+            source=np.asarray(crop.source),
         )
     return crop
 

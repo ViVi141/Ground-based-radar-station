@@ -1421,7 +1421,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             + " bestDist=" + bestDist.ToString()
             + " bestBeam=" + bestBeam, LogLevel.WARNING);
 
-        // Live RDF physics samples (parity check vs offline calib_pd_full.py).
+        // Live RDF physics samples (parity check vs offline tools/calib_pd_full.py).
         if (plots)
         {
             int shown = 0;

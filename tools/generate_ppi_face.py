@@ -77,7 +77,7 @@ def main() -> None:
 
     image = image.resize((SIZE, SIZE), Image.Resampling.LANCZOS)
     output = (
-        Path(__file__).resolve().parents[3]
+        Path(__file__).resolve().parents[1]
         / "UI"
         / "Textures"
         / "GBRS"
