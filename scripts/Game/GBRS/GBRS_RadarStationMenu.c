@@ -33,6 +33,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const string ACTION_TAB_NEXT = "MenuTabRight";
 	protected static const string ACTION_SELECT = "MenuSelect";
 	protected static const string ACTION_CLOSE = "MenuBack";
+	protected static const int MODE_NAV_COOLDOWN_MS = 180;
+
+	protected float m_fLastModeNavS;
 
 	//------------------------------------------------------------------------------------------------
 	static void OpenFor(GBRS_RadarStationComponent station)
@@ -200,6 +203,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		if (widgets.m_wModeTabPd)
 		{
+			MuteWLibSounds(widgets.m_wModeTabPd);
 			ScriptInvoker invPd = ButtonActionComponent.GetOnAction(widgets.m_wModeTabPd, true);
 			if (invPd)
 				invPd.Insert(OnModeTabPd);
@@ -207,6 +211,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		if (widgets.m_wModeTabWlr)
 		{
+			MuteWLibSounds(widgets.m_wModeTabWlr);
 			ScriptInvoker invWlr = ButtonActionComponent.GetOnAction(widgets.m_wModeTabWlr, true);
 			if (invWlr)
 				invWlr.Insert(OnModeTabWlr);
@@ -214,6 +219,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		if (widgets.m_wModeTabLock)
 		{
+			MuteWLibSounds(widgets.m_wModeTabLock);
 			ScriptInvoker invLock = ButtonActionComponent.GetOnAction(widgets.m_wModeTabLock, true);
 			if (invLock)
 				invLock.Insert(OnModeTabLock);
@@ -235,7 +241,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			SCR_InputButtonComponent prev =
 				SCR_InputButtonComponent.Cast(widgets.m_wHintTabPrev.FindHandler(SCR_InputButtonComponent));
 			if (prev)
+			{
+				MuteInputButtonSounds(prev);
 				prev.m_OnActivated.Insert(OnNavTabPrev);
+			}
 		}
 
 		if (widgets.m_wHintTabNext)
@@ -243,7 +252,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			SCR_InputButtonComponent next =
 				SCR_InputButtonComponent.Cast(widgets.m_wHintTabNext.FindHandler(SCR_InputButtonComponent));
 			if (next)
+			{
+				MuteInputButtonSounds(next);
 				next.m_OnActivated.Insert(OnNavTabNext);
+			}
 		}
 
 		if (widgets.m_wHintSelect)
@@ -251,7 +263,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			SCR_InputButtonComponent select =
 				SCR_InputButtonComponent.Cast(widgets.m_wHintSelect.FindHandler(SCR_InputButtonComponent));
 			if (select)
+			{
+				MuteInputButtonSounds(select);
 				select.m_OnActivated.Insert(OnNavSelect);
+			}
 		}
 
 		if (widgets.m_wHintClose)
@@ -259,11 +274,49 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			SCR_InputButtonComponent closeBtn =
 				SCR_InputButtonComponent.Cast(widgets.m_wHintClose.FindHandler(SCR_InputButtonComponent));
 			if (closeBtn)
+			{
+				MuteInputButtonSounds(closeBtn);
 				closeBtn.m_OnActivated.Insert(OnNavClose);
+			}
 		}
 
 		m_bNavBound = true;
 		RefreshNavHintGlyphs();
+	}
+
+	// Mode bar / nav hints inherit WLib hover+click sounds; mute to avoid
+	// AudioCategory queue overflow when focus cycles during mode changes.
+	protected void MuteWLibSounds(Widget w)
+	{
+		if (!w)
+			return;
+
+		SCR_ButtonTextComponent textBtn =
+			SCR_ButtonTextComponent.Cast(w.FindHandler(SCR_ButtonTextComponent));
+		if (textBtn)
+		{
+			textBtn.SetHoverSound(string.Empty);
+			textBtn.SetClickedSound(string.Empty);
+			return;
+		}
+
+		SCR_WLibComponentBase wlib =
+			SCR_WLibComponentBase.Cast(w.FindHandler(SCR_WLibComponentBase));
+		if (!wlib)
+			return;
+
+		wlib.SetHoverSound(string.Empty);
+		wlib.SetClickedSound(string.Empty);
+	}
+
+	protected void MuteInputButtonSounds(SCR_InputButtonComponent button)
+	{
+		if (!button)
+			return;
+
+		button.SetClickSoundDisabled(true);
+		button.SetHoverSound(string.Empty);
+		button.SetClickedSound(string.Empty);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -340,6 +393,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void CycleModeTab(int delta)
 	{
+		if (!CanAcceptModeNav())
+			return;
+
 		m_iFocusedModeTab = m_iFocusedModeTab + delta;
 		while (m_iFocusedModeTab < 0)
 			m_iFocusedModeTab = m_iFocusedModeTab + MODE_TAB_COUNT;
@@ -388,8 +444,19 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
 		UpdateModeTabVisuals();
 		UpdateContextHint();
-		FocusModeTabIndex(m_iFocusedModeTab);
 		FeedOnce();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool CanAcceptModeNav()
+	{
+		float nowS = System.GetTickCount() * 0.001;
+		float cooldownS = MODE_NAV_COOLDOWN_MS * 0.001;
+		if ((nowS - m_fLastModeNavS) < cooldownS)
+			return false;
+
+		m_fLastModeNavS = nowS;
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -465,7 +532,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			hint = HINT_LOCK;
 
 		widgets.m_wPpiHint.SetText(hint);
-		RefreshNavHintGlyphs();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -497,7 +563,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!button)
 			return;
 
-		button.SetAction(actionName, device, true);
+		// forceUpdate=false avoids rebinding listeners / glyph rebuild spam.
+		button.SetAction(actionName, device, false);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -523,6 +590,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnInputDeviceChanged(EInputDeviceType oldDevice, EInputDeviceType newDevice)
 	{
+		RefreshNavHintGlyphs();
 		UpdateContextHint();
 		FocusForCurrentDevice();
 	}
@@ -564,6 +632,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		WorkspaceWidget workspace = GetGame().GetWorkspace();
 		if (!workspace)
+			return;
+
+		if (workspace.GetFocusedWidget() == target)
 			return;
 
 		workspace.SetFocusedWidget(target);

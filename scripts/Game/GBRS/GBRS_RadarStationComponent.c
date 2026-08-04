@@ -434,6 +434,9 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         m_WorkstationMode = "PD SEARCH";
 
+        if (m_bPowered)
+            SetAntennaSpinning(true);
+
         if (m_bDebugLog)
         {
             string projFlag = "0";
@@ -526,6 +529,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_fScanRpm = 0.0;
         if (settings.m_Hardware)
             m_fScanRpm = settings.m_Hardware.m_ScanRpm;
+
+        if (m_bPowered)
+            SetAntennaSpinning(true);
     }
 
     // When enabled: auto-acquire vehicles. When disabled: clear any held lock.

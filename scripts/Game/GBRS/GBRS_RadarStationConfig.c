@@ -43,6 +43,22 @@ class GBRS_RadarStationConfig
         settings.m_EnableCoarseRd = true;
     }
 
+    // Operator console readout: keep class tags on the PPI/list and soften the
+    // stock realistic-channel measurement noise (3.5x + 5 m bias is too coarse
+    // for a manned workstation). Channel physics stay on; only identity strip
+    // and noise scale are tuned for playable precision.
+    static void ApplyWorkstationReadout(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.m_KeepEntityTruth = true;
+        settings.m_MeasNoiseScale = 1.25;
+        settings.m_MeasRangeBiasM = 1.0;
+        settings.m_MeasAzimuthBiasDeg = 0.05;
+        settings.m_MeasElevationBiasDeg = 0.05;
+    }
+
     // US RPL-5: SHORAD pulse-Doppler search (~7 km).
     static RDF_RadarSettings CreateUsSearch()
     {
@@ -71,7 +87,6 @@ class GBRS_RadarStationConfig
         settings.m_EnablePhysicalDetection = true;
         settings.m_DetectionSnrDb = 8.0;
         settings.m_KeepUndetected = false;
-        settings.m_KeepEntityTruth = false;
 
         if (settings.m_Hardware)
         {
@@ -83,6 +98,7 @@ class GBRS_RadarStationConfig
             settings.m_Hardware.Validate();
         }
         ApplyFullFidelity(settings);
+        ApplyWorkstationReadout(settings);
         settings.Validate();
         return settings;
     }
@@ -116,7 +132,6 @@ class GBRS_RadarStationConfig
         // Wider EW beam + VHF clutter: slightly softer gate than US SHORAD.
         settings.m_DetectionSnrDb = 5.0;
         settings.m_KeepUndetected = false;
-        settings.m_KeepEntityTruth = false;
 
         // P-18 RF front-end, then re-apply stock PD MTI (CreateP18Like is TwoPulse).
         RDF_RadarHardware hw = RDF_RadarHardware.CreateP18Like();
@@ -139,11 +154,12 @@ class GBRS_RadarStationConfig
         ApplyFullFidelity(settings);
         // VHF surface returns are weaker than X-band SHORAD clutter cells.
         settings.m_DemClutterScale = 0.25;
+        ApplyWorkstationReadout(settings);
         settings.Validate();
         return settings;
     }
 
-    // Shared WLR geometry: stare sector, projectile-only, mortar elevation beams.
+    // Shared WLR geometry: rotating projectile search with mortar elevation beams.
     // Do not ApplyFullFidelity — DEM clutter would bury shell returns.
     static void ApplyWlrProductFlags(RDF_RadarSettings settings)
     {
@@ -155,14 +171,15 @@ class GBRS_RadarStationConfig
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
-        settings.m_EnableMechanicalScan = false;
+        // Keep mechanical scan on so the station antenna / PPI sweep continue
+        // after switching from PD SEARCH (stock RDF WLR is stare / ScanRpm=0).
+        settings.m_EnableMechanicalScan = true;
         settings.m_EnableBallisticPrediction = true;
         settings.m_EnableWeaponLocate = true;
         settings.m_EnableDemGroundForWlr = true;
         settings.m_WeaponLocateMinHits = 5;
         settings.m_WeaponLocateMinSpanS = 1.0;
         settings.m_TrackConfirmHits = 2;
-        settings.m_KeepEntityTruth = false;
         settings.m_UseBoundsCenter = false;
         settings.m_UseLocalOffset = false;
         settings.m_OriginOffset = "0 0 0";
@@ -175,7 +192,6 @@ class GBRS_RadarStationConfig
 
         if (settings.m_Hardware)
         {
-            settings.m_Hardware.m_ScanRpm = 0.0;
             settings.m_Hardware.m_EnableMti = false;
             settings.m_Hardware.ClearElevationBeams();
             settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
@@ -185,7 +201,7 @@ class GBRS_RadarStationConfig
         }
     }
 
-    // US counter-battery WLR (~8 km stare).
+    // US counter-battery WLR (~8 km rotating search).
     static RDF_RadarSettings CreateUsWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -200,13 +216,17 @@ class GBRS_RadarStationConfig
         settings.m_ScattererMaxEntries = 1024;
         settings.m_DetectionSnrDb = 6.0;
         if (settings.m_Hardware)
+        {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 25.0;
+            settings.m_Hardware.m_ScanRpm = 10.0;
+        }
         ApplyWlrProductFlags(settings);
+        ApplyWorkstationReadout(settings);
         settings.Validate();
         return settings;
     }
 
-    // USSR counter-battery WLR (~10 km stare, wider beam).
+    // USSR counter-battery WLR (~10 km rotating search, wider beam).
     static RDF_RadarSettings CreateUssrWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -221,8 +241,12 @@ class GBRS_RadarStationConfig
         settings.m_ScattererMaxEntries = 1024;
         settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
+        {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
+            settings.m_Hardware.m_ScanRpm = 6.0;
+        }
         ApplyWlrProductFlags(settings);
+        ApplyWorkstationReadout(settings);
         settings.Validate();
         return settings;
     }
