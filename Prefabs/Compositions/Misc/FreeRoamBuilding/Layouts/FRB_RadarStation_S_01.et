@@ -1,0 +1,80 @@
+GenericEntity : "{BB1B3769EB8C290D}Prefabs/Compositions/Misc/FreeRoamBuilding/CompositionLayoutBase.et" {
+ ID "5D6CA46CF033D8B7"
+ components {
+  RigidBody "{5D6CA46CDC94F02B}" {
+   Geometries {
+    PhysicsBoxGeometry FreeRoamBuildingInteraction {
+     Extents 14 1 14
+    }
+   }
+  }
+  ActionsManagerComponent "{5D6CA46D33CBCC29}" {
+   ActionContexts {
+    UserActionContext "{5D6CA46D3494A9F9}" {
+     Radius 20
+    }
+   }
+   additionalActions {
+    SCR_CampaignBuildingBuildUserAction "{5D6CA46D23446DFB}" {
+     VisibilityRange 20
+    }
+    SCR_CampaignBuildingDisassemblyUserAction "{5D8E8D19F09C8CCA}" {
+     VisibilityRange 20
+    }
+   }
+  }
+ }
+ coords 0 0 0
+ {
+  $grp StaticModelEntity : "{AD5D1A7FF5FB5FA2}Prefabs/Structures/Military/Fortifications/Trenches/TrenchOld_01/TrenchOld_01_pole_metal.et" {
+   {
+    ID "69FCEDCEA0030101"
+    components {
+     RigidBody "{5272E314F5AC4FE7}" {
+      Enabled 0
+     }
+     Hierarchy "{69FCEDCEA0030111}" {
+     }
+    }
+    coords 6.5 0 6.5
+    angleY 45
+   }
+   {
+    ID "69FCEDCEA0030102"
+    components {
+     RigidBody "{5272E314F5AC4FE7}" {
+      Enabled 0
+     }
+     Hierarchy "{69FCEDCEA0030112}" {
+     }
+    }
+    coords -6.5 0 6.5
+    angleY -45
+   }
+   {
+    ID "69FCEDCEA0030103"
+    components {
+     RigidBody "{5272E314F5AC4FE7}" {
+      Enabled 0
+     }
+     Hierarchy "{69FCEDCEA0030113}" {
+     }
+    }
+    coords 6.5 0 -6.5
+    angleY 135
+   }
+   {
+    ID "69FCEDCEA0030104"
+    components {
+     RigidBody "{5272E314F5AC4FE7}" {
+      Enabled 0
+     }
+     Hierarchy "{69FCEDCEA0030114}" {
+     }
+    }
+    coords -6.5 0 -6.5
+    angleY -135
+   }
+  }
+ }
+}

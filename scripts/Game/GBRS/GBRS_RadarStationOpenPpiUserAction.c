@@ -49,6 +49,12 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation.IsConfigured())
             return false;
 
+        if (m_RadarStation.IsDestroyed())
+            return false;
+
+        if (!m_RadarStation.IsCompositionReady())
+            return false;
+
         if (!m_RadarStation.IsPowered())
             return false;
 
@@ -63,11 +69,20 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation)
             return false;
 
+        if (m_RadarStation.IsDestroyed())
+            return false;
+
+        if (!m_RadarStation.IsCompositionReady())
+            return false;
+
         return m_RadarStation.IsPowered();
     }
 
     override string GetCannotPerformReason()
     {
+        if (m_RadarStation && !m_RadarStation.IsCompositionReady())
+            return "Finish building first";
+
         return m_sNotPoweredReason;
     }
 

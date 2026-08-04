@@ -1,7 +1,6 @@
 //------------------------------------------------------------------------------------------------
-//! Client -> server ask for workstation mode only.
-//! Power / scan frustum follow placeable-light UserAction broadcast (no PC RPC).
-//! Mode comes from a local menu, so proxies ask via owned SCR_PlayerController.
+//! Client -> server asks for workstation mode and power toggles that mutate shared state.
+//! Scan frustum still follows placeable-light UserAction broadcast (local visual only).
 class GBRS_PlayerControllerNet
 {
     protected static const float MAX_REQUEST_DISTANCE_M = 25.0;
@@ -22,6 +21,25 @@ class GBRS_PlayerControllerNet
             return false;
 
         playerController.GBRS_RpcAsk_WorkstationMode(stationId, mode);
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    static bool RequestTogglePower(GBRS_RadarStationComponent station)
+    {
+        if (!station)
+            return false;
+
+        RplId stationId = station.GetStationRplId();
+        if (!stationId.IsValid())
+            return false;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(GetGame().GetPlayerController());
+        if (!playerController)
+            return false;
+
+        playerController.GBRS_RpcAsk_TogglePower(stationId);
         return true;
     }
 
@@ -57,6 +75,12 @@ modded class SCR_PlayerController
     }
 
     //------------------------------------------------------------------------------------------------
+    void GBRS_RpcAsk_TogglePower(RplId stationId)
+    {
+        Rpc(RpcAsk_GBRS_TogglePower, stationId);
+    }
+
+    //------------------------------------------------------------------------------------------------
     [RplRpc(RplChannel.Reliable, RplRcver.Server)]
     protected void RpcAsk_GBRS_WorkstationMode(RplId stationId, string mode)
     {
@@ -72,5 +96,36 @@ modded class SCR_PlayerController
             return;
 
         station.AuthoritySetWorkstationMode(mode);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Server)]
+    protected void RpcAsk_GBRS_TogglePower(RplId stationId)
+    {
+        GBRS_RadarStationComponent station = GBRS_PlayerControllerNet.ResolveStation(stationId);
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        if (!station.IsConfigured())
+            return;
+
+        if (station.IsDestroyed())
+            return;
+
+        if (!station.IsCompositionReady())
+            return;
+
+        bool turnOn = !station.IsPowered();
+        if (turnOn && !station.CanAffordPowerOn())
+            return;
+
+        station.SetPowered(turnOn);
     }
 }

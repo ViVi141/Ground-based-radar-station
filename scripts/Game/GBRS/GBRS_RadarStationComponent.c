@@ -66,6 +66,15 @@ class GBRS_RadarStationComponent : ScriptComponent
     [Attribute("0", UIWidgets.CheckBox, desc: "Print [GBRS-DEBUG] radar detection diagnostics to console")]
     protected bool m_bDebugLog;
 
+    [Attribute("{4D5CD8B2B5DE8916}Particles/Vehicle/Vehicle_fire_engine_medium.ptc", UIWidgets.ResourceNamePicker, "Persistent fire particle after destroy", "ptc")]
+    protected ResourceName m_sDestroyedFireParticle;
+
+    [Attribute("{8986B887CCF7BFA9}Particles/Vehicle/Vehicle_smoke_UAZ_damaged_black_02.ptc", UIWidgets.ResourceNamePicker, "Persistent smoke particle after destroy", "ptc")]
+    protected ResourceName m_sDestroyedSmokeParticle;
+
+    [Attribute("0 2.5 0", UIWidgets.EditBox, "Local offset for fire/smoke emitters")]
+    protected vector m_vDestroyedFireOffset;
+
     // Runtime state — synced like SCR_BaseInteractiveLightComponent:
     // UserAction broadcast toggles peers live; RplSave/RplLoad covers JIP.
     protected bool m_bPowered;
@@ -91,6 +100,12 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ref GBRS_RadarDebugProbe m_DebugProbe;
     protected int m_iDebugLastScanSerial;
     protected float m_fDebugNextHeartbeatS;
+    protected bool m_bDestroyed;
+    protected GBRS_RadarStationDamageManagerComponent m_DamageManager;
+    protected ParticleEffectEntity m_DestroyedFireParticle;
+    protected ParticleEffectEntity m_DestroyedSmokeParticle;
+    protected SCR_CampaignBuildingCompositionComponent m_BuildingComposition;
+    protected bool m_bCompositionBuildGateBound;
 
     override void OnPostInit(IEntity owner)
     {
@@ -102,7 +117,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         super.EOnInit(owner);
         if (m_WorkstationMode == "")
             m_WorkstationMode = "PD SEARCH";
+        BindDamageManager(owner);
+        BindBuildingCompositionGate(owner);
         ApplyConfiguration(owner);
+        ApplyUnderConstructionLock();
     }
 
     override void EOnFrame(IEntity owner, float timeSlice)
@@ -133,6 +151,12 @@ class GBRS_RadarStationComponent : ScriptComponent
         StopAntennaResolveRetry();
         SetAntennaSpinning(false);
         SetTraceIgnoreActive(false);
+        StopDestroyedFireEffects();
+        if (m_bCompositionBuildGateBound && m_BuildingComposition)
+        {
+            m_BuildingComposition.GetOnCompositionSpawned().Remove(OnCompositionFullyBuilt);
+            m_bCompositionBuildGateBound = false;
+        }
         ShutdownRadar();
         super.OnDelete(owner);
     }
@@ -146,6 +170,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         writer.WriteBool(m_bPowered);
         writer.WriteBool(m_bScanVisualEnabled);
         writer.WriteInt(WorkstationModeToIndex(m_WorkstationMode));
+        writer.WriteBool(m_bDestroyed);
         return true;
     }
 
@@ -157,16 +182,25 @@ class GBRS_RadarStationComponent : ScriptComponent
         bool powered;
         bool scanVisual;
         int modeIndex;
+        bool destroyed;
         reader.ReadBool(powered);
         reader.ReadBool(scanVisual);
         reader.ReadInt(modeIndex);
+        reader.ReadBool(destroyed);
 
         if (!m_bConfigured)
             ApplyConfiguration(GetOwner());
 
-        TogglePower(powered, true);
-        ToggleScanVisual(scanVisual);
-        ApplyWorkstationModeLocal(IndexToWorkstationMode(modeIndex));
+        if (destroyed)
+        {
+            ApplyDestroyedStateLocal(false);
+        }
+        else
+        {
+            TogglePower(powered, true);
+            ToggleScanVisual(scanVisual);
+            ApplyWorkstationModeLocal(IndexToWorkstationMode(modeIndex));
+        }
         return true;
     }
 
@@ -178,6 +212,210 @@ class GBRS_RadarStationComponent : ScriptComponent
     bool IsPowered()
     {
         return m_bPowered;
+    }
+
+    bool IsDestroyed()
+    {
+        if (m_bDestroyed)
+            return true;
+
+        if (m_DamageManager && m_DamageManager.IsStationDestroyed())
+            return true;
+
+        return false;
+    }
+
+    float GetHealth()
+    {
+        if (!m_DamageManager)
+            return 0.0;
+        return m_DamageManager.GetStationHealth();
+    }
+
+    float GetMaxHealth()
+    {
+        if (!m_DamageManager)
+            return 0.0;
+        return m_DamageManager.GetStationMaxHealth();
+    }
+
+    float GetHealthScaled()
+    {
+        if (!m_DamageManager)
+            return 0.0;
+        return m_DamageManager.GetStationHealthScaled();
+    }
+
+    // Called by GBRS_RadarStationDamageManagerComponent when HP reaches DESTROYED.
+    void OnStationDestroyed()
+    {
+        ApplyDestroyedStateLocal(true);
+    }
+
+    // Shared destroy path for live damage and JIP RplLoad.
+    protected void ApplyDestroyedStateLocal(bool fromDamageEvent)
+    {
+        if (m_bDestroyed)
+        {
+            EnsureDestroyedFireEffects();
+            return;
+        }
+
+        m_bDestroyed = true;
+
+        if (m_bDebugLog)
+            Print("[GBRS-DEBUG] Station DESTROYED — forcing power off + fire", LogLevel.WARNING);
+
+        if (m_bPowered)
+            TogglePower(false, true);
+        else if (m_Radar)
+            m_Radar.SetEnabled(false);
+
+        GBRS_RadarStationMenu.CloseIfBound(this);
+        SetAntennaSpinning(false);
+        SetTraceIgnoreActive(false);
+        StopSupplyDrain();
+        if (m_DetectVisual)
+            m_DetectVisual.Clear();
+
+        EnsureDestroyedFireEffects();
+
+        if (fromDamageEvent)
+            Replication.BumpMe();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void EnsureDestroyedFireEffects()
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return;
+
+        if (!m_DestroyedFireParticle && !m_sDestroyedFireParticle.IsEmpty())
+        {
+            m_DestroyedFireParticle = SpawnAttachedParticle(
+                m_sDestroyedFireParticle, owner, m_vDestroyedFireOffset);
+        }
+
+        if (!m_DestroyedSmokeParticle && !m_sDestroyedSmokeParticle.IsEmpty())
+        {
+            vector smokeOffset = m_vDestroyedFireOffset;
+            smokeOffset[1] = smokeOffset[1] + 1.0;
+            m_DestroyedSmokeParticle = SpawnAttachedParticle(
+                m_sDestroyedSmokeParticle, owner, smokeOffset);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void StopDestroyedFireEffects()
+    {
+        if (m_DestroyedFireParticle)
+        {
+            SCR_ParticleHelper.StopParticleEmissionAndLights(m_DestroyedFireParticle);
+            m_DestroyedFireParticle = null;
+        }
+
+        if (m_DestroyedSmokeParticle)
+        {
+            SCR_ParticleHelper.StopParticleEmissionAndLights(m_DestroyedSmokeParticle);
+            m_DestroyedSmokeParticle = null;
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected ParticleEffectEntity SpawnAttachedParticle(
+        ResourceName particle,
+        IEntity parent,
+        vector localOffset)
+    {
+        if (particle.IsEmpty() || !parent)
+            return null;
+
+        ParticleEffectEntitySpawnParams spawnParams = new ParticleEffectEntitySpawnParams();
+        spawnParams.Transform[3] = localOffset;
+        spawnParams.FollowParent = parent;
+        spawnParams.PlayOnSpawn = true;
+        spawnParams.UseFrameEvent = true;
+        spawnParams.DeleteWhenStopped = true;
+        return ParticleEffectEntity.SpawnParticleEffect(particle, spawnParams);
+    }
+
+    protected void BindDamageManager(IEntity owner)
+    {
+        if (!owner)
+            return;
+
+        m_DamageManager =
+            GBRS_RadarStationDamageManagerComponent.Cast(
+                owner.FindComponent(GBRS_RadarStationDamageManagerComponent));
+        if (!m_DamageManager)
+            return;
+
+        if (m_DamageManager.IsStationDestroyed())
+            ApplyDestroyedStateLocal(false);
+    }
+
+    // Conflict FreeRoam: keep radar/damage inert until shovel-build finishes.
+    protected void BindBuildingCompositionGate(IEntity owner)
+    {
+        if (!owner)
+            return;
+
+        m_BuildingComposition =
+            SCR_CampaignBuildingCompositionComponent.Cast(
+                owner.FindComponent(SCR_CampaignBuildingCompositionComponent));
+        if (!m_BuildingComposition)
+            return;
+
+        if (m_BuildingComposition.IsCompositionSpawned())
+            return;
+
+        if (!m_bCompositionBuildGateBound)
+        {
+            m_BuildingComposition.GetOnCompositionSpawned().Insert(OnCompositionFullyBuilt);
+            m_bCompositionBuildGateBound = true;
+        }
+    }
+
+    protected void ApplyUnderConstructionLock()
+    {
+        if (!m_BuildingComposition)
+            return;
+
+        if (m_BuildingComposition.IsCompositionSpawned())
+            return;
+
+        if (m_Radar)
+            m_Radar.SetEnabled(false);
+
+        if (m_DamageManager)
+            m_DamageManager.EnableDamageHandling(false);
+
+        m_bPowered = false;
+        SetAntennaSpinning(false);
+    }
+
+    protected void OnCompositionFullyBuilt(bool spawned)
+    {
+        if (!spawned)
+            return;
+
+        if (m_DamageManager)
+            m_DamageManager.EnableDamageHandling(true);
+
+        if (m_bCompositionBuildGateBound && m_BuildingComposition)
+        {
+            m_BuildingComposition.GetOnCompositionSpawned().Remove(OnCompositionFullyBuilt);
+            m_bCompositionBuildGateBound = false;
+        }
+    }
+
+    bool IsCompositionReady()
+    {
+        if (!m_BuildingComposition)
+            return true;
+
+        return m_BuildingComposition.IsCompositionSpawned();
     }
 
     bool IsScanVisualEnabled()
@@ -222,10 +460,14 @@ class GBRS_RadarStationComponent : ScriptComponent
         return m_WorkstationMode;
     }
 
-    // Menu / API entry. Local apply on caller; authority also broadcasts so
-    // peers match (menu is not a UserAction, unlike power/scan).
+    // Menu / API entry. Clients only submit a request; authority applies and
+    // broadcasts so PPI / RDF stay synchronized. Rejected asks leave the mode
+    // unchanged on the requester.
     bool ApplyWorkstationMode(string mode)
     {
+        if (IsDestroyed())
+            return false;
+
         if (!IsValidWorkstationMode(mode))
             return false;
 
@@ -239,11 +481,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             ApplyWorkstationModeLocal(mode);
             Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(mode));
+            Replication.BumpMe();
             return true;
         }
 
-        // Apply locally first to hide round-trip; server confirms + fans out.
-        ApplyWorkstationModeLocal(mode);
         return GBRS_PlayerControllerNet.RequestWorkstationMode(this, mode);
     }
 
@@ -255,14 +496,24 @@ class GBRS_RadarStationComponent : ScriptComponent
     // Server entry from GBRS_PlayerControllerNet (menu on a proxy).
     bool AuthoritySetWorkstationMode(string mode)
     {
+        if (!IsAuthority())
+            return false;
+
+        if (IsDestroyed())
+            return false;
+
         if (!m_bPowered)
             return false;
 
         if (!IsValidWorkstationMode(mode))
             return false;
 
+        if (mode == m_WorkstationMode)
+            return true;
+
         ApplyWorkstationModeLocal(mode);
         Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(mode));
+        Replication.BumpMe();
         return true;
     }
 
@@ -291,6 +542,9 @@ class GBRS_RadarStationComponent : ScriptComponent
     // True when the station root or any descendant damage manager is destroyed.
     bool IsDestroyedForPpi()
     {
+        if (IsDestroyed())
+            return true;
+
         IEntity owner = GetOwner();
         if (!owner)
             return true;
@@ -353,20 +607,32 @@ class GBRS_RadarStationComponent : ScriptComponent
         return false;
     }
 
+    // Client UserAction / menu entry: ask authority. Listen servers apply locally.
     void RequestTogglePower()
     {
-        TogglePower(!m_bPowered, false);
+        if (IsAuthority())
+        {
+            SetPowered(!m_bPowered);
+            return;
+        }
+
+        GBRS_PlayerControllerNet.RequestTogglePower(this);
     }
 
-    // Authority-driven power change (supply drain, script). UserActions call TogglePower
-    // directly — the action system already broadcasts those.
+    // Authority-driven power change. Supply affordability and stockpile drain are
+    // decided only here; peers receive RpcDo_TogglePower after confirmation.
     void SetPowered(bool powered)
     {
-        TogglePower(powered, false);
         if (!IsAuthority())
             return;
 
-        Rpc(RpcDo_TogglePower, powered);
+        bool before = m_bPowered;
+        TogglePower(powered, false);
+        if (m_bPowered == before)
+            return;
+
+        Rpc(RpcDo_TogglePower, m_bPowered);
+        Replication.BumpMe();
     }
 
     // Auto-test only: bypass supply affordability so Script Debugger runs work
@@ -390,6 +656,12 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         if (!GetGame().InPlayMode())
+            return;
+
+        if (turnOn && IsDestroyed())
+            return;
+
+        if (turnOn && !IsCompositionReady())
             return;
 
         if (!m_bConfigured)
@@ -614,6 +886,8 @@ class GBRS_RadarStationComponent : ScriptComponent
                 + " coast=" + BoolDebugFlag(settings.m_TrackCoastOnMiss)
                 + " cfar=" + BoolDebugFlag(settings.m_EnableCfarGate)
                 + " nlos=" + BoolDebugFlag(settings.m_EnableNlosMultipath)
+                + " esm=" + BoolDebugFlag(settings.m_EnableEsmReceive)
+                + " ewFx=" + EwEffectCount(settings).ToString()
                 + " snrGate=" + settings.m_DetectionSnrDb.ToString(), LogLevel.WARNING);
         }
     }
@@ -1183,7 +1457,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_DetectVisual = new GBRS_RadarDetectVisual();
 
         float nowS = System.GetTickCount() * 0.001;
-        m_DetectVisual.Ingest(sensor.GetPlots(), origin, nowS);
+        m_DetectVisual.Ingest(sensor.GetPlots(), cfg, origin, nowS);
         m_DetectVisual.Draw(origin, GetLiveScanRpm(), nowS);
     }
 
@@ -1275,6 +1549,13 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (value)
             return "1";
         return "0";
+    }
+
+    protected int EwEffectCount(RDF_RadarSettings settings)
+    {
+        if (!settings || !settings.m_EwStack || !settings.m_EwStack.m_Effects)
+            return 0;
+        return settings.m_EwStack.m_Effects.Count();
     }
 
     protected string HasAntennaDebugFlag()

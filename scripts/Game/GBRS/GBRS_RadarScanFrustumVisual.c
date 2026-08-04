@@ -1,12 +1,13 @@
 // Scan-beam debug draw for RDF mechanical scanning.
-// The hard gate is horizontal azimuth. Elevation is evaluated separately
-// by the configured elevation beams in physical detection.
+// Azimuth gate is horizontal; elevation is a separate vertical wedge.
+// Do not draw a full 3D cone around a level axis — that puts the lower
+// half underground.
 class GBRS_RadarScanFrustumVisual
 {
     protected static const float DEG_TO_RAD = 0.017453292519943295;
-    protected static const int CONE_SEGMENTS = 16;
+    protected static const int FAN_SEGMENTS = 16;
 
-    // Draw the RDF instantaneous acceptance cone + boresight.
+    // Draw the RDF instantaneous azimuth fan + elevation boresight wedge.
     static void Draw(
         vector origin,
         vector forward,
@@ -17,9 +18,8 @@ class GBRS_RadarScanFrustumVisual
         int colourEdge,
         int colourCore)
     {
-        DrawCone(origin, forward, rangeM, coneHalfDeg, colourEdge, colourCore);
+        DrawAzimuthFan(origin, forward, rangeM, coneHalfDeg, colourEdge, colourCore);
 
-        // Optional elevation-beam hint: thin wedge on boresight.
         if (elevationHalfDeg > 0.1)
             DrawElevationHint(
                 origin,
@@ -30,7 +30,8 @@ class GBRS_RadarScanFrustumVisual
                 colourCore);
     }
 
-    static void DrawCone(
+    // Horizontal sector in the XZ plane through the antenna origin.
+    static void DrawAzimuthFan(
         vector origin,
         vector forward,
         float rangeM,
@@ -41,6 +42,8 @@ class GBRS_RadarScanFrustumVisual
         if (rangeM < 1.0)
             return;
 
+        // Flatten to horizontal — matches RDF_RadarScanner.GetScanForward.
+        forward[1] = 0.0;
         float flen = forward.Length();
         if (flen < 0.001)
             forward = Vector(1.0, 0.0, 0.0);
@@ -52,37 +55,41 @@ class GBRS_RadarScanFrustumVisual
         if (coneHalfDeg > 89.0)
             coneHalfDeg = 89.0;
 
-        vector axisX;
-        vector axisY;
-        BuildConeBasis(forward, axisX, axisY);
-
+        float az = Math.Atan2(forward[2], forward[0]);
         float halfRad = coneHalfDeg * DEG_TO_RAD;
-        float sinH = Math.Sin(halfRad);
-        float cosH = Math.Cos(halfRad);
-        float ringR = rangeM * sinH;
-        vector ringCenter = origin + forward * (rangeM * cosH);
+        float azLo = az - halfRad;
+        float azHi = az + halfRad;
 
-        ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP;
+        // Respect terrain depth. NOZBUFFER makes rays remain visible after
+        // entering hills or dropping below the terrain surface.
+        ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.TRANSP;
 
-        vector ring[CONE_SEGMENTS + 1];
+        vector leftDir = DirFromAzEl(azLo, 0.0, 0.0);
+        vector rightDir = DirFromAzEl(azHi, 0.0, 0.0);
+        vector leftEnd = origin + leftDir * rangeM;
+        vector rightEnd = origin + rightDir * rangeM;
+
+        vector leftEdge[2];
+        leftEdge[0] = origin;
+        leftEdge[1] = leftEnd;
+        Shape.CreateLines(colourEdge, flags, leftEdge, 2);
+
+        vector rightEdge[2];
+        rightEdge[0] = origin;
+        rightEdge[1] = rightEnd;
+        Shape.CreateLines(colourEdge, flags, rightEdge, 2);
+
+        vector arc[FAN_SEGMENTS + 1];
         int i = 0;
-        while (i < CONE_SEGMENTS)
+        while (i <= FAN_SEGMENTS)
         {
-            float ang = (6.2831853 * i) / CONE_SEGMENTS;
-            vector rim = ringCenter
-                + axisX * (Math.Cos(ang) * ringR)
-                + axisY * (Math.Sin(ang) * ringR);
-            ring[i] = rim;
-
-            vector edge[2];
-            edge[0] = origin;
-            edge[1] = rim;
-            Shape.CreateLines(colourEdge, flags, edge, 2);
-
+            float t = i;
+            t = t / FAN_SEGMENTS;
+            float a = azLo + (azHi - azLo) * t;
+            arc[i] = origin + DirFromAzEl(a, 0.0, 0.0) * rangeM;
             i = i + 1;
         }
-        ring[CONE_SEGMENTS] = ring[0];
-        Shape.CreateLines(colourEdge, flags, ring, CONE_SEGMENTS + 1);
+        Shape.CreateLines(colourEdge, flags, arc, FAN_SEGMENTS + 1);
 
         vector core[2];
         core[0] = origin;
@@ -107,11 +114,22 @@ class GBRS_RadarScanFrustumVisual
         float elLo = elevationBoresightDeg - elevationHalfDeg;
         float elHi = elevationBoresightDeg + elevationHalfDeg;
 
+        // Keep the visual wedge above the local horizon so lines do not
+        // punch through the terrain near the mast.
+        if (elLo < 0.0)
+            elLo = 0.0;
+        if (elHi < elLo + 0.5)
+            elHi = elLo + 0.5;
+        if (elevationBoresightDeg < elLo)
+            elevationBoresightDeg = elLo;
+        if (elevationBoresightDeg > elHi)
+            elevationBoresightDeg = elHi;
+
         vector dLo = DirFromAzEl(az, 0.0, elLo);
         vector dHi = DirFromAzEl(az, 0.0, elHi);
         vector dCore = DirFromAzEl(az, 0.0, elevationBoresightDeg);
 
-        ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP;
+        ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.TRANSP;
 
         vector lo[2];
         lo[0] = origin;
@@ -127,33 +145,6 @@ class GBRS_RadarScanFrustumVisual
         core[0] = origin;
         core[1] = origin + dCore * rangeM;
         Shape.CreateLines(colour, flags, core, 2);
-    }
-
-    protected static void BuildConeBasis(vector forward, out vector axisX, out vector axisY)
-    {
-        vector up = Vector(0.0, 1.0, 0.0);
-        axisX = up * forward;
-        float xLen = axisX.Length();
-        if (xLen < 0.001)
-        {
-            up = Vector(1.0, 0.0, 0.0);
-            axisX = up * forward;
-            xLen = axisX.Length();
-        }
-        if (xLen < 0.001)
-        {
-            axisX = Vector(1.0, 0.0, 0.0);
-            axisY = Vector(0.0, 1.0, 0.0);
-            return;
-        }
-
-        axisX = axisX * (1.0 / xLen);
-        axisY = forward * axisX;
-        float yLen = axisY.Length();
-        if (yLen < 0.001)
-            axisY = Vector(0.0, 1.0, 0.0);
-        else
-            axisY = axisY * (1.0 / yLen);
     }
 
     protected static vector DirFromAzEl(float azRad, float azOffDeg, float elDeg)

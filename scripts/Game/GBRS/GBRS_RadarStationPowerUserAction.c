@@ -1,5 +1,6 @@
 // Interactive power toggle for GBRS radar stations.
-// Mirrors SCR_SwitchLightUserAction: default broadcast UserAction, local TogglePower.
+// Server-first: clients only submit a toggle ask; authority gates supplies and
+// broadcasts the confirmed powered state.
 class GBRS_RadarStationPowerUserAction : ScriptedUserAction
 {
     [Attribute("#AR-UserAction_TurnOn", UIWidgets.EditBox, "Shown when radar is off", "")]
@@ -50,12 +51,27 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
         if (!m_RadarStation)
             return false;
 
-        return m_RadarStation.IsConfigured();
+        if (!m_RadarStation.IsConfigured())
+            return false;
+
+        if (m_RadarStation.IsDestroyed())
+            return false;
+
+        if (!m_RadarStation.IsCompositionReady())
+            return false;
+
+        return true;
     }
 
     override bool CanBePerformedScript(IEntity user)
     {
         if (!m_RadarStation)
+            return false;
+
+        if (m_RadarStation.IsDestroyed())
+            return false;
+
+        if (!m_RadarStation.IsCompositionReady())
             return false;
 
         if (m_RadarStation.IsPowered())
@@ -66,6 +82,12 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
 
     override string GetCannotPerformReason()
     {
+        if (m_RadarStation && m_RadarStation.IsDestroyed())
+            return "Radar station destroyed";
+
+        if (m_RadarStation && !m_RadarStation.IsCompositionReady())
+            return "Finish building first";
+
         return m_sCannotAffordReason;
     }
 
@@ -77,7 +99,17 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
         if (!m_RadarStation)
             return;
 
-        m_RadarStation.TogglePower(!m_RadarStation.IsPowered(), false);
+        m_RadarStation.RequestTogglePower();
+    }
+
+    override bool HasLocalEffectOnlyScript()
+    {
+        return true;
+    }
+
+    override bool CanBroadcastScript()
+    {
+        return false;
     }
 
     override bool GetActionNameScript(out string outName)

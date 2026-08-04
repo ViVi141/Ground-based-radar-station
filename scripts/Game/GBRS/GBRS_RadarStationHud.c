@@ -49,6 +49,7 @@ class GBRS_RadarStationHud
     static const int COL_PROJ = ARGB(255, 255, 180, 50);
     static const int COL_EMITTER = ARGB(255, 255, 100, 235);
     static const int COL_ANON = ARGB(255, 255, 235, 150);
+    static const int COL_FALSEPLOT = ARGB(255, 255, 90, 90);
     static const int COL_NLOS = ARGB(255, 100, 230, 255);
     static const int COL_VEL = ARGB(190, 100, 255, 190);
     static const int COL_WLR_LAUNCH = ARGB(220, 255, 160, 40);
@@ -1201,6 +1202,8 @@ class GBRS_RadarStationHud
     {
         if (t.m_LosBlocked)
             return COL_NLOS;
+        if (t.m_IsFalsePlot)
+            return COL_FALSEPLOT;
         if (t.m_IsAnonymous)
             return COL_ANON;
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
@@ -1224,6 +1227,8 @@ class GBRS_RadarStationHud
     {
         if (!t)
             return "----";
+        if (t.m_IsFalsePlot)
+            return "FAKE";
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
             return "PROJ";
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)

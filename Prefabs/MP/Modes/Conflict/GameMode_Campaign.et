@@ -1,0 +1,22 @@
+SCR_GameModeCampaign : "{3B230AAC5252108F}Prefabs/MP/Modes/Conflict/GameMode_Campaign.et" {
+ ID "56B2B479C6B96951"
+ components {
+  SCR_CampaignBuildingManagerComponent "{5C6878C4C62529D2}" {
+   m_sPrefabsToBuildResource "{69FCEDCEA0030001}Configs/Editor/PlaceableEntities/Compositions/Compositions_FreeRoamBuilding_GBRS.conf"
+   m_OutlineManager SCR_CampaignBuildingCompositionOutlineManager "{5D7A73031D9A11E1}" : "{96A8B496A076F1C0}scripts/Game/Building/CampaignBuildingCompositionOutline.conf" {
+    m_aCompositionLayouts +{
+     SCR_CampaignBuildingCompositionOutline "{69FCEDCEA0030020}" {
+      m_sEditableEntity "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et"
+      m_sCompositionLayout "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et"
+      m_iBuildingValue 120
+     }
+     SCR_CampaignBuildingCompositionOutline "{69FCEDCEA0030021}" {
+      m_sEditableEntity "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et"
+      m_sCompositionLayout "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et"
+      m_iBuildingValue 120
+     }
+    }
+   }
+  }
+ }
+}

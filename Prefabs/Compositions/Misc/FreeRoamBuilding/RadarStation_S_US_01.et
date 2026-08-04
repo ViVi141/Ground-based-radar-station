@@ -5,14 +5,23 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    "faction affiliation" "US"
   }
   RigidBody "{5E96A067A67C5029}" {
+   Static 1
    Geometries {
     PhysicsBoxGeometry UserAction {
-     Extents 8 0.5 8
+     Extents 12 0.5 12
     }
    }
   }
   Hierarchy "{69FCEDCE10011003}" {
    Enabled 1
+  }
+  SCR_CampaignBuildingCompositionComponent "{69FCEDCE10011030}" {
+   m_AudioSourceConfigurationSpawn SCR_AudioSourceConfiguration "{69FCEDCE10011031}" {
+    m_sSoundEventName "SOUND_BUILD_VEHICLE_FUEL_STATION"
+   }
+   m_AudioSourceConfigurationDespawn SCR_AudioSourceConfiguration "{69FCEDCE10011032}" {
+    m_sSoundEventName "SOUND_DESTROY_SANDBAG"
+   }
   }
   RDF_RadarComponent "{69FCEDCE10011004}" {
   }
@@ -26,71 +35,41 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    m_fElevationBoresightDeg 4
    m_fElevationBeamwidthDeg 8
   }
+  GBRS_RadarStationDamageManagerComponent "{69FCEDCE10011020}" {
+   "Additional hit zones" {
+    SCR_HitZone Default {
+     HZDefault 1
+     MaxHealth 5000
+     DamageReduction 50
+     DamageThreshold 50
+     "Collision multiplier" 0.2
+     "Explosive multiplier" 5
+     "Fragmentation multiplier" 0.5
+     "Kinetic multiplier" 1
+    }
+   }
+   m_fMaxHealth 5000
+  }
  }
  coords 0 0 0
  {
   GenericEntity : "{A528F04F41F2A2D0}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_on.et" {
-   ID "69FCEDCE10012001"
+   ID "69FCEDCEA0010101"
    components {
-    Hierarchy "{69FCEDCE10012002}" {
+    Hierarchy "{69FCEDCEA0010111}" {
      Enabled 1
-    }
-    ProcAnimComponent "{5A4ED832D66CA486}" {
-     Enabled 0
     }
    }
    coords 0 0 1.5
   }
   GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_generator.et" {
-   ID "69FCEDCE10012003"
+   ID "69FCEDCEA0010102"
    components {
-    Hierarchy "{69FCEDCE10012004}" {
+    Hierarchy "{69FCEDCEA0010112}" {
      Enabled 1
-    }
-    ActionsManagerComponent "{69FCEDCE10012010}" {
-     ActionContexts {
-      UserActionContext "{69FCEDCE10012011}" {
-       ContextName "RadarPower"
-       Position PointInfo "{69FCEDCE10012012}" {
-        Offset 0 1.2 0.5
-       }
-       Radius 2.5
-      }
-     }
-     additionalActions {
-      GBRS_RadarStationPowerUserAction "{69FCEDCE10012013}" {
-       ParentContextList {
-        "RadarPower"
-       }
-       Duration 0
-      }
-      GBRS_RadarStationOpenPpiUserAction "{69FCEDCE10012014}" {
-       ParentContextList {
-        "RadarPower"
-       }
-       Duration 0
-      }
-      GBRS_RadarStationScanVisualUserAction "{69FCEDCE10012015}" {
-       ParentContextList {
-        "RadarPower"
-       }
-       Duration 0
-      }
-     }
     }
    }
    coords -4 0 -2
-   {
-    GenericEntity : "{002A9FA2A8544E0C}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_antenna.et" {
-     ID "69FCEDCE10012005"
-     components {
-      Hierarchy "{69FCEDCE10012006}" {
-       Enabled 1
-      }
-     }
-     coords 0 0 0
-    }
-   }
   }
  }
 }

@@ -4,6 +4,7 @@ class GBRS_RadarDetectBlip
     vector m_Pos;
     float m_BirthS;
     ERDF_RadarTargetType m_Type;
+    bool m_IsFalsePlot;
     bool m_DrawRay;
 }
 
@@ -30,7 +31,11 @@ class GBRS_RadarDetectVisual
         m_iWrite = 0;
     }
 
-    void Ingest(array<ref RDF_RadarTarget> plots, vector origin, float nowS)
+    void Ingest(
+        array<ref RDF_RadarTarget> plots,
+        RDF_RadarSettings settings,
+        vector origin,
+        float nowS)
     {
         if (!plots)
             return;
@@ -42,7 +47,7 @@ class GBRS_RadarDetectVisual
         {
             RDF_RadarTarget t = plots.Get(i);
             i = i + 1;
-            if (!t || !t.m_Detected)
+            if (!GBRS_RadarStationConfig.ShouldDisplayPlot(t, settings))
                 continue;
 
             GBRS_RadarDetectBlip blip = Alloc();
@@ -52,6 +57,7 @@ class GBRS_RadarDetectVisual
             blip.m_Pos = t.m_Position;
             blip.m_BirthS = nowS;
             blip.m_Type = t.m_Type;
+            blip.m_IsFalsePlot = t.m_IsFalsePlot;
             blip.m_DrawRay = true;
         }
     }
@@ -69,7 +75,9 @@ class GBRS_RadarDetectVisual
         if (life > LIFE_SEC_MAX)
             life = LIFE_SEC_MAX;
 
-            ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP;
+        // Let terrain occlude markers and rays instead of drawing them through
+        // the ground with NOZBUFFER.
+        ShapeFlags flags = ShapeFlags.ONCE | ShapeFlags.TRANSP;
 
         int i = 0;
         while (i < m_Blips.Count())
@@ -87,7 +95,7 @@ class GBRS_RadarDetectVisual
             if (fade < 0.15)
                 fade = 0.15;
 
-            int colour = ColourForType(blip.m_Type, fade);
+            int colour = ColourForBlip(blip, fade);
             float size = POINT_SIZE_M * (0.55 + 0.45 * fade);
             Shape.CreateSphere(colour, flags, blip.m_Pos, size);
 
@@ -96,7 +104,7 @@ class GBRS_RadarDetectVisual
                 vector ray[2];
                 ray[0] = origin;
                 ray[1] = blip.m_Pos;
-                int rayCol = ColourForType(blip.m_Type, fade * 0.55);
+                int rayCol = ColourForBlip(blip, fade * 0.55);
                 Shape.CreateLines(rayCol, flags, ray, 2);
             }
         }
@@ -126,6 +134,24 @@ class GBRS_RadarDetectVisual
 
         m_iWrite = m_iWrite + 1;
         return slot;
+    }
+
+    protected int ColourForBlip(GBRS_RadarDetectBlip blip, float alpha)
+    {
+        if (blip && blip.m_IsFalsePlot)
+        {
+            int aFake = Math.Round(alpha * 220.0);
+            if (aFake < 40)
+                aFake = 40;
+            if (aFake > 255)
+                aFake = 255;
+            return ARGB(aFake, 255, 70, 70);
+        }
+
+        ERDF_RadarTargetType type = ERDF_RadarTargetType.RDF_RADAR_TARGET_ANONYMOUS;
+        if (blip)
+            type = blip.m_Type;
+        return ColourForType(type, alpha);
     }
 
     protected int ColourForType(ERDF_RadarTargetType type, float alpha)

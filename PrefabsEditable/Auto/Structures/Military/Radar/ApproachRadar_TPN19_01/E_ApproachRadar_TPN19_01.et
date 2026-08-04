@@ -11,7 +11,8 @@ StaticModelEntity : "{A0190D51FD62FF68}Prefabs/Structures/Military/Radar/Approac
     }
    }
   }
-  RplComponent "{69FCEDCE20041003}" : "{B193E926C1935A4C}Prefabs/Editor/Components/Default_RplComponent.ct" {
+  RplComponent "{69FCEDCE20041003}" {
+   Enabled 1
   }
  }
 }

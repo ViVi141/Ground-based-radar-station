@@ -6,9 +6,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const int CLUSTER_INTERVAL_MS = 100;
 	protected static const int PERSIST_MAX_BLIPS = 512;
 	protected static const int DISPLAY_MAX_BLIPS = 64;
-	protected static const float PERSIST_SEC_MIN = 2.5;
-	protected static const float PERSIST_SEC_MAX = 12.0;
-	protected static const float DISPLAY_CLUSTER_M = 120.0;
+	// ~1 scan period fade: long afterglow was painting over intermittent MTI misses.
+	protected static const float PERSIST_SEC_MIN = 1.2;
+	protected static const float PERSIST_SEC_MAX = 8.0;
+	protected static const float DISPLAY_CLUSTER_M = 90.0;
 	protected static const string MODE_PD_SEARCH = "PD SEARCH";
 	protected static const string MODE_WLR = "WLR";
 	protected static const string MODE_LOCK = "LOCK";
@@ -436,6 +437,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 		}
 
+		// Client only submits the ask. Labels / PPI refresh after authority
+		// confirmation lands on GetWorkstationMode().
 		if (!m_Station.ApplyWorkstationMode(nextMode))
 		{
 			ShowModeHint(HINT_NOT_AVAILABLE);
@@ -443,14 +446,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 		}
 
-		m_ActiveMode = nextMode;
-		ClearPersist();
-		m_LastClusterS = 0.0;
-		m_DetectedInRange = 0;
-		GBRS_RadarStationHud.SetMode(m_ActiveMode);
-		UpdateModeTabVisuals();
 		UpdateContextHint();
-		FeedOnce();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -681,7 +677,38 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 		}
 
+		SyncWorkstationModeFromStation();
 		FeedOnce();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// Apply PD / WLR / LOCK UI only after the station reports the confirmed mode.
+	protected void SyncWorkstationModeFromStation()
+	{
+		if (!m_Station)
+			return;
+
+		string liveMode = m_Station.GetWorkstationMode();
+		if (liveMode == m_ActiveMode)
+			return;
+
+		if (liveMode != MODE_WLR && liveMode != MODE_LOCK && liveMode != MODE_PD_SEARCH)
+			return;
+
+		m_ActiveMode = liveMode;
+		ClearPersist();
+		m_LastClusterS = 0.0;
+		m_DetectedInRange = 0;
+		GBRS_RadarStationHud.SetMode(m_ActiveMode);
+
+		m_iFocusedModeTab = 0;
+		if (m_ActiveMode == MODE_WLR)
+			m_iFocusedModeTab = 1;
+		else if (m_ActiveMode == MODE_LOCK)
+			m_iFocusedModeTab = 2;
+
+		UpdateModeTabVisuals();
+		UpdateContextHint();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -735,7 +762,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (rpm > 0.0)
 			life = 60.0 / rpm;
 
-		life = life * 1.15;
+		life = life * 1.05;
 		if (life < PERSIST_SEC_MIN)
 			life = PERSIST_SEC_MIN;
 		if (life > PERSIST_SEC_MAX)
@@ -744,7 +771,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void IngestLivePlots(array<ref RDF_RadarTarget> live, float nowS)
+	protected void IngestLivePlots(
+		array<ref RDF_RadarTarget> live,
+		RDF_RadarSettings settings,
+		float nowS)
 	{
 		EnsurePersistBuffer();
 		if (!live)
@@ -755,9 +785,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		{
 			RDF_RadarTarget src = live.Get(i);
 			i = i + 1;
-			if (!src)
-				continue;
-			if (!src.m_Detected)
+			if (!GBRS_RadarStationConfig.ShouldDisplayPlot(src, settings))
 				continue;
 
 			RDF_RadarTarget existing = FindPersistMatch(src);
@@ -923,6 +951,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected IEntity ResolveClusterRoot(RDF_RadarTarget src, map<int, IEntity> rootCache)
 	{
 		if (!src || src.m_ScattererId <= 0)
+			return null;
+
+		// Anonymous plots must not cluster via scatterer→entity truth; that
+		// re-introduces identity after KeepEntityTruth is stripped.
+		if (src.m_IsAnonymous)
 			return null;
 
 		if (rootCache && rootCache.Contains(src.m_ScattererId))
@@ -1097,7 +1130,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				hudRange = ctx.m_RangeM;
 		}
 
-		IngestLivePlots(sensor.GetPlots(), nowS);
+		IngestLivePlots(sensor.GetPlots(), settings, nowS);
 		PrunePersist(nowS, lifeS);
 
 		float clusterIntervalS = CLUSTER_INTERVAL_MS * 0.001;

@@ -5,14 +5,23 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    "faction affiliation" "USSR"
   }
   RigidBody "{5E96A067A67C5029}" {
+   Static 1
    Geometries {
     PhysicsBoxGeometry UserAction {
-     Extents 8 0.5 8
+     Extents 12 0.5 12
     }
    }
   }
   Hierarchy "{69FCEDCE10021003}" {
    Enabled 1
+  }
+  SCR_CampaignBuildingCompositionComponent "{69FCEDCE10021030}" {
+   m_AudioSourceConfigurationSpawn SCR_AudioSourceConfiguration "{69FCEDCE10021031}" {
+    m_sSoundEventName "SOUND_BUILD_VEHICLE_FUEL_STATION"
+   }
+   m_AudioSourceConfigurationDespawn SCR_AudioSourceConfiguration "{69FCEDCE10021032}" {
+    m_sSoundEventName "SOUND_DESTROY_SANDBAG"
+   }
   }
   RDF_RadarComponent "{69FCEDCE10021004}" {
   }
@@ -26,54 +35,38 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    m_fElevationBoresightDeg 4
    m_fElevationBeamwidthDeg 8
   }
+  GBRS_RadarStationDamageManagerComponent "{69FCEDCE10021020}" {
+   "Additional hit zones" {
+    SCR_HitZone Default {
+     HZDefault 1
+     MaxHealth 5000
+     DamageReduction 50
+     DamageThreshold 50
+     "Collision multiplier" 0.2
+     "Explosive multiplier" 5
+     "Fragmentation multiplier" 0.5
+     "Kinetic multiplier" 1
+    }
+   }
+   m_fMaxHealth 5000
+  }
  }
  coords 0 0 0
  {
   StaticModelEntity : "{A0190D51FD62FF68}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01.et" {
-   ID "69FCEDCE10022001"
+   ID "69FCEDCEA0010201"
    components {
-    Hierarchy "{69FCEDCE10022002}" {
+    Hierarchy "{69FCEDCEA0010211}" {
      Enabled 1
     }
    }
    coords 0 0 1.5
   }
   GenericEntity : "{451BE00A37C69679}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01_generator.et" {
-   ID "69FCEDCE10022003"
+   ID "69FCEDCEA0010202"
    components {
-    Hierarchy "{69FCEDCE10022004}" {
+    Hierarchy "{69FCEDCEA0010212}" {
      Enabled 1
-    }
-    ActionsManagerComponent "{69FCEDCE10022010}" {
-     ActionContexts {
-      UserActionContext "{69FCEDCE10022011}" {
-       ContextName "RadarPower"
-       Position PointInfo "{69FCEDCE10022012}" {
-        Offset 0 1.2 0.5
-       }
-       Radius 2.5
-      }
-     }
-     additionalActions {
-      GBRS_RadarStationPowerUserAction "{69FCEDCE10022013}" {
-       ParentContextList {
-        "RadarPower"
-       }
-       Duration 0
-      }
-      GBRS_RadarStationOpenPpiUserAction "{69FCEDCE10022014}" {
-       ParentContextList {
-        "RadarPower"
-       }
-       Duration 0
-      }
-      GBRS_RadarStationScanVisualUserAction "{69FCEDCE10022015}" {
-       ParentContextList {
-        "RadarPower"
-       }
-       Duration 0
-      }
-     }
     }
    }
    coords -3.5 0 -1.5

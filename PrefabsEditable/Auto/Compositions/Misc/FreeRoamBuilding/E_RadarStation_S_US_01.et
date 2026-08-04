@@ -5,23 +5,24 @@ GenericEntity : "{69FCEDCEA0010001}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
    m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE30011002}" {
     Name "US Ground Radar Station (RPL-5)"
     Icon "{90075F5E63E57688}UI/Textures/Editor/ContentBrowser/ContentBrowser_Type_Composition.edds"
+    m_Image "{69FCEDCEA0040001}UI/Textures/EditorPreviews/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.edds"
     m_sFaction "US"
     m_aAuthoredLabels {
-     1 11 29 108 1001
+     ENTITYTYPE_COMPOSITION FACTION_US TRAIT_RADIO TRAIT_SERVICE THEME_MILITARY CONTENT_MODDED
     }
     m_aAutoLabels {
-     122
+     SIZE_M
     }
     m_EntityBudgetCost {
      SCR_EntityBudgetValue "{69FCEDCE30011003}" {
       m_BudgetType CAMPAIGN
-      m_Value 150
+      m_Value 400
      }
     }
     m_EntityChildrenBudgetCost {
      SCR_EntityBudgetValue "{69FCEDCE30011004}" {
       m_BudgetType SYSTEMS
-      m_Value 2
+      m_Value 5
      }
      SCR_EntityBudgetValue "{69FCEDCE30011005}" {
       m_BudgetType PROPS
@@ -49,12 +50,12 @@ GenericEntity : "{69FCEDCEA0010001}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
  }
  {
   GenericEntity {
-   ID "69FCEDCE10012001"
-   Flags 1048576
+   ID "69FCEDCEA0010101"
+   Flags 0x100000 0x3
   }
   GenericEntity {
-   ID "69FCEDCE10012003"
-   Flags 1048576
+   ID "69FCEDCEA0010102"
+   Flags 0x100000 0x3
   }
  }
 }

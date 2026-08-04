@@ -5,27 +5,28 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
    m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE30021002}" {
     Name "USSR Ground Radar Station (TPN-19)"
     Icon "{90075F5E63E57688}UI/Textures/Editor/ContentBrowser/ContentBrowser_Type_Composition.edds"
+    m_Image "{69FCEDCEA0040002}UI/Textures/EditorPreviews/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.edds"
     m_sFaction "USSR"
     m_aAuthoredLabels {
-     1 10 29 108 1001
+     ENTITYTYPE_COMPOSITION FACTION_USSR TRAIT_RADIO TRAIT_SERVICE THEME_MILITARY CONTENT_MODDED
     }
     m_aAutoLabels {
-     122
+     SIZE_M
     }
     m_EntityBudgetCost {
      SCR_EntityBudgetValue "{69FCEDCE30021003}" {
       m_BudgetType CAMPAIGN
-      m_Value 150
+      m_Value 400
      }
     }
     m_EntityChildrenBudgetCost {
      SCR_EntityBudgetValue "{69FCEDCE30021004}" {
       m_BudgetType SYSTEMS
-      m_Value 2
+      m_Value 5
      }
      SCR_EntityBudgetValue "{69FCEDCE30021005}" {
       m_BudgetType PROPS
-      m_Value 6
+      m_Value 8
      }
     }
    }
@@ -49,12 +50,12 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
  }
  {
   StaticModelEntity {
-   ID "69FCEDCE10022001"
-   Flags 1048576
+   ID "69FCEDCEA0010201"
+   Flags 0x100000 0x403
   }
   GenericEntity {
-   ID "69FCEDCE10022003"
-   Flags 1048576
+   ID "69FCEDCEA0010202"
+   Flags 0x100000 0x3
   }
  }
 }

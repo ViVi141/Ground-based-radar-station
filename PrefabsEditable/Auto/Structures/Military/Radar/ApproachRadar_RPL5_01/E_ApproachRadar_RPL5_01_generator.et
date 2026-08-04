@@ -43,13 +43,22 @@ GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRad
      }
      Duration 0
     }
+    GBRS_RadarStationShovelDismantleUserAction "{69FCEDCE20021016}" {
+     ParentContextList {
+      "RadarPower"
+     }
+     Duration 15
+     m_sActionName "Dismantle wreck"
+     m_sNeedShovelReason "Hold entrenching tool"
+     m_sNotDestroyedReason "Radar must be destroyed first"
+    }
+    SCR_CampaignBuildingDisassemblyUserAction "{69FCEDCE20021017}" {
+     ParentContextList {
+      "RadarPower"
+     }
+     Duration 20
+    }
    }
-  }
- }
- {
-  GenericEntity : "{69FCEDCEA0010009}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_RPL5_01/E_ApproachRadar_RPL5_01_antenna.et" {
-   ID "69FCEDCE20021004"
-   coords 0 0 0
   }
  }
 }
