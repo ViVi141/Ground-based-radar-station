@@ -66,7 +66,11 @@ class GBRS_RadarStationComponent : ScriptComponent
     [Attribute("0", UIWidgets.CheckBox, desc: "Print [GBRS-DEBUG] radar detection diagnostics to console")]
     protected bool m_bDebugLog;
 
+    // Runtime state — synced like SCR_BaseInteractiveLightComponent:
+    // UserAction broadcast toggles peers live; RplSave/RplLoad covers JIP.
     protected bool m_bPowered;
+    protected string m_WorkstationMode;
+
     protected RDF_RadarComponent m_Radar;
     protected IEntity m_AntennaEntity;
     protected ProcAnimComponent m_AntennaProcAnim;
@@ -78,7 +82,6 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected bool m_bTraceIgnoreActive;
     protected int m_iAntennaResolveAttempts;
     protected float m_fScanRpm;
-    protected string m_WorkstationMode;
     protected float m_fAntennaBasePitch;
     protected float m_fAntennaBaseRoll;
     protected float m_fVisualAzHalfDeg;
@@ -97,6 +100,8 @@ class GBRS_RadarStationComponent : ScriptComponent
     override void EOnInit(IEntity owner)
     {
         super.EOnInit(owner);
+        if (m_WorkstationMode == "")
+            m_WorkstationMode = "PD SEARCH";
         ApplyConfiguration(owner);
     }
 
@@ -132,6 +137,39 @@ class GBRS_RadarStationComponent : ScriptComponent
         super.OnDelete(owner);
     }
 
+    //------------------------------------------------------------------------------------------------
+    // JIP / stream-in — same contract as SCR_BaseInteractiveLightComponent.RplSave/RplLoad.
+    //------------------------------------------------------------------------------------------------
+    override bool RplSave(ScriptBitWriter writer)
+    {
+        super.RplSave(writer);
+        writer.WriteBool(m_bPowered);
+        writer.WriteBool(m_bScanVisualEnabled);
+        writer.WriteInt(WorkstationModeToIndex(m_WorkstationMode));
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    override bool RplLoad(ScriptBitReader reader)
+    {
+        super.RplLoad(reader);
+
+        bool powered;
+        bool scanVisual;
+        int modeIndex;
+        reader.ReadBool(powered);
+        reader.ReadBool(scanVisual);
+        reader.ReadInt(modeIndex);
+
+        if (!m_bConfigured)
+            ApplyConfiguration(GetOwner());
+
+        TogglePower(powered, true);
+        ToggleScanVisual(scanVisual);
+        ApplyWorkstationModeLocal(IndexToWorkstationMode(modeIndex));
+        return true;
+    }
+
     bool IsConfigured()
     {
         return m_bConfigured;
@@ -147,7 +185,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         return m_bScanVisualEnabled;
     }
 
-    void SetScanVisualEnabled(bool enabled)
+    // Like SCR_BaseInteractiveLightComponent.ToggleLight — runs on every peer
+    // that receives the broadcast UserAction (and on RplLoad).
+    void ToggleScanVisual(bool enabled)
     {
         if (enabled == m_bScanVisualEnabled)
             return;
@@ -157,9 +197,14 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_DetectVisual.Clear();
     }
 
+    void SetScanVisualEnabled(bool enabled)
+    {
+        ToggleScanVisual(enabled);
+    }
+
     void RequestToggleScanVisual()
     {
-        SetScanVisualEnabled(!m_bScanVisualEnabled);
+        ToggleScanVisual(!m_bScanVisualEnabled);
     }
 
     RDF_RadarComponent GetRadarComponent()
@@ -177,41 +222,54 @@ class GBRS_RadarStationComponent : ScriptComponent
         return m_WorkstationMode;
     }
 
-    // Reconfigure sensor for PD SEARCH / WLR / LOCK. Returns false if unknown.
+    // Menu / API entry. Local apply on caller; authority also broadcasts so
+    // peers match (menu is not a UserAction, unlike power/scan).
     bool ApplyWorkstationMode(string mode)
     {
-        IEntity owner = GetOwner();
-        if (!owner)
+        if (!IsValidWorkstationMode(mode))
             return false;
 
-        if (!m_Radar)
-            m_Radar = RDF_RadarComponent.Cast(owner.FindComponent(RDF_RadarComponent));
-        if (!m_Radar)
+        if (!m_bPowered)
             return false;
 
-        if (mode == "WLR")
+        if (mode == m_WorkstationMode)
+            return true;
+
+        if (IsAuthority())
         {
-            ApplyWlrSettings(owner);
-            m_WorkstationMode = "WLR";
+            ApplyWorkstationModeLocal(mode);
+            Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(mode));
             return true;
         }
 
-        if (mode == "LOCK")
-        {
-            ApplyLockSettings(owner);
-            m_WorkstationMode = "LOCK";
-            return true;
-        }
+        // Apply locally first to hide round-trip; server confirms + fans out.
+        ApplyWorkstationModeLocal(mode);
+        return GBRS_PlayerControllerNet.RequestWorkstationMode(this, mode);
+    }
 
-        if (mode == "PD SEARCH")
-        {
-            ApplySearchSettings(owner);
-            ConfigureLockLayer(false);
-            m_WorkstationMode = "PD SEARCH";
-            return true;
-        }
+    RplId GetStationRplId()
+    {
+        return Replication.FindItemId(this);
+    }
 
-        return false;
+    // Server entry from GBRS_PlayerControllerNet (menu on a proxy).
+    bool AuthoritySetWorkstationMode(string mode)
+    {
+        if (!m_bPowered)
+            return false;
+
+        if (!IsValidWorkstationMode(mode))
+            return false;
+
+        ApplyWorkstationModeLocal(mode);
+        Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(mode));
+        return true;
+    }
+
+    [RplRpc(RplChannel.Reliable, RplRcver.Broadcast, RplCondition.NoOwner)]
+    protected void RpcDo_WorkstationMode(int modeIndex)
+    {
+        ApplyWorkstationModeLocal(IndexToWorkstationMode(modeIndex));
     }
 
     float GetScanRpm()
@@ -297,46 +355,65 @@ class GBRS_RadarStationComponent : ScriptComponent
 
     void RequestTogglePower()
     {
-        SetPowered(!m_bPowered);
+        TogglePower(!m_bPowered, false);
     }
 
+    // Authority-driven power change (supply drain, script). UserActions call TogglePower
+    // directly — the action system already broadcasts those.
     void SetPowered(bool powered)
     {
-        ApplyPoweredState(powered, false);
+        TogglePower(powered, false);
+        if (!IsAuthority())
+            return;
+
+        Rpc(RpcDo_TogglePower, powered);
     }
 
     // Auto-test only: bypass supply affordability so Script Debugger runs work
     // without a linked base stockpile.
     void SetPoweredForAutoTest(bool powered)
     {
-        ApplyPoweredState(powered, true);
+        TogglePower(powered, true);
     }
 
-    protected void ApplyPoweredState(bool powered, bool ignoreSupplyGate)
+    [RplRpc(RplChannel.Reliable, RplRcver.Broadcast, RplCondition.NoOwner)]
+    protected void RpcDo_TogglePower(bool powered)
     {
+        TogglePower(powered, true);
+    }
+
+    // Like SCR_BaseInteractiveLightComponent.ToggleLight.
+    // skipSupplyGate: auto-test / RplLoad / RpcDo must not re-check stockpile.
+    void TogglePower(bool turnOn, bool skipSupplyGate = false)
+    {
+        if (m_bPowered == turnOn)
+            return;
+
+        if (!GetGame().InPlayMode())
+            return;
+
         if (!m_bConfigured)
             ApplyConfiguration(GetOwner());
 
         if (!m_Radar)
             return;
 
-        if (powered == m_bPowered)
-            return;
-
-        if (powered)
+        if (turnOn)
         {
-            if (!ignoreSupplyGate)
+            // Proxies trust broadcast UserAction / RpcDo; only authority gates stockpile.
+            if (!skipSupplyGate)
             {
-                if (!CanAffordPowerOn())
-                    return;
+                if (IsAuthority())
+                {
+                    if (!CanAffordPowerOn())
+                        return;
+                }
             }
 
-            // Re-push latest GBRS preset on every power-on so script reloads
-            // take effect without respawning the composition.
-            ApplySearchSettings(GetOwner());
-            ConfigureLockLayer(false);
-
+            m_WorkstationMode = "PD SEARCH";
             m_bPowered = true;
+            ApplyWorkstationModeLocal(m_WorkstationMode);
+
             RDF_RadarSensor poweredSensor = m_Radar.GetSensor();
             if (poweredSensor)
                 poweredSensor.SetForceLocalScan(true);
@@ -348,19 +425,92 @@ class GBRS_RadarStationComponent : ScriptComponent
 
             if (IsAuthority())
                 StartSupplyDrain();
+            return;
         }
-        else
-        {
-            if (m_bDebugLog)
-                Print("[GBRS-DEBUG] Power OFF", LogLevel.WARNING);
 
-            m_bPowered = false;
-            m_Radar.SetEnabled(false);
-            SetAntennaSpinning(false);
-            SetTraceIgnoreActive(false);
-            StopSupplyDrain();
-            GBRS_RadarStationMenu.CloseIfBound(this);
+        if (m_bDebugLog)
+            Print("[GBRS-DEBUG] Power OFF", LogLevel.WARNING);
+
+        m_bPowered = false;
+        m_Radar.SetEnabled(false);
+        SetAntennaSpinning(false);
+        SetTraceIgnoreActive(false);
+        StopSupplyDrain();
+        GBRS_RadarStationMenu.CloseIfBound(this);
+    }
+
+    protected bool IsValidWorkstationMode(string mode)
+    {
+        if (mode == "PD SEARCH")
+            return true;
+        if (mode == "WLR")
+            return true;
+        if (mode == "LOCK")
+            return true;
+        return false;
+    }
+
+    protected int WorkstationModeToIndex(string mode)
+    {
+        if (mode == "WLR")
+            return 1;
+        if (mode == "LOCK")
+            return 2;
+        return 0;
+    }
+
+    protected string IndexToWorkstationMode(int modeIndex)
+    {
+        if (modeIndex == 1)
+            return "WLR";
+        if (modeIndex == 2)
+            return "LOCK";
+        return "PD SEARCH";
+    }
+
+    protected void ApplyWorkstationModeLocal(string mode)
+    {
+        if (!IsValidWorkstationMode(mode))
+            return;
+
+        if (!ApplyWorkstationModeEffects(mode))
+            return;
+
+        m_WorkstationMode = mode;
+    }
+
+    // Configures RDF for the mode without network traffic.
+    protected bool ApplyWorkstationModeEffects(string mode)
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return false;
+
+        if (!m_Radar)
+            m_Radar = RDF_RadarComponent.Cast(owner.FindComponent(RDF_RadarComponent));
+        if (!m_Radar)
+            return false;
+
+        if (mode == "WLR")
+        {
+            ApplyWlrSettings(owner);
+            return true;
         }
+
+        if (mode == "LOCK")
+        {
+            ApplyLockSettings(owner);
+            return true;
+        }
+
+        if (mode == "PD SEARCH")
+        {
+            ApplySearchSettings(owner);
+            ConfigureLockLayer(false);
+            return true;
+        }
+
+        return false;
     }
 
     protected void ApplyConfiguration(IEntity owner)
@@ -374,12 +524,14 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         ApplySearchSettings(owner);
 
-        m_Radar.SetEnabled(false);
-        m_bPowered = false;
+        // Leave m_bPowered alone — RplLoad / TogglePower own runtime power state.
+        if (!m_bPowered)
+            m_Radar.SetEnabled(false);
 
         m_iAntennaResolveAttempts = 0;
         EnsureAntennaResolved();
-        SetAntennaSpinning(false);
+        if (!m_bPowered)
+            SetAntennaSpinning(false);
         ApplyAntennaElevationVisual();
 
         m_bConfigured = true;
@@ -388,7 +540,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             Print("[GBRS-DEBUG] Configured faction=" + ((int)m_eFactionPreset).ToString()
                 + " rpm=" + m_fScanRpm.ToString()
-                + " forceLocal=1 powered=0", LogLevel.WARNING);
+                + " forceLocal=1 powered=" + BoolDebugFlag(m_bPowered), LogLevel.WARNING);
         }
     }
 
@@ -431,8 +583,6 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_fScanRpm = 0.0;
         if (settings.m_Hardware)
             m_fScanRpm = settings.m_Hardware.m_ScanRpm;
-
-        m_WorkstationMode = "PD SEARCH";
 
         if (m_bPowered)
             SetAntennaSpinning(true);

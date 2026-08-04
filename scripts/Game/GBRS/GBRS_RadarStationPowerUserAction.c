@@ -1,4 +1,5 @@
 // Interactive power toggle for GBRS radar stations.
+// Mirrors SCR_SwitchLightUserAction: default broadcast UserAction, local TogglePower.
 class GBRS_RadarStationPowerUserAction : ScriptedUserAction
 {
     [Attribute("#AR-UserAction_TurnOn", UIWidgets.EditBox, "Shown when radar is off", "")]
@@ -76,7 +77,7 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
         if (!m_RadarStation)
             return;
 
-        m_RadarStation.RequestTogglePower();
+        m_RadarStation.TogglePower(!m_RadarStation.IsPowered(), false);
     }
 
     override bool GetActionNameScript(out string outName)

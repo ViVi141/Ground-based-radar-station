@@ -135,15 +135,21 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_bBound = true;
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
-		m_ActiveMode = MODE_PD_SEARCH;
+		m_ActiveMode = station.GetWorkstationMode();
+		if (m_ActiveMode != MODE_WLR && m_ActiveMode != MODE_LOCK && m_ActiveMode != MODE_PD_SEARCH)
+			m_ActiveMode = MODE_PD_SEARCH;
 		EnsurePersistBuffer();
 		ClearPersist();
 
 		Widget root = GetRootWidget();
 		IEntity opticsParent = station.GetOwner();
 		GBRS_RadarStationHud.Attach(root, opticsParent);
-		GBRS_RadarStationHud.SetMode(MODE_PD_SEARCH);
+		GBRS_RadarStationHud.SetMode(m_ActiveMode);
 		m_iFocusedModeTab = 0;
+		if (m_ActiveMode == MODE_WLR)
+			m_iFocusedModeTab = 1;
+		else if (m_ActiveMode == MODE_LOCK)
+			m_iFocusedModeTab = 2;
 		UpdateModeTabVisuals();
 		BindNavigation();
 		UpdateContextHint();

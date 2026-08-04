@@ -1,4 +1,5 @@
 // Toggles RDF world-space scan visualization for a powered GBRS radar station.
+// Same broadcast UserAction pattern as SCR_SwitchLightUserAction.
 class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
 {
     [Attribute("Enable Scan Frustum", UIWidgets.EditBox, "Shown when scan visuals are off", "")]
@@ -79,7 +80,7 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
         if (!m_RadarStation.IsPowered())
             return;
 
-        m_RadarStation.RequestToggleScanVisual();
+        m_RadarStation.ToggleScanVisual(!m_RadarStation.IsScanVisualEnabled());
     }
 
     override bool GetActionNameScript(out string outName)
@@ -93,15 +94,5 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
             outName = m_sEnableName;
 
         return true;
-    }
-
-    override bool HasLocalEffectOnlyScript()
-    {
-        return true;
-    }
-
-    override bool CanBroadcastScript()
-    {
-        return false;
     }
 }
