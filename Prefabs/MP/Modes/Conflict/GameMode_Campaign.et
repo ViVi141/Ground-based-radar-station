@@ -8,12 +8,12 @@ SCR_GameModeCampaign : "{3B230AAC5252108F}Prefabs/MP/Modes/Conflict/GameMode_Cam
      SCR_CampaignBuildingCompositionOutline "{69FCEDCEA0030020}" {
       m_sEditableEntity "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et"
       m_sCompositionLayout "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et"
-      m_iBuildingValue 120
+      m_iBuildingValue 160
      }
      SCR_CampaignBuildingCompositionOutline "{69FCEDCEA0030021}" {
       m_sEditableEntity "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et"
       m_sCompositionLayout "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et"
-      m_iBuildingValue 120
+      m_iBuildingValue 160
      }
     }
    }

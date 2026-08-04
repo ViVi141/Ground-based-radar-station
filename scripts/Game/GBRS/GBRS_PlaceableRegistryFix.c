@@ -2,6 +2,12 @@
 // even when a mission still points BuildingManager at the vanilla
 // Compositions_FreeRoamBuilding.conf (RDF can run on a world-placed station
 // without ever touching that registry).
+//
+// Deployment policy (forward OK): keep THEME_MILITARY on E_ radar so
+// construction trucks can place outside bases. Cost — not trait bans —
+// constrains that: CAMPAIGN 450 (~truck cargo), build value 160, and
+// powered drain from the station's local supply bunker (truck unloads
+// into Generator_Store, then may leave).
 modded class SCR_CampaignBuildingManagerComponent
 {
     protected static const ResourceName GBRS_PLACEABLE_US =
@@ -49,7 +55,7 @@ modded class SCR_CampaignBuildingCompositionOutlineManager
         "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et";
     protected static const ResourceName GBRS_FRB_LAYOUT =
         "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et";
-    protected static const int GBRS_BUILDING_VALUE = 120;
+    protected static const int GBRS_BUILDING_VALUE = 160;
 
     //------------------------------------------------------------------------------------------------
     override ResourceName GetCompositionOutline(notnull SCR_EditableEntityComponent entity)

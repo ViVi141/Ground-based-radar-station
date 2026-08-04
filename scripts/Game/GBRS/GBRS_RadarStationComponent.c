@@ -33,13 +33,16 @@ class GBRS_RadarStationComponent : ScriptComponent
     [Attribute("0", UIWidgets.ComboBox, desc: "Faction radar hardware/search preset", enums: ParamEnumArray.FromEnum(EGBRS_RadarFactionPreset))]
     protected EGBRS_RadarFactionPreset m_eFactionPreset;
 
-    [Attribute("5", UIWidgets.EditBox, desc: "Supplies consumed from the owning base each drain tick while powered")]
+    // Forward-deploy cost lever: drain the station's local supply bunker first
+    // (truck unloads into Generator_Store, then can leave). Interval keeps
+    // forward sites needing periodic resupply runs.
+    [Attribute("8", UIWidgets.EditBox, desc: "Supplies consumed from the local bunker (or build provider fallback) each drain tick while powered")]
     protected float m_fSupplyCostPerTick;
 
-    [Attribute("30", UIWidgets.EditBox, desc: "Seconds between supply drain ticks while powered")]
+    [Attribute("25", UIWidgets.EditBox, desc: "Seconds between supply drain ticks while powered")]
     protected float m_fSupplyTickIntervalS;
 
-    [Attribute("1", UIWidgets.CheckBox, desc: "If true, power-on requires enough supplies for one drain tick when a base provider is linked")]
+    [Attribute("1", UIWidgets.CheckBox, desc: "If true, power-on requires enough supplies for one drain tick in the local bunker / linked provider")]
     protected bool m_bRequireSuppliesToPowerOn;
 
     [Attribute("5", UIWidgets.Slider, desc: "Antenna visual pitch (deg). Detection elevation beams come from the faction preset.", params: "-5 85 0.5")]
@@ -279,9 +282,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_DetectVisual.Clear();
 
         EnsureDestroyedFireEffects();
-
-        if (fromDamageEvent)
-            Replication.BumpMe();
     }
 
     //------------------------------------------------------------------------------------------------
@@ -481,7 +481,6 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             ApplyWorkstationModeLocal(mode);
             Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(mode));
-            Replication.BumpMe();
             return true;
         }
 
@@ -513,7 +512,6 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         ApplyWorkstationModeLocal(mode);
         Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(mode));
-        Replication.BumpMe();
         return true;
     }
 
@@ -632,7 +630,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         Rpc(RpcDo_TogglePower, m_bPowered);
-        Replication.BumpMe();
     }
 
     // Auto-test only: bypass supply affordability so Script Debugger runs work
@@ -2004,8 +2001,23 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!owner)
             return null;
 
+        // Prefer the station's own supply bunker so the placing truck can leave
+        // after unloading. Power drain uses the DEFAULT consumer on this root.
+        SCR_ResourceComponent localResource =
+            SCR_ResourceComponent.FindResourceComponent(owner);
+        if (localResource)
+        {
+            SCR_ResourceConsumer localConsumer;
+            if (localResource.GetConsumer(
+                EResourceGeneratorID.DEFAULT, EResourceType.SUPPLIES, localConsumer))
+            {
+                return localResource;
+            }
+        }
+
         SCR_CampaignBuildingCompositionComponent composition =
-            SCR_CampaignBuildingCompositionComponent.Cast(owner.FindComponent(SCR_CampaignBuildingCompositionComponent));
+            SCR_CampaignBuildingCompositionComponent.Cast(
+                owner.FindComponent(SCR_CampaignBuildingCompositionComponent));
         if (!composition)
             return null;
 
@@ -2014,7 +2026,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             return null;
 
         SCR_CampaignBuildingProviderComponent provider =
-            SCR_CampaignBuildingProviderComponent.Cast(providerEntity.FindComponent(SCR_CampaignBuildingProviderComponent));
+            SCR_CampaignBuildingProviderComponent.Cast(
+                providerEntity.FindComponent(SCR_CampaignBuildingProviderComponent));
         if (!provider)
             return SCR_ResourceComponent.FindResourceComponent(providerEntity);
 
@@ -2029,7 +2042,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (masterEntity && masterEntity != providerEntity)
         {
             SCR_CampaignBuildingProviderComponent masterFromEntity =
-                SCR_CampaignBuildingProviderComponent.Cast(masterEntity.FindComponent(SCR_CampaignBuildingProviderComponent));
+                SCR_CampaignBuildingProviderComponent.Cast(
+                    masterEntity.FindComponent(SCR_CampaignBuildingProviderComponent));
             if (masterFromEntity)
                 return masterFromEntity.GetResourceComponent();
         }

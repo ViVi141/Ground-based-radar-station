@@ -27,10 +27,40 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
   }
   RDF_RadarNetworkComponent "{69FCEDCE10011005}" {
   }
+  SCR_ResourceComponent "{69FCEDCE10011040}" {
+   m_aContainers {
+    SCR_ResourceContainer "{69FCEDCE10011041}" {
+     m_sDebugName "GBRS Radar Supply Bunker"
+     m_eResourceRights FACTION
+     m_eStorageType STORED
+     m_fResourceValueCurrent 0
+     m_fResourceValueMax 400
+     m_bEnableResourceDecay 0
+     m_fResourceDecay 0
+    }
+   }
+   m_aConsumers {
+    SCR_ResourceConsumer "{69FCEDCE10011042}" {
+     m_sDebugName "GBRS Radar Power Consumer"
+     m_eResourceRights SELF
+     m_eGeneratorIdentifier DEFAULT
+     m_fResourceRange 0
+     m_ContainerQueue SCR_ResourceConsumerContainerQueue "{69FCEDCE10011043}" : "{CADA9408804B64C3}Configs/Resources/Supplies/ContainerQueues/Consumer/Queue_Consumer_Store.conf" {
+     }
+    }
+    SCR_ResourceConsumer "{69FCEDCE10011044}" : "{56226D15690083FD}Configs/Resources/Supplies/Consumers/Consumer_Store.conf" {
+    }
+   }
+   m_aGenerators {
+    SCR_ResourceGenerator "{69FCEDCE10011045}" : "{C7255049765FE747}Configs/Resources/Supplies/Generators/Generator_Store.conf" {
+     m_fStorageRange 15
+    }
+   }
+  }
   GBRS_RadarStationComponent "{69FCEDCE10011006}" {
    m_eFactionPreset 0
-   m_fSupplyCostPerTick 5
-   m_fSupplyTickIntervalS 30
+   m_fSupplyCostPerTick 8
+   m_fSupplyTickIntervalS 25
    m_bRequireSuppliesToPowerOn 1
    m_fElevationBoresightDeg 4
    m_fElevationBeamwidthDeg 8

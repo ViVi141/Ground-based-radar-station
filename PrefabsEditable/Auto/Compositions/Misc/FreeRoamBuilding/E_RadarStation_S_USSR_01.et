@@ -16,7 +16,7 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
     m_EntityBudgetCost {
      SCR_EntityBudgetValue "{69FCEDCE30021003}" {
       m_BudgetType CAMPAIGN
-      m_Value 400
+      m_Value 450
      }
     }
     m_EntityChildrenBudgetCost {
