@@ -4,16 +4,43 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
   FactionAffiliationComponent "{69FCEDCE10011001}" {
    "faction affiliation" "US"
   }
+  GBRS_RadarStationComponent "{69FCEDCE10011006}" {
+   m_eFactionPreset US
+   m_fSupplyCostPerTick 8
+   m_fSupplyTickIntervalS 25
+   m_bRequireSuppliesToPowerOn 1
+   m_fElevationBoresightDeg 4
+   m_fElevationBeamwidthDeg 8
+   m_bDebugLog 0
+   m_vDestroyedFireOffset -4 2.5 -2
+  }
+  GBRS_RadarStationDamageManagerComponent "{69FCEDCE10011020}" {
+   "Additional hit zones" {
+    SCR_HitZone Default {
+     HZDefault 1
+     MaxHealth 8000
+     DamageReduction 25
+     DamageThreshold 25
+     "Collision multiplier" 0.001
+     "Kinetic multiplier" 2
+     "Fragmentation multiplier" 0.2
+     "Explosive multiplier" 7
+     "Incendiary multiplier" 30
+    }
+   }
+   m_fMaxHealth 8000
+  }
+  RDF_RadarComponent "{69FCEDCE10011004}" {
+  }
+  RDF_RadarNetworkComponent "{69FCEDCE10011005}" {
+  }
   RigidBody "{5E96A067A67C5029}" {
-   Static 1
    Geometries {
     PhysicsBoxGeometry UserAction {
      Extents 12 0.5 12
     }
    }
-  }
-  Hierarchy "{69FCEDCE10011003}" {
-   Enabled 1
+   Static 1
   }
   SCR_CampaignBuildingCompositionComponent "{69FCEDCE10011030}" {
    m_AudioSourceConfigurationSpawn SCR_AudioSourceConfiguration "{69FCEDCE10011031}" {
@@ -22,10 +49,6 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    m_AudioSourceConfigurationDespawn SCR_AudioSourceConfiguration "{69FCEDCE10011032}" {
     m_sSoundEventName "SOUND_DESTROY_SANDBAG"
    }
-  }
-  RDF_RadarComponent "{69FCEDCE10011004}" {
-  }
-  RDF_RadarNetworkComponent "{69FCEDCE10011005}" {
   }
   SCR_ResourceComponent "{69FCEDCE10011040}" {
    m_aContainers {
@@ -57,28 +80,8 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
     }
    }
   }
-  GBRS_RadarStationComponent "{69FCEDCE10011006}" {
-   m_eFactionPreset 0
-   m_fSupplyCostPerTick 8
-   m_fSupplyTickIntervalS 25
-   m_bRequireSuppliesToPowerOn 1
-   m_fElevationBoresightDeg 4
-   m_fElevationBeamwidthDeg 8
-  }
-  GBRS_RadarStationDamageManagerComponent "{69FCEDCE10011020}" {
-   "Additional hit zones" {
-    SCR_HitZone Default {
-     HZDefault 1
-     MaxHealth 5000
-     DamageReduction 50
-     DamageThreshold 50
-     "Collision multiplier" 0.2
-     "Explosive multiplier" 5
-     "Fragmentation multiplier" 0.5
-     "Kinetic multiplier" 1
-    }
-   }
-   m_fMaxHealth 5000
+  Hierarchy "{69FCEDCE10011003}" {
+   Enabled 1
   }
  }
  coords 0 0 0
@@ -95,6 +98,9 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
   GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_generator.et" {
    ID "69FCEDCEA0010102"
    components {
+    RplComponent "{5624A88DC2D9928D}" {
+     Enabled 1
+    }
     Hierarchy "{69FCEDCEA0010112}" {
      Enabled 1
     }

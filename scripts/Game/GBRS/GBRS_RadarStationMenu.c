@@ -1148,6 +1148,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		GBRS_RadarStationHud.SetDisplayRange(hudRange);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
+		// RDF 1.0.0 ECCM decision status → PPI jam ring + list footer.
+		GBRS_RadarStationHud.SetEccmStatus(sensor.GetEccmStatusShort());
 		GBRS_RadarStationHud.FeedScan(
 			m_DisplayPlots,
 			hudOrigin,

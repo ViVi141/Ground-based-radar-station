@@ -17,5 +17,30 @@ GenericEntity : "{A528F04F41F2A2D0}Prefabs/Structures/Military/Radar/ApproachRad
   ProcAnimComponent "{5A4ED832D66CA486}" {
    Enabled 0
   }
+  // Disable the stock antenna's own destruction manager so it does not eat
+  // blast damage; the child relay below forwards damage to the station root.
+  SCR_DestructionMultiPhaseComponent "{5624A88D86EFE8BA}" {
+   Enabled 0
+   EnableDamage 0
+  }
+  // Kinematic blast-receiving body (stock antenna chain already has Kinematic).
+  RigidBody "{5872F0EB7DFB5A9D}" {
+   ModelGeometry 1
+   Static 0
+   Kinematic 1
+   ResponseIndex "Normal"
+  }
+  // Relay: engine delivers the blast here, OnDamage forwards it to the station
+  // root's 5000 HP pool. Huge child HP so the part never dies on its own.
+  // 0.2: antenna strikes are mostly cosmetic - only 20% relays to the root.
+  GBRS_RadarStationChildDamageComponent "{69FCEDCE20011020}" {
+   m_fRelayMultiplier 0.2
+   "Additional hit zones" {
+    SCR_HitZone Default {
+     HZDefault 1
+     MaxHealth 1000000
+    }
+   }
+  }
  }
 }

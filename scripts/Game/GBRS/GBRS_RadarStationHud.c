@@ -74,6 +74,8 @@ class GBRS_RadarStationHud
     protected string m_Mode = "PD SEARCH";
     protected int m_DetectedTotal;
     protected RDF_RadarLockManager m_LockManager;
+    // RDF 1.0.0 ECCM decision status ("eccm=0" | "eccm slb/prf/freq/burn").
+    protected string m_EccmStatus = "eccm=0";
 
     protected float m_PpiW = PPI_W;
     protected float m_PpiH = PPI_H;
@@ -139,6 +141,15 @@ class GBRS_RadarStationHud
         if (rangeM <= 0.0)
             return;
         GetInstance().m_DisplayRange = rangeM;
+    }
+
+    // RDF 1.0.0 ECCM status from the Sensor (GetEccmStatusShort): drives the
+    // PPI jam-warning ring and the list footer line.
+    static void SetEccmStatus(string status)
+    {
+        if (status == "")
+            status = "eccm=0";
+        GetInstance().m_EccmStatus = status;
     }
 
     static void FeedScan(
@@ -670,6 +681,7 @@ class GBRS_RadarStationHud
         m_PpiAll.Clear();
 
         DrawPpiFace();
+        DrawEccmJamRing();
 
         float fx = forward[0];
         float fz = forward[2];
@@ -922,19 +934,78 @@ class GBRS_RadarStationHud
         m_PpiAll.Insert(ring);
     }
 
+    // RDF 1.0.0 ECCM active → pulsing red warning ring just inside the PPI rim.
+    // Uses the same sweep geometry as the scan wedge so jamming is visible in
+    // all workstation modes while the decision layer fights it.
+    protected void DrawEccmJamRing()
+    {
+        if (m_EccmStatus == "eccm=0")
+            return;
+        if (!m_Widgets || !m_Widgets.m_wPpiCanvas)
+            return;
+
+        float nowS = System.GetTickCount() * 0.001;
+        float pulse = 0.5 + 0.5 * Math.Sin(nowS * 3.0);
+        int alpha = Math.Round(90.0 + 90.0 * pulse);
+        if (alpha < 40)
+            alpha = 40;
+        if (alpha > 255)
+            alpha = 255;
+        int ringColour = ARGB(alpha, 255, 70, 70);
+
+        vector centerPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(m_PpiCx, m_PpiCy, 0.0));
+        float rimPx = UnitSizeToPixels(m_PpiR - 10.0);
+        if (rimPx < 8.0)
+            rimPx = 8.0;
+
+        array<float> ringVerts = new array<float>();
+        m_Widgets.m_wPpiCanvas.TessellateCircle(centerPx, rimPx, 28, ringVerts);
+        LineDrawCommand ring = new LineDrawCommand();
+        ring.m_iColor = ringColour;
+        ring.m_fWidth = UnitSizeToPixels(3.0);
+        if (ring.m_fWidth < 1.5)
+            ring.m_fWidth = 1.5;
+        ring.m_bShouldEnclose = true;
+        ring.m_Vertices = ringVerts;
+        m_PpiAll.Insert(ring);
+    }
+
     protected bool IsLockMatchedBlip(RDF_RadarTarget t, vector lockPos)
     {
         if (!t)
             return false;
 
+        // Distance gate fallback keeps the blip highlighted while kinematics
+        // are still converging to the locked entity's true position.
         float dist = vector.Distance(t.m_Position, lockPos);
         if (dist <= 80.0)
             return true;
 
-        if (t.m_Entity && m_LockManager)
+        // RDF 1.0.0 TruthSample split: plot.m_Entity stays null when
+        // KeepEntityTruth is off. Resolve the scatterer handle instead and
+        // compare roots against the lock manager's entity.
+        if (m_LockManager)
         {
-            if (t.m_Entity == m_LockManager.GetLockedEntity())
-                return true;
+            IEntity lockedEntity = m_LockManager.GetLockedEntity();
+            if (!lockedEntity)
+                return false;
+
+            IEntity lockedRoot = lockedEntity.GetRootParent();
+            if (!lockedRoot)
+                lockedRoot = lockedEntity;
+
+            if (t.m_ScattererId > 0)
+            {
+                RDF_RadarScatterer entry = RDF_RadarScattererRegistry.FindById(t.m_ScattererId);
+                if (entry && entry.m_Entity)
+                {
+                    IEntity plotRoot = entry.m_Entity.GetRootParent();
+                    if (!plotRoot)
+                        plotRoot = entry.m_Entity;
+                    if (plotRoot == lockedRoot)
+                        return true;
+                }
+            }
         }
 
         return false;
@@ -1141,7 +1212,17 @@ class GBRS_RadarStationHud
                 if (m_LockManager)
                     lockStatus = m_LockManager.GetStatusShort();
                 footer = footer + "   " + lockStatus;
+
+                // RDF 1.0.0 fire-control bridge: TRACKING lock authorizes fire
+                // for external weapons polling TryGetFireSolution.
+                if (m_LockManager && m_LockManager.IsLocked())
+                    footer = footer + "   FIRE";
             }
+
+            // RDF 1.0.0 ECCM decision status: "eccm=0" hides; active jam shows
+            // the countermeasure set (slb / prf / freq / burn).
+            if (m_EccmStatus != "eccm=0")
+                footer = footer + "   " + m_EccmStatus;
 
             m_Widgets.m_wListFooter.SetText(footer);
         }

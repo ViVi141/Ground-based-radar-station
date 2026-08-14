@@ -1,10 +1,15 @@
 // Bridges live RDF emitters into the station EwStack as noise jammers.
 // Deception / RGPO / scintillation stay as separate static effects on the stack.
-class GBRS_RadarEmitterNoiseBridge : RDF_RadarEwEffect
+//
+// Inherits RDF_RadarNoiseJammerEffect (not the bare RDF_RadarEwEffect) so the
+// RDF 1.0.0 ECCM decision layer can observe this jammer:
+//   - GetMainlobeFraction() drives SLB vs frequency-agility selection.
+//   - EnableSlb() / m_EnableSlb implements sidelobe blanking on the stack.
+// The bridge still aggregates ALL live emitters from the scatterer registry
+// (multi-source), unlike the single-position stock RDF jammer.
+class GBRS_RadarEmitterNoiseBridge : RDF_RadarNoiseJammerEffect
 {
 	float m_MaxRangeM = 15000.0;
-	float m_SidelobeLevelDb = -40.0;
-	float m_CouplingGain = 1.0;
 	// When true, use rotating-search average coupling (soft); else mainlobe+sidelobe beam.
 	bool m_UseSearchAvg = true;
 
@@ -63,7 +68,7 @@ class GBRS_RadarEmitterNoiseBridge : RDF_RadarEwEffect
 			if (e.m_EmitAntennaGainDbi != 0.0)
 				erpW = erpW * RDF_RadarClutterModel.DbToLin(e.m_EmitAntennaGainDbi);
 
-			float coupling = ResolveCoupling(scanForward, delta, rangeM, hardware, sideLin);
+			float coupling = ResolveBridgeCoupling(scanForward, delta, rangeM, hardware, sideLin);
 			if (coupling <= 0.0)
 				continue;
 
@@ -80,7 +85,76 @@ class GBRS_RadarEmitterNoiseBridge : RDF_RadarEwEffect
 		return total;
 	}
 
-	protected float ResolveCoupling(
+	// ECCM observable: fraction of the scan where jamming couples through the
+	// mainlobe. SEARCH_AVG has no instantaneous boresight → return the beam
+	// duty (same contract as the stock RDF jammer). BEAM mode: 1.0 when any
+	// live emitter sits inside the main beam, else 0.0.
+	override float GetMainlobeFraction(
+		vector radarOrigin,
+		vector scanForward,
+		RDF_RadarHardware hardware)
+	{
+		if (!hardware)
+			return 0.0;
+
+		if (m_UseSearchAvg)
+		{
+			float duty = m_SearchDutyOverride;
+			if (duty < 0.0)
+			{
+				float beam = hardware.m_AzimuthBeamwidthDeg;
+				if (beam < 0.1)
+					beam = 0.1;
+				duty = beam / 360.0;
+			}
+			if (duty < 0.0)
+				duty = 0.0;
+			if (duty > 1.0)
+				duty = 1.0;
+			return duty;
+		}
+
+		array<ref RDF_RadarScatterer> entries = RDF_RadarScattererRegistry.GetEntries();
+		if (!entries)
+			return 0.0;
+
+		float maxRange = m_MaxRangeM;
+		if (maxRange < 1.0)
+			maxRange = 1.0;
+		float maxRangeSq = maxRange * maxRange;
+		float halfBeamRad = hardware.m_AzimuthBeamwidthDeg * 0.5 * 0.01745329;
+		float mainThreshold = Math.Cos(halfBeamRad);
+
+		int i = 0;
+		while (i < entries.Count())
+		{
+			RDF_RadarScatterer e = entries.Get(i);
+			i = i + 1;
+			if (!e || !e.m_Emitting || !e.m_Entity)
+				continue;
+
+			vector delta = e.m_Position - radarOrigin;
+			float rangeSq = delta.LengthSq();
+			if (rangeSq > maxRangeSq || rangeSq < 1.0)
+				continue;
+			if (e.m_EmitPeakPowerW <= 0.0)
+				continue;
+
+			float rangeM = Math.Sqrt(rangeSq);
+			vector direction = delta * (1.0 / rangeM);
+			float dot = scanForward[0] * direction[0]
+				+ scanForward[1] * direction[1]
+				+ scanForward[2] * direction[2];
+			if (dot >= mainThreshold)
+				return 1.0;
+		}
+
+		return 0.0;
+	}
+
+	// Same coupling math as before; renamed so it does not collide with the
+	// stock RDF_RadarNoiseJammerEffect.ResolveCoupling(3-arg) overload.
+	protected float ResolveBridgeCoupling(
 		vector scanForward,
 		vector delta,
 		float rangeM,
@@ -97,6 +171,9 @@ class GBRS_RadarEmitterNoiseBridge : RDF_RadarEwEffect
 				duty = 0.0;
 			if (duty > 1.0)
 				duty = 1.0;
+			// SLB: blank the sidelobe contribution; keep only mainlobe duty.
+			if (m_EnableSlb)
+				return duty;
 			return duty * 1.0 + (1.0 - duty) * sideLin;
 		}
 
@@ -108,6 +185,8 @@ class GBRS_RadarEmitterNoiseBridge : RDF_RadarEwEffect
 		float mainThreshold = Math.Cos(halfBeamRad);
 		if (dot >= mainThreshold)
 			return 1.0;
+		if (m_EnableSlb)
+			return 0.0;
 		return sideLin;
 	}
 }

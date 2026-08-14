@@ -96,6 +96,13 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected float m_fScanRpm;
     protected float m_fAntennaBasePitch;
     protected float m_fAntennaBaseRoll;
+    // Mechanical-scan phase continuity: while powered off the antenna stays
+    // frozen at its last bearing; on re-power we offset the RDF scan angle so
+    // the logical scan resumes from that bearing instead of snapping to the
+    // world-clock angle. Radians, applied to RDF_RadarSettings.m_ScanPhaseOffsetRad.
+    protected float m_fScanPhaseOffsetRad;
+    protected float m_fAntennaFrozenAngleRad;
+    protected bool m_bAntennaFrozen;
     protected float m_fVisualAzHalfDeg;
     protected float m_fVisualElHalfDeg;
     protected ref array<ref GBRS_GeomLayerBackup> m_aGeomLayerBackups;
@@ -109,6 +116,9 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ParticleEffectEntity m_DestroyedSmokeParticle;
     protected SCR_CampaignBuildingCompositionComponent m_BuildingComposition;
     protected bool m_bCompositionBuildGateBound;
+    // RDF 1.0.0 fire-control bridge: exposes LOCK-mode lock as a fire solution
+    // for external weapons (SAM vehicles, AAA) that poll this station.
+    protected ref RDF_RadarWeaponBridge m_WeaponBridge;
 
     override void OnPostInit(IEntity owner)
     {
@@ -247,6 +257,103 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!m_DamageManager)
             return 0.0;
         return m_DamageManager.GetStationHealthScaled();
+    }
+
+    // Called by GBRS_RadarStationChildDamageComponent when an engine explosion
+    // (C4 etc.) hits a child part (antenna / generator). Relays the raw damage
+    // into the station root's own 8000 HP pool so any hit part hurts the whole
+    // station. HandleDamage applies the root HitZone multipliers itself — pass
+    // the raw damageValue, do NOT pre-compute effective damage (that would
+    // double-apply the multipliers).
+    // multiplier scales the child's received damage before relay (realism:
+    // antenna = 0.2, generator = 1.0).
+    void RelayDamageToStation(notnull BaseDamageContext damageContext, float multiplier = 1.0)
+    {
+        if (!m_DamageManager)
+            return;
+
+        if (m_DamageManager.IsStationDestroyed())
+            return;
+
+        HitZone defaultZone = m_DamageManager.GetDefaultHitZone();
+        if (!defaultZone)
+            return;
+
+        float relayedDamage = damageContext.damageValue * multiplier;
+        if (relayedDamage <= 0.0)
+            return;
+
+        IEntity owner = GetOwner();
+        vector dirNorm[3];
+        dirNorm[0] = damageContext.hitPosition;
+        dirNorm[1] = damageContext.hitDirection;
+        dirNorm[2] = damageContext.hitNormal;
+
+        SCR_DamageContext relayed = new SCR_DamageContext(
+            damageContext.damageType,
+            relayedDamage,
+            dirNorm,
+            owner,
+            defaultZone,
+            damageContext.instigator,
+            damageContext.material,
+            -1,
+            -1);
+        m_DamageManager.HandleDamage(relayed);
+
+        // Damage debug is always on: hits are sparse events, so this cannot
+        // spam the log (unlike the scan heartbeat, which stays behind
+        // m_bDebugLog).
+        // Simulate the root HitZone math for the relayed value so the log
+        // shows effective damage vs raw (reduction/threshold/type multiplier).
+        float effective = defaultZone.ComputeEffectiveDamage(relayed, false);
+        Print("[GBRS-DAMAGE] relayed child damage " + relayedDamage.ToString()
+            + " (mult " + multiplier.ToString()
+            + ") -> effective " + effective.ToString()
+            + " (hp now " + m_DamageManager.GetStationHealth().ToString() + ")",
+            LogLevel.WARNING);
+
+        DrawRelayDebug(damageContext, relayedDamage, effective);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Draws a marker at the child hit point, a line to the station root, and
+    //! a label at the root showing raw->effective damage + remaining HP.
+    //! All shapes/text use ONCE flags so the engine auto-clears them.
+    protected void DrawRelayDebug(notnull BaseDamageContext damageContext, float relayedDamage, float effective)
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return;
+
+        World world = owner.GetWorld();
+        if (!world)
+            return;
+
+        vector hitPos = damageContext.hitPosition;
+        vector rootPos = owner.GetOrigin();
+
+        // Line from hit point to the station root pool.
+        vector linePts[2];
+        linePts[0] = hitPos;
+        linePts[1] = rootPos + "0 1.5 0";
+        Shape.CreateLines(
+            Color.YELLOW,
+            ShapeFlags.ONCE | ShapeFlags.NOOUTLINE | ShapeFlags.TRANSP | ShapeFlags.NOZBUFFER,
+            linePts,
+            2);
+
+        // Root label: type, raw relayed, effective, hp left.
+        string typeName = typename.EnumToString(EDamageType, damageContext.damageType);
+        DebugTextWorldSpace.Create(
+            world,
+            "ROOT " + typeName + "\nraw " + relayedDamage.ToString() + " -> eff " + effective.ToString()
+                + "\nhp " + m_DamageManager.GetStationHealth().ToString() + "/" + m_DamageManager.GetStationMaxHealth().ToString(),
+            DebugTextFlags.ONCE | DebugTextFlags.CENTER | DebugTextFlags.FACE_CAMERA,
+            rootPos[0], rootPos[1] + 2.2, rootPos[2],
+            11,
+            Color.CYAN,
+            ARGB(200, 0, 0, 0));
     }
 
     // Called by GBRS_RadarStationDamageManagerComponent when HP reaches DESTROYED.
@@ -537,6 +644,51 @@ class GBRS_RadarStationComponent : ScriptComponent
         return GetAntennaBindOrigin(GetOwner());
     }
 
+    // RDF 1.0.0 fire-control bridge. External weapons (SAM vehicles, AAA,
+    // guided launchers) call this to consume the station's LOCK-mode lock:
+    //   RDF_RadarFireSolution solution = new RDF_RadarFireSolution();
+    //   if (station.TryGetFireSolution(solution) && solution.m_CanAuthorizeFire)
+    //       aim at solution.m_AimPos with solution.m_AimVel
+    // Returns false when the station is not powered, not in LOCK mode, or the
+    // lock manager holds no confirmed target.
+    bool TryGetFireSolution(out RDF_RadarFireSolution solution)
+    {
+        solution = null;
+
+        if (IsDestroyed())
+            return false;
+
+        if (!m_bPowered)
+            return false;
+
+        if (m_WorkstationMode != "LOCK")
+            return false;
+
+        if (!m_Radar)
+            return false;
+
+        if (!m_WeaponBridge)
+        {
+            m_WeaponBridge = new RDF_RadarWeaponBridge();
+            m_WeaponBridge.BindRadarComponent(m_Radar);
+            // LOCK auto-acquire holds TRACKING before weapons may fire.
+            m_WeaponBridge.SetRequireTrackingForFire(true);
+            m_WeaponBridge.SetPreferArmAim(false);
+        }
+
+        return m_WeaponBridge.TryGetFireSolution(solution);
+    }
+
+    // Convenience for HUD / debug: true when the LOCK layer currently holds a
+    // tracking lock that authorizes fire.
+    bool IsFireAuthorized()
+    {
+        RDF_RadarFireSolution solution = new RDF_RadarFireSolution();
+        if (!TryGetFireSolution(solution))
+            return false;
+        return solution.m_CanAuthorizeFire;
+    }
+
     // True when the station root or any descendant damage manager is destroyed.
     bool IsDestroyedForPpi()
     {
@@ -679,6 +831,29 @@ class GBRS_RadarStationComponent : ScriptComponent
                 }
             }
 
+            // Resume from the frozen antenna bearing: offset = frozenAngle -
+            // current world-clock angle. ApplySearchSettings / PushSensorSettings
+            // stamp m_fScanPhaseOffsetRad into the new settings object, and the
+            // antenna sync uses the same offset so mesh and scan stay in sync.
+            if (m_bAntennaFrozen)
+            {
+                float rpm = GetLiveScanRpm();
+                if (rpm > 0.0)
+                {
+                    BaseWorld world = GetGame().GetWorld();
+                    float worldTimeS = 0.0;
+                    if (world)
+                        worldTimeS = world.GetWorldTime() * 0.001;
+                    m_fScanPhaseOffsetRad = m_fAntennaFrozenAngleRad
+                        - worldTimeS * rpm * Math.PI * 2.0 / 60.0;
+                }
+                else
+                {
+                    m_fScanPhaseOffsetRad = 0.0;
+                }
+                m_bAntennaFrozen = false;
+            }
+
             m_WorkstationMode = "PD SEARCH";
             m_bPowered = true;
             ApplyWorkstationModeLocal(m_WorkstationMode);
@@ -700,6 +875,11 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (m_bDebugLog)
             Print("[GBRS-DEBUG] Power OFF", LogLevel.WARNING);
 
+        // Freeze the antenna at its last driven bearing. Sync* stops running
+        // below (EOnFrame early-outs on !m_bPowered) so the value recorded by
+        // the last spin tick is the frozen angle; re-power offsets the RDF
+        // scan phase to resume from here instead of the world-clock angle.
+        m_bAntennaFrozen = true;
         m_bPowered = false;
         m_Radar.SetEnabled(false);
         SetAntennaSpinning(false);
@@ -838,6 +1018,7 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         // Stamp product mode, then overlay station geometry/range preset.
         // Configure replaces the stock ConfigureMode settings object.
+        settings.m_ScanPhaseOffsetRad = m_fScanPhaseOffsetRad;
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(settings);
@@ -936,6 +1117,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!sensor)
             return;
 
+        settings.m_ScanPhaseOffsetRad = m_fScanPhaseOffsetRad;
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(mode);
         sensor.Configure(settings);
@@ -1224,35 +1406,11 @@ class GBRS_RadarStationComponent : ScriptComponent
                 m_AntennaProcAnim.Deactivate(m_AntennaEntity);
         }
 
-        if (!spinning)
-        {
-            if (m_bUseBoneSpin)
-                ResetAntennaBone();
-            else if (m_bUseEntityYawSpin)
-            {
-                m_AntennaEntity.SetYawPitchRoll(
-                    Vector(0.0, m_fElevationBoresightDeg, m_fAntennaBaseRoll));
-            }
-        }
-    }
-
-    protected void ResetAntennaBone()
-    {
-        if (!m_AntennaEntity || m_iAntennaSpinBone < 0)
-            return;
-
-        Animation anim = m_AntennaEntity.GetAnimation();
-        if (!anim)
-            return;
-
-        vector rot[3];
-        Math3D.MatrixIdentity3(rot);
-        vector boneMat[4];
-        boneMat[0] = rot[0];
-        boneMat[1] = rot[1];
-        boneMat[2] = rot[2];
-        boneMat[3] = "0 0 0";
-        anim.SetBoneMatrix(m_AntennaEntity, m_iAntennaSpinBone, boneMat);
+        // On stop, leave the antenna at its current angle. EOnFrame early-outs
+        // on !m_bPowered, so SyncAntennaBoneSpin / SyncEntityYawAntenna stop
+        // driving and the last bone matrix / entity yaw persists — the antenna
+        // freezes where it is instead of snapping back to the initial bearing.
+        // (Re-power resumes from the world-time scan angle, matching RDF scan.)
     }
 
     // RPL-5: drive antenna_rotation bone (pedestal stays fixed).
@@ -1283,7 +1441,12 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         // RDF angle a: forward=(cos a, 0, sin a). Enfusion yaw 0 = +Z, so yaw = 90 - a_deg.
         float worldTimeS = world.GetWorldTime() * 0.001;
-        float angleDeg = worldTimeS * rpm * 6.0;
+        // Same phase offset as RDF_RadarScanner.GetScanForward so the antenna
+        // mesh and the logical scan beam stay aligned across pause/resume.
+        // angleDeg = worldTimeS * rpm * 6.0 + offsetDeg (offsetRad -> deg).
+        float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
+        m_fAntennaFrozenAngleRad = angleRad;
+        float angleDeg = angleRad * Math.RAD2DEG;
         float worldYawDeg = 90.0 - angleDeg;
         vector antYpr = m_AntennaEntity.GetYawPitchRoll();
         float localYawDeg = worldYawDeg - antYpr[0];
@@ -1360,9 +1523,10 @@ class GBRS_RadarStationComponent : ScriptComponent
             BaseWorld world = GetGame().GetWorld();
             if (world)
             {
-                // Must match RDF_RadarScanner.GetScanForward exactly.
+                // Must match RDF_RadarScanner.GetScanForward exactly (plus the
+                // pause/resume phase offset so HUD sweep tracks the antenna).
                 float worldTimeS = world.GetWorldTime() * 0.001;
-                float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0;
+                float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
                 return Vector(Math.Cos(angleRad), 0.0, Math.Sin(angleRad));
             }
         }
@@ -1922,7 +2086,10 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         float worldTimeS = world.GetWorldTime() * 0.001;
-        float angleDeg = worldTimeS * rpm * 6.0;
+        // Same phase offset as SyncAntennaBoneSpin / RDF GetScanForward.
+        float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
+        m_fAntennaFrozenAngleRad = angleRad;
+        float angleDeg = angleRad * Math.RAD2DEG;
         float worldYawDeg = 90.0 - angleDeg;
         vector ownerYpr = owner.GetYawPitchRoll();
         float localYawDeg = worldYawDeg - ownerYpr[0];
@@ -2075,6 +2242,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_bPowered = false;
         m_bTraceIgnoreActive = false;
         m_fScanRpm = 0.0;
+        m_fScanPhaseOffsetRad = 0.0;
+        m_fAntennaFrozenAngleRad = 0.0;
+        m_bAntennaFrozen = false;
         if (m_DetectVisual)
             m_DetectVisual.Clear();
         if (m_aGeomLayerBackups)

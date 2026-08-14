@@ -64,21 +64,29 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    m_bRequireSuppliesToPowerOn 1
    m_fElevationBoresightDeg 4
    m_fElevationBeamwidthDeg 8
+   // Destroyed fire/smoke anchors on the generator (-3.5 0 -1.5 in station
+   // space), not on the antenna mast (default 0 2.5 0 sits on the antenna).
+   m_vDestroyedFireOffset -3.5 2.5 -1.5
+   m_bDebugLog 0
   }
   GBRS_RadarStationDamageManagerComponent "{69FCEDCE10021020}" {
    "Additional hit zones" {
     SCR_HitZone Default {
      HZDefault 1
-     MaxHealth 5000
-     DamageReduction 50
-     DamageThreshold 50
-     "Collision multiplier" 0.2
-     "Explosive multiplier" 5
-     "Fragmentation multiplier" 0.5
-     "Kinetic multiplier" 1
+     MaxHealth 8000
+     DamageReduction 25
+     DamageThreshold 25
+     "Collision multiplier" 0.001
+     "Explosive multiplier" 7
+     "Fragmentation multiplier" 0.2
+     // HEIT (25x137 M792) burns at 48 Incendiary per hit; 48*15-50 = 670/round
+     // so a LAV-25 HEIT belt (150 rds) is a credible threat. APDS stays
+     // kinetic-only (50*0.4-50 = 0), so the default APDS belt still can't hurt.
+     "Incendiary multiplier" 30
+     "Kinetic multiplier" 2.0
     }
    }
-   m_fMaxHealth 5000
+   m_fMaxHealth 8000
   }
  }
  coords 0 0 0

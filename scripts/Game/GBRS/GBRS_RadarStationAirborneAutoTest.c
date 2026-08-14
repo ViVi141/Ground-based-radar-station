@@ -331,7 +331,10 @@ class GBRS_RadarStationAirborneAutoTest
         if (cfg.m_Hardware)
             cfg.m_Hardware.m_EnableMti = false;
 
-        cfg.ApplyIdealChannel();
+        // RDF 1.0.0 removed ApplyIdealChannel; StabilizeForRegression clears the
+        // same optional fidelity extras (noise / thermal fill / atmosphere /
+        // two-ray / refraction / PRF folds). CFAR gate is handled explicitly below.
+        cfg.StabilizeForRegression();
         cfg.m_KeepEntityTruth = true;
         cfg.m_EnableCfarGate = false;
         cfg.Validate();

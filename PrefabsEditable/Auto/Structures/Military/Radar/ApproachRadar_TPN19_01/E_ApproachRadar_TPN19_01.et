@@ -14,5 +14,25 @@ StaticModelEntity : "{A0190D51FD62FF68}Prefabs/Structures/Military/Radar/Approac
   RplComponent "{69FCEDCE20041003}" {
    Enabled 1
   }
+  // Kinematic blast-receiving body (the stock StaticObject chain is Static 1,
+  // which explosion traces skip).
+  RigidBody "{56ACD1C4D3E9DDF0}" {
+   ModelGeometry 1
+   Static 0
+   Kinematic 1
+   ResponseIndex "Normal"
+  }
+  // Relay: engine delivers the blast here, OnDamage forwards it to the station
+  // root's 5000 HP pool. Huge child HP so the part never dies on its own.
+  // 0.2: antenna strikes are mostly cosmetic - only 20% relays to the root.
+  GBRS_RadarStationChildDamageComponent "{69FCEDCE20041020}" {
+   m_fRelayMultiplier 0.2
+   "Additional hit zones" {
+    SCR_HitZone Default {
+     HZDefault 1
+     MaxHealth 1000000
+    }
+   }
+  }
  }
 }

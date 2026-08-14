@@ -73,13 +73,48 @@ class GBRS_RadarStationConfig
         hw.Validate();
     }
 
+    // RDF 1.0.0 (2026-08-05) removed ApplyRealisticChannel / ApplyIdealChannel.
+    // Recreate the former realistic-channel profile with the opt-in Enable* APIs:
+    //   CFAR gate + thermal fill, measurement noise/bias, clear-air + weather
+    //   rain/fog loss, LOS two-ray, 4/3-Earth refraction, PRF ambiguity folds.
+    static void ApplyRealisticChannelOptIn(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.SetMeasurementNoise(3.5, 5.0, 0.2, 0.15);
+        settings.EnableCfarThermalFill(true);
+        settings.EnableAtmosphericPathLoss(true);
+        settings.EnableLosTwoRayMultipath();
+        settings.EnableAtmosphericRefraction();
+        settings.EnablePrfAmbiguityFolds(true, true);
+    }
+
+    // RDF 1.0.0 system layer (layered, opt-in): dwell/resource scheduling.
+    // Fire-control dwells (locked target) and track dwells (confirmed tracks)
+    // are force-refreshed within a beam-time budget; SEARCH keeps the fair
+    // cursor, so mechanical rotation is unaffected. 20 ms budget ≈ 5× fire-
+    // control or 10× track dwells per scan — plenty for a single-station lock.
+    static void ApplySystemLayers(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.m_EnableDwellScheduler = true;
+        settings.m_DwellBudgetMs = 20.0;
+        settings.m_FireControlDwellPeriodS = 0.25;
+        settings.m_FireControlDwellMs = 4.0;
+        settings.m_TrackDwellPeriodS = 1.0;
+        settings.m_TrackDwellMs = 2.0;
+    }
+
     // Enables RDF channel / environment / track features for air search.
     static void ApplyFullFidelity(RDF_RadarSettings settings)
     {
         if (!settings)
             return;
 
-        settings.ApplyRealisticChannel();
+        ApplyRealisticChannelOptIn(settings);
         settings.m_EnableDemClutter = true;
         settings.m_EnableDemSpanOcclusion = true;
         settings.m_EnableCoarseRd = true;
@@ -109,6 +144,12 @@ class GBRS_RadarStationConfig
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
         ApplyEwStack(settings);
+        ApplySystemLayers(settings);
+
+        // RDF 1.0.0 clutter-boundary sharpening: asymmetric EMA (fast-down) +
+        // footprint σ⁰ mix. Keeps land/water and ridge edges crisper on the PPI
+        // without changing the detection gate.
+        settings.EnableClutterSharpen(true, settings.m_ClutterMapAlpha, 0.45, true);
     }
 
     // WLR keeps a live clutter channel (DEM + clutter map + span occlusion).
@@ -120,7 +161,7 @@ class GBRS_RadarStationConfig
         if (!settings)
             return;
 
-        settings.ApplyRealisticChannel();
+        ApplyRealisticChannelOptIn(settings);
         settings.m_EnableDemClutter = true;
         settings.m_EnableDemSpanOcclusion = true;
         settings.m_EnableCoarseRd = true;
@@ -153,6 +194,11 @@ class GBRS_RadarStationConfig
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
         ApplyEwStack(settings);
+        ApplySystemLayers(settings);
+
+        // WLR keeps clutter sharpening too — launch/impact fits benefit from
+        // stable land/water boundaries in the DEM clutter channel.
+        settings.EnableClutterSharpen(true, settings.m_ClutterMapAlpha, 0.45, true);
     }
 
     // Receiver-side EW uses only live registered emitters. Static deception
@@ -179,6 +225,16 @@ class GBRS_RadarStationConfig
 
         // Floor for receiver noise injection path (stack adds on top).
         settings.m_AdditionalNoisePowerW = 0.0;
+
+        // RDF 1.0.0 ECCM decision layer (layered, opt-in). The bridge now
+        // inherits RDF_RadarNoiseJammerEffect so the Sensor's RunEccmDecision
+        // can read GetMainlobeFraction and drive SLB / PRF agility / burn-
+        // through against live jammers. JN gate 6 dB is enough to catch a
+        // dedicated jammer while ignoring scatterer-table noise floor.
+        settings.m_EnableEccmDecision = true;
+        settings.m_EccmJnOnDb = 6.0;
+        settings.m_EccmJnHysteresisDb = 2.0;
+        settings.m_EccmSidelobeCouplingOn = 0.3;
     }
 
     // Operator console readout: strip entity identity from published plots and
