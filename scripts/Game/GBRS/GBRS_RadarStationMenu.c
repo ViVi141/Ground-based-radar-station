@@ -18,7 +18,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const string HINT_CONTEXT = "north-up AZ/EL";
 	protected static const string HINT_WLR = "WLR launch/impact";
 	protected static const string HINT_LOCK = "auto-lock vehicles";
-	protected static const string HINT_MANUAL = "tune radar params";
 
 	protected GBRS_RadarStationComponent m_Station;
 	protected bool m_bBound;
@@ -721,6 +720,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		}
 
 		GBRS_RadarStationHud.SetManualParamList(body, m_iFocusedManualParam);
+		GBRS_RadarStationHud.SetManualParamFooter(
+			"PARAM " + (m_iFocusedManualParam + 1).ToString()
+			+ "/" + GBRS_RadarManualConfig.PARAM_COUNT.ToString()
+			+ "  Select=+  TabL=-  TabR=next");
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -800,7 +803,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		else if (m_ActiveMode == MODE_LOCK)
 			hint = HINT_LOCK;
 		else if (m_ActiveMode == MODE_MANUAL)
-			hint = HINT_MANUAL;
+			hint = "Select + / TabL - / TabR next  |  STARE AZ parks antenna";
 
 		widgets.m_wPpiHint.SetText(hint);
 	}

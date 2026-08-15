@@ -125,6 +125,16 @@ class GBRS_RadarStationHud
         inst.m_Mode = mode;
         if (inst.m_Widgets && inst.m_Widgets.m_wPpiMode)
             inst.m_Widgets.m_wPpiMode.SetText(mode);
+
+        // The contacts panel doubles as the manual-tuning panel in MANUAL mode;
+        // retitle it so the operator knows which view they are looking at.
+        if (inst.m_Widgets && inst.m_Widgets.m_wListTitle)
+        {
+            if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+                inst.m_Widgets.m_wListTitle.SetText("MANUAL TUNING");
+            else
+                inst.m_Widgets.m_wListTitle.SetText("TRACKED CONTACTS");
+        }
     }
 
     static void SetDisplayRange(float rangeM)
@@ -153,6 +163,14 @@ class GBRS_RadarStationHud
         inst.m_ManualFocusedParam = focusedIndex;
         if (inst.m_Widgets && inst.m_Widgets.m_wListBody)
             inst.m_Widgets.m_wListBody.SetText(text);
+    }
+
+    // MANUAL workstation mode: footer line under the parameter list.
+    static void SetManualParamFooter(string text)
+    {
+        GBRS_RadarStationHud inst = GetInstance();
+        if (inst.m_Widgets && inst.m_Widgets.m_wListFooter)
+            inst.m_Widgets.m_wListFooter.SetText(text);
     }
 
     static void FeedScan(

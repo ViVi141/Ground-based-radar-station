@@ -156,21 +156,28 @@ class GBRS_RadarStationConfig
     // Shells are not protected by turning clutter off — elevation beams look
     // above the ground ring, CFAR gates clutter edges, include-filters are
     // projectile-only, and ShouldDisplayPlot drops non-shell plots.
+    // WLR fidelity: projectile-only counter-battery search.
+    // DEM clutter is DISABLED for WLR: offline validation (simulate_wlr_projectile)
+    // showed the full DEM clutter floor swamps 0.01 m2 projectiles (-35 dB,
+    // clutter-limited) so nothing is ever detected. Real counter-battery radars
+    // look up at the ballistic mid-course with narrow elevation beams - the
+    // main-beam ground return is negligible there, so thermal-noise-limited CFAR
+    // is the correct model. Launch/impact solving still uses DEM ground
+    // (m_EnableDemGroundForWlr) for the surface intersection fit.
     static void ApplyWlrFidelity(RDF_RadarSettings settings)
     {
         if (!settings)
             return;
 
         ApplyRealisticChannelOptIn(settings);
-        settings.m_EnableDemClutter = true;
-        settings.m_EnableDemSpanOcclusion = true;
+        settings.m_EnableDemClutter = false;
+        settings.m_EnableDemSpanOcclusion = false;
         settings.m_EnableCoarseRd = true;
         settings.m_RdCellsPerScan = 24;
         settings.m_RdMapAlpha = 0.15;
         settings.m_RdDecayPerScan = 0.97;
         settings.m_RdClutterBlend = 0.3;
-        settings.m_EnableClutterMap = true;
-        settings.m_ClutterMapAlpha = 0.12;
+        settings.m_EnableClutterMap = false;
         settings.m_EnableNlosMultipath = true;
         settings.m_EnableKnifeEdgeDiffraction = true;
         settings.m_EnableEsmReceive = false;
@@ -188,17 +195,13 @@ class GBRS_RadarStationConfig
         settings.m_TrackCoastOnMiss = true;
         settings.m_TrackCoastOnDopplerNull = false;
         settings.m_TrackCoastMaxSec = 4.0;
-        // Greater-of CFAR: better at clutter ridge / land-sea edges for WLR.
+        // Greater-of CFAR for clutter-edge VHF EW scenes.
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_GO;
         if (!settings.m_MeasurementModel)
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
         ApplyEwStack(settings);
         ApplySystemLayers(settings);
-
-        // WLR keeps clutter sharpening too — launch/impact fits benefit from
-        // stable land/water boundaries in the DEM clutter channel.
-        settings.EnableClutterSharpen(true, settings.m_ClutterMapAlpha, 0.45, true);
     }
 
     // Receiver-side EW uses only live registered emitters. Static deception
