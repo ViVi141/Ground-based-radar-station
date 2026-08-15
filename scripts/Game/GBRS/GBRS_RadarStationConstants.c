@@ -9,4 +9,5 @@ class GBRS_RadarStationConstants
     static const string MODE_PD_SEARCH = "PD SEARCH";
     static const string MODE_WLR = "WLR";
     static const string MODE_LOCK = "LOCK";
+    static const string MODE_MANUAL = "MANUAL";
 }

@@ -13,10 +13,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const string MODE_PD_SEARCH = GBRS_RadarStationConstants.MODE_PD_SEARCH;
 	protected static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
 	protected static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
+	protected static const string MODE_MANUAL = GBRS_RadarStationConstants.MODE_MANUAL;
 	protected static const string HINT_NOT_AVAILABLE = "Not available";
 	protected static const string HINT_CONTEXT = "north-up AZ/EL";
 	protected static const string HINT_WLR = "WLR launch/impact";
 	protected static const string HINT_LOCK = "auto-lock vehicles";
+	protected static const string HINT_MANUAL = "tune radar params";
 
 	protected GBRS_RadarStationComponent m_Station;
 	protected bool m_bBound;
@@ -29,12 +31,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected bool m_bDeviceListenerBound;
 	protected bool m_bNavBound;
 	protected int m_iFocusedModeTab;
-	protected static const int MODE_TAB_COUNT = 3;
+	protected static const int MODE_TAB_COUNT = 4;
 	protected static const string ACTION_TAB_PREV = "MenuTabLeft";
 	protected static const string ACTION_TAB_NEXT = "MenuTabRight";
 	protected static const string ACTION_SELECT = "MenuSelect";
 	protected static const string ACTION_CLOSE = "MenuBack";
 	protected static const int MODE_NAV_COOLDOWN_MS = 180;
+
+	// MANUAL mode: focused parameter index (0..PARAM_COUNT-1).
+	protected int m_iFocusedManualParam;
 
 	protected float m_fLastModeNavS;
 
@@ -136,8 +141,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_bBound = true;
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
+		m_iFocusedManualParam = 0;
 		m_ActiveMode = station.GetWorkstationMode();
-		if (m_ActiveMode != MODE_WLR && m_ActiveMode != MODE_LOCK && m_ActiveMode != MODE_PD_SEARCH)
+		if (m_ActiveMode != MODE_WLR && m_ActiveMode != MODE_LOCK
+			&& m_ActiveMode != MODE_PD_SEARCH && m_ActiveMode != MODE_MANUAL)
 			m_ActiveMode = MODE_PD_SEARCH;
 		EnsurePersistBuffer();
 		ClearPersist();
@@ -151,10 +158,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_iFocusedModeTab = 1;
 		else if (m_ActiveMode == MODE_LOCK)
 			m_iFocusedModeTab = 2;
+		else if (m_ActiveMode == MODE_MANUAL)
+			m_iFocusedModeTab = 3;
 		UpdateModeTabVisuals();
 		BindNavigation();
 		UpdateContextHint();
 		FocusForCurrentDevice();
+
+		if (m_ActiveMode == MODE_MANUAL)
+			RefreshManualParamList();
 
 		StartFeed();
 		FeedOnce();
@@ -230,6 +242,14 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			ScriptInvoker invLock = ButtonActionComponent.GetOnAction(widgets.m_wModeTabLock, true);
 			if (invLock)
 				invLock.Insert(OnModeTabLock);
+		}
+
+		if (widgets.m_wModeTabManual)
+		{
+			MuteWLibSounds(widgets.m_wModeTabManual);
+			ScriptInvoker invManual = ButtonActionComponent.GetOnAction(widgets.m_wModeTabManual, true);
+			if (invManual)
+				invManual.Insert(OnModeTabManual);
 		}
 	}
 
@@ -354,6 +374,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
+	protected void OnModeTabManual(Widget w, float value, EActionTrigger reason)
+	{
+		m_iFocusedModeTab = 3;
+		ActivateFocusedModeTab();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	protected void OnModeTabUnavailable(Widget w, float value, EActionTrigger reason)
 	{
 		if (w)
@@ -365,6 +392,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 					m_iFocusedModeTab = 1;
 				else if (w == widgets.m_wModeTabLock)
 					m_iFocusedModeTab = 2;
+				else if (w == widgets.m_wModeTabManual)
+					m_iFocusedModeTab = 3;
 			}
 		}
 
@@ -376,18 +405,36 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavTabPrev(SCR_InputButtonComponent button, string actionName)
 	{
+		if (m_ActiveMode == MODE_MANUAL)
+		{
+			// TabLeft in manual mode decreases the focused parameter.
+			DecreaseManualParam();
+			return;
+		}
 		CycleModeTab(-1);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavTabNext(SCR_InputButtonComponent button, string actionName)
 	{
+		if (m_ActiveMode == MODE_MANUAL)
+		{
+			// TabRight in manual mode cycles to the next parameter.
+			CycleManualParam(1);
+			return;
+		}
 		CycleModeTab(1);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavSelect(SCR_InputButtonComponent button, string actionName)
 	{
+		if (m_ActiveMode == MODE_MANUAL)
+		{
+			// MenuSelect in manual mode increases the focused parameter.
+			AdjustManualParam(1);
+			return;
+		}
 		ActivateFocusedModeTab();
 	}
 
@@ -415,6 +462,77 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
+	// MANUAL mode: move the focused parameter up/down (TabLeft/Right).
+	protected void CycleManualParam(int delta)
+	{
+		if (!CanAcceptModeNav())
+			return;
+
+		int count = GBRS_RadarManualConfig.PARAM_COUNT;
+		m_iFocusedManualParam = m_iFocusedManualParam + delta;
+		if (m_iFocusedManualParam < 0)
+			m_iFocusedManualParam = count - 1;
+		if (m_iFocusedManualParam >= count)
+			m_iFocusedManualParam = 0;
+
+		RefreshManualParamList();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// MANUAL mode: increase the focused parameter by one step (MenuSelect).
+	protected void AdjustManualParam(int direction)
+	{
+		if (!m_Station)
+			return;
+
+		if (!m_Station.IsManualMode())
+			return;
+
+		if (!m_Station.IsPowered())
+			return;
+
+		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
+		if (!cfg)
+			return;
+
+		int index = m_iFocusedManualParam;
+		float current = cfg.GetParam(index);
+		float step = GBRS_RadarManualConfig.StepParam(index);
+		float next = current + step * direction;
+
+		if (!m_Station.ApplyManualParam(index, next))
+			return;
+
+		RefreshManualParamList();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// Manual decrease (MenuTabPrev in manual mode = -step on the focused param).
+	protected void DecreaseManualParam()
+	{
+		if (!m_Station)
+			return;
+
+		if (!m_Station.IsManualMode())
+			return;
+
+		if (!m_Station.IsPowered())
+			return;
+
+		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
+		if (!cfg)
+			return;
+
+		int index = m_iFocusedManualParam;
+		float current = cfg.GetParam(index);
+		float step = GBRS_RadarManualConfig.StepParam(index);
+		if (!m_Station.ApplyManualParam(index, current - step))
+			return;
+
+		RefreshManualParamList();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	protected void ActivateFocusedModeTab()
 	{
 		string nextMode = MODE_PD_SEARCH;
@@ -422,6 +540,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			nextMode = MODE_WLR;
 		else if (m_iFocusedModeTab == 2)
 			nextMode = MODE_LOCK;
+		else if (m_iFocusedModeTab == 3)
+			nextMode = MODE_MANUAL;
 
 		if (nextMode == m_ActiveMode)
 		{
@@ -445,6 +565,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			UpdateModeTabVisuals();
 			return;
 		}
+
+		if (nextMode == MODE_MANUAL)
+			m_iFocusedManualParam = 0;
 
 		UpdateContextHint();
 	}
@@ -471,16 +594,20 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		bool pdActive = false;
 		bool wlrActive = false;
 		bool lockActive = false;
+		bool manualActive = false;
 		if (m_iFocusedModeTab == 0)
 			pdActive = true;
 		else if (m_iFocusedModeTab == 1)
 			wlrActive = true;
 		else if (m_iFocusedModeTab == 2)
 			lockActive = true;
+		else if (m_iFocusedModeTab == 3)
+			manualActive = true;
 
 		SetTabEmphasis(widgets.m_wModeTabPd, pdActive);
 		SetTabEmphasis(widgets.m_wModeTabWlr, wlrActive);
 		SetTabEmphasis(widgets.m_wModeTabLock, lockActive);
+		SetTabEmphasis(widgets.m_wModeTabManual, manualActive);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -517,6 +644,99 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		UpdateContextHint();
 	}
 
+	//------------------------------------------------------------------------------------------------
+	// MANUAL mode: build the parameter list text and push it to the HUD.
+	// Each line: "NN NAME  value", focused line prefixed with ">".
+	protected void RefreshManualParamList()
+	{
+		if (!m_Station)
+			return;
+
+		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
+		if (!cfg)
+			return;
+
+		if (m_iFocusedManualParam < 0)
+			m_iFocusedManualParam = 0;
+		if (m_iFocusedManualParam >= GBRS_RadarManualConfig.PARAM_COUNT)
+			m_iFocusedManualParam = GBRS_RadarManualConfig.PARAM_COUNT - 1;
+
+		string body = "";
+		int i = 0;
+		while (i < GBRS_RadarManualConfig.PARAM_COUNT)
+		{
+			string marker = "  ";
+			if (i == m_iFocusedManualParam)
+				marker = "> ";
+
+			string name = ManualParamName(i);
+			float value = cfg.GetParam(i);
+			string valueStr = ManualParamValue(i, value);
+
+			string line = marker + PadParamName(name) + " " + valueStr;
+			if (body != "")
+				body = body + "\n";
+			body = body + line;
+			i = i + 1;
+		}
+
+		GBRS_RadarStationHud.SetManualParamList(body, m_iFocusedManualParam);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected string ManualParamName(int index)
+	{
+		switch (index)
+		{
+			case 0: return "SNR dB";
+			case 1: return "CLUTTER";
+			case 2: return "RPM";
+			case 3: return "RANGE";
+			case 4: return "EL BORE";
+			case 5: return "EL BW";
+			case 6: return "AZ BW";
+			case 7: return "UPDATE";
+			case 8: return "POWER";
+		}
+		return "???";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected string ManualParamValue(int index, float value)
+	{
+		switch (index)
+		{
+			case 0: return value.ToString(-1, 1) + " dB";
+			case 1: return value.ToString(-1, 2);
+			case 2: return value.ToString(-1, 0) + " rpm";
+			case 3:
+			{
+				if (value >= 1000.0)
+					return (value / 1000.0).ToString(-1, 1) + " km";
+				return value.ToString(-1, 0) + " m";
+			}
+			case 4: return value.ToString(-1, 1) + " deg";
+			case 5: return value.ToString(-1, 1) + " deg";
+			case 6: return value.ToString(-1, 1) + " deg";
+			case 7: return value.ToString(-1, 2) + " s";
+			case 8:
+			{
+				if (value >= 1000000.0)
+					return (value / 1000000.0).ToString(-1, 1) + " MW";
+				return (value / 1000.0).ToString(-1, 0) + " kW";
+			}
+		}
+		return value.ToString();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected string PadParamName(string name)
+	{
+		while (name.Length() < 9)
+			name = name + " ";
+		return name;
+	}
+
 	// PPI note only — key glyphs come from official SCR_InputButton NavHints.
 	protected void UpdateContextHint()
 	{
@@ -532,6 +752,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			hint = HINT_WLR;
 		else if (m_ActiveMode == MODE_LOCK)
 			hint = HINT_LOCK;
+		else if (m_ActiveMode == MODE_MANUAL)
+			hint = HINT_MANUAL;
 
 		widgets.m_wPpiHint.SetText(hint);
 	}
@@ -626,8 +848,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			target = widgets.m_wModeTabPd;
 		else if (index == 1)
 			target = widgets.m_wModeTabWlr;
-		else
+		else if (index == 2)
 			target = widgets.m_wModeTabLock;
+		else
+			target = widgets.m_wModeTabManual;
 
 		if (!target)
 			return;
@@ -692,7 +916,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (liveMode == m_ActiveMode)
 			return;
 
-		if (liveMode != MODE_WLR && liveMode != MODE_LOCK && liveMode != MODE_PD_SEARCH)
+		if (liveMode != MODE_WLR && liveMode != MODE_LOCK
+			&& liveMode != MODE_PD_SEARCH && liveMode != MODE_MANUAL)
 			return;
 
 		m_ActiveMode = liveMode;
@@ -706,6 +931,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_iFocusedModeTab = 1;
 		else if (m_ActiveMode == MODE_LOCK)
 			m_iFocusedModeTab = 2;
+		else if (m_ActiveMode == MODE_MANUAL)
+			m_iFocusedModeTab = 3;
+
+		if (m_ActiveMode == MODE_MANUAL)
+			RefreshManualParamList();
 
 		UpdateModeTabVisuals();
 		UpdateContextHint();

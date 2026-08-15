@@ -80,11 +80,24 @@ FrameWidgetClass {
       ButtonWidgetClass "{69FCEDCEB00101A6}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
        Name "ModeTabLock"
        Slot LayoutSlot "{69FCEDCEB00101A7}" {
-        Padding 0 0 0 0
+        Padding 0 0 8 0
        }
        components {
         SCR_ButtonTextComponent "{69FCEDCEB00101B2}" {
          m_sText "LOCK"
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB00101A8}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
+       Name "ModeTabManual"
+       Slot LayoutSlot "{69FCEDCEB00101A9}" {
+        Padding 0 0 0 0
+       }
+       components {
+        SCR_ButtonTextComponent "{69FCEDCEB00101B3}" {
+         m_sText "MANUAL"
         }
        }
        {

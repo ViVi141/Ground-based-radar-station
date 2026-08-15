@@ -74,6 +74,9 @@ class GBRS_RadarStationHud
     protected RDF_RadarLockManager m_LockManager;
     // RDF 1.0.0 ECCM decision status ("eccm=0" | "eccm slb/prf/freq/burn").
     protected string m_EccmStatus = "eccm=0";
+    // MANUAL mode parameter list rendering (set by the menu).
+    protected string m_ManualParamText;
+    protected int m_ManualFocusedParam = -1;
 
     protected float m_PpiW = PPI_W;
     protected float m_PpiH = PPI_H;
@@ -138,6 +141,18 @@ class GBRS_RadarStationHud
         if (status == "")
             status = "eccm=0";
         GetInstance().m_EccmStatus = status;
+    }
+
+    // MANUAL workstation mode: render the operator parameter list into the
+    // contacts panel body (instead of radar contacts). text lines are
+    // pre-formatted by the menu; focusedIndex highlights the active parameter.
+    static void SetManualParamList(string text, int focusedIndex)
+    {
+        GBRS_RadarStationHud inst = GetInstance();
+        inst.m_ManualParamText = text;
+        inst.m_ManualFocusedParam = focusedIndex;
+        if (inst.m_Widgets && inst.m_Widgets.m_wListBody)
+            inst.m_Widgets.m_wListBody.SetText(text);
     }
 
     static void FeedScan(
@@ -1068,6 +1083,15 @@ class GBRS_RadarStationHud
     {
         if (!m_Widgets || !m_Widgets.m_wListBody)
             return;
+
+        // MANUAL mode: the contacts panel shows the operator parameter list
+        // instead of radar contacts; the menu owns its content.
+        if (m_Mode == GBRS_RadarStationConstants.MODE_MANUAL)
+        {
+            if (m_ManualParamText != "")
+                m_Widgets.m_wListBody.SetText(m_ManualParamText);
+            return;
+        }
 
         string body = "";
         int row = 0;

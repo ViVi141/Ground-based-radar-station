@@ -119,6 +119,8 @@ class GBRS_RadarStationComponent : ScriptComponent
     // RDF 1.0.0 fire-control bridge: exposes LOCK-mode lock as a fire solution
     // for external weapons (SAM vehicles, AAA) that poll this station.
     protected ref RDF_RadarWeaponBridge m_WeaponBridge;
+    // MANUAL workstation mode: live-tunable radar parameters (server-authoritative).
+    protected ref GBRS_RadarManualConfig m_ManualConfig;
 
     override void OnPostInit(IEntity owner)
     {
@@ -130,6 +132,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         super.EOnInit(owner);
         if (m_WorkstationMode == "")
             m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
         ApplyConfiguration(owner);
@@ -184,6 +188,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         writer.WriteBool(m_bScanVisualEnabled);
         writer.WriteInt(WorkstationModeToIndex(m_WorkstationMode));
         writer.WriteBool(m_bDestroyed);
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
+        m_ManualConfig.WriteRpl(writer);
         return true;
     }
 
@@ -200,6 +207,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         reader.ReadBool(scanVisual);
         reader.ReadInt(modeIndex);
         reader.ReadBool(destroyed);
+
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
+        m_ManualConfig.ReadRpl(reader);
 
         if (!m_bConfigured)
             ApplyConfiguration(GetOwner());
@@ -628,6 +639,93 @@ class GBRS_RadarStationComponent : ScriptComponent
         ApplyWorkstationModeLocal(IndexToWorkstationMode(modeIndex));
     }
 
+    //------------------------------------------------------------------------------------------------
+    // MANUAL workstation mode: operator parameter tuning.
+    //------------------------------------------------------------------------------------------------
+
+    // Client entry (menu). Only MANUAL mode accepts tuning; authority applies
+    // the change and broadcasts so every peer sees the same radar settings.
+    bool ApplyManualParam(int paramIndex, float value)
+    {
+        if (IsDestroyed())
+            return false;
+
+        if (!m_bPowered)
+            return false;
+
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_MANUAL)
+            return false;
+
+        if (paramIndex < 0 || paramIndex >= GBRS_RadarManualConfig.PARAM_COUNT)
+            return false;
+
+        float clamped = GBRS_RadarManualConfig.ClampParam(paramIndex, value);
+
+        if (IsAuthority())
+        {
+            AuthoritySetManualParam(paramIndex, clamped);
+            return true;
+        }
+
+        return GBRS_PlayerControllerNet.RequestManualParam(this, paramIndex, clamped);
+    }
+
+    // Server entry from GBRS_PlayerControllerNet (menu on a proxy).
+    bool AuthoritySetManualParam(int paramIndex, float value)
+    {
+        if (!IsAuthority())
+            return false;
+
+        if (IsDestroyed())
+            return false;
+
+        if (!m_bPowered)
+            return false;
+
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_MANUAL)
+            return false;
+
+        if (paramIndex < 0 || paramIndex >= GBRS_RadarManualConfig.PARAM_COUNT)
+            return false;
+
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
+
+        float clamped = GBRS_RadarManualConfig.ClampParam(paramIndex, value);
+        m_ManualConfig.SetParam(paramIndex, clamped);
+        Rpc(RpcDo_ManualParam, paramIndex, clamped);
+        ApplyManualSettings(GetOwner());
+        return true;
+    }
+
+    [RplRpc(RplChannel.Reliable, RplRcver.Broadcast, RplCondition.NoOwner)]
+    protected void RpcDo_ManualParam(int paramIndex, float value)
+    {
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
+
+        if (paramIndex < 0 || paramIndex >= GBRS_RadarManualConfig.PARAM_COUNT)
+            return;
+
+        m_ManualConfig.SetParam(paramIndex, value);
+        ApplyManualSettings(GetOwner());
+    }
+
+    // Read the operator's manual config (menu display). Null-safe.
+    GBRS_RadarManualConfig GetManualConfig()
+    {
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
+        return m_ManualConfig;
+    }
+
+    // True when the operator is actively tuning MANUAL mode (menu uses it to
+    // decide whether to show the parameter list instead of the contact list).
+    bool IsManualMode()
+    {
+        return m_WorkstationMode == GBRS_RadarStationConstants.MODE_MANUAL;
+    }
+
     float GetScanRpm()
     {
         return GetLiveScanRpm();
@@ -896,6 +994,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             return true;
         if (mode == GBRS_RadarStationConstants.MODE_LOCK)
             return true;
+        if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+            return true;
         return false;
     }
 
@@ -905,6 +1005,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             return 1;
         if (mode == GBRS_RadarStationConstants.MODE_LOCK)
             return 2;
+        if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+            return 3;
         return 0;
     }
 
@@ -914,6 +1016,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             return GBRS_RadarStationConstants.MODE_WLR;
         if (modeIndex == 2)
             return GBRS_RadarStationConstants.MODE_LOCK;
+        if (modeIndex == 3)
+            return GBRS_RadarStationConstants.MODE_MANUAL;
         return GBRS_RadarStationConstants.MODE_PD_SEARCH;
     }
 
@@ -949,6 +1053,12 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (mode == GBRS_RadarStationConstants.MODE_LOCK)
         {
             ApplyLockSettings(owner);
+            return true;
+        }
+
+        if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+        {
+            ApplyManualSettings(owner);
             return true;
         }
 
@@ -1103,6 +1213,81 @@ class GBRS_RadarStationComponent : ScriptComponent
     {
         ApplySearchSettings(owner);
         ConfigureLockLayer(true);
+    }
+
+    // MANUAL workstation mode: pulse-Doppler search built from the operator's
+    // live-tunable parameters (GBRS_RadarManualConfig). No lock layer.
+    protected void ApplyManualSettings(IEntity owner)
+    {
+        if (!owner)
+            return;
+
+        if (!m_Radar)
+            m_Radar = RDF_RadarComponent.Cast(owner.FindComponent(RDF_RadarComponent));
+        if (!m_Radar)
+            return;
+
+        if (!m_ManualConfig)
+            m_ManualConfig = new GBRS_RadarManualConfig();
+
+        RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(64);
+        settings.m_Range = m_ManualConfig.m_RangeM;
+        settings.m_UpdateInterval = m_ManualConfig.m_UpdateIntervalS;
+        settings.m_SectorHalfAngleDeg = 180.0;
+        settings.m_EnableMechanicalScan = true;
+        settings.m_UseBoundsCenter = false;
+        settings.m_UseLocalOffset = false;
+        settings.m_OriginOffset = "0 0 0";
+        settings.m_MaxLosTracesPerScan = 128;
+        settings.m_FreshUpdateBudgetMin = 64;
+        settings.m_FreshUpdateBudgetMax = 128;
+        settings.m_ScattererDiscoveryIntervalS = 0.25;
+        settings.m_ScattererDiscoveryRangeScale = 1.25;
+        settings.m_ScattererClassifyPerTick = 96;
+        settings.m_ScattererRefreshPerTick = 128;
+        settings.m_ScattererMaxEntries = 512;
+        settings.m_IncludeVehicles = true;
+        settings.m_IncludeProjectiles = false;
+        settings.m_IncludeRadarEmitters = true;
+        settings.m_MinDistance = 40.0;
+        settings.m_EnablePhysicalDetection = true;
+        settings.m_DetectionSnrDb = m_ManualConfig.m_DetectionSnrDb;
+        settings.m_KeepUndetected = false;
+
+        if (settings.m_Hardware)
+        {
+            // Start from the stock PD hardware block, then overlay operator tuning.
+            GBRS_RadarStationConfig.ApplyPulseDopplerHardware(settings.m_Hardware);
+            settings.m_Hardware.m_ScanRpm = m_ManualConfig.m_ScanRpm;
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = m_ManualConfig.m_AzimuthBeamwidthDeg;
+            settings.m_Hardware.m_PeakPowerW = m_ManualConfig.m_PeakPowerW;
+            settings.m_Hardware.ClearElevationBeams();
+            settings.m_Hardware.AddElevationBeam(
+                "manual",
+                m_ManualConfig.m_ElevationBoresightDeg,
+                m_ManualConfig.m_ElevationBeamwidthDeg,
+                0.0);
+            settings.m_Hardware.Validate();
+        }
+
+        // Full fidelity + operator clutter / readout choices.
+        GBRS_RadarStationConfig.ApplyFullFidelity(settings);
+        settings.m_DemClutterScale = m_ManualConfig.m_DemClutterScale;
+        settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_CA;
+        settings.Validate();
+
+        PushSensorSettings(owner, settings, ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
+        ConfigureLockLayer(false);
+
+        if (m_bDebugLog)
+        {
+            Print("[GBRS-DEBUG] ManualSettings range=" + settings.m_Range.ToString()
+                + " snr=" + m_ManualConfig.m_DetectionSnrDb.ToString()
+                + " dem=" + m_ManualConfig.m_DemClutterScale.ToString()
+                + " rpm=" + m_ManualConfig.m_ScanRpm.ToString()
+                + " azBw=" + m_ManualConfig.m_AzimuthBeamwidthDeg.ToString()
+                + " pw=" + m_ManualConfig.m_PeakPowerW.ToString(), LogLevel.WARNING);
+        }
     }
 
     protected void PushSensorSettings(
