@@ -121,6 +121,13 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ref RDF_RadarWeaponBridge m_WeaponBridge;
     // MANUAL workstation mode: live-tunable radar parameters (server-authoritative).
     protected ref GBRS_RadarManualConfig m_ManualConfig;
+    // Antenna stare: park the antenna at a fixed bearing (and lock the RDF
+    // scan to it) in any workstation mode. m_fScanPhaseOffsetRad is updated
+    // every frame so both the mesh and the logical scan hold the bearing.
+    protected bool m_bAntennaStare;
+    protected float m_fAntennaStareAzDeg;
+    // One-frame guard so ClearStarePhase runs exactly once after stare off.
+    protected bool m_bStarePhaseCleared = true;
 
     override void OnPostInit(IEntity owner)
     {
@@ -154,11 +161,79 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!m_AntennaEntity)
             EnsureAntennaResolved();
 
+        // Antenna stare: hold a fixed bearing. Recompute the scan phase every
+        // frame so the RDF scan angle (= worldTime*rpm*2pi/60 + phaseOffset)
+        // equals the requested bearing; SyncAntennaBoneSpin / SyncEntityYawAntenna
+        // use the same phase, so the mesh parks at the same azimuth.
+        if (m_bAntennaStare)
+            ApplyAntennaStarePhase(owner);
+        else if (!m_bStarePhaseCleared)
+            ClearStarePhase();
+
         SyncRadarBindToAntenna(owner);
         SyncAntennaBoneSpin(owner);
         SyncEntityYawAntenna(owner);
         RenderScanVisuals(owner);
         DebugScanTick(owner);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Antenna stare: park the antenna (and RDF scan) at m_fAntennaStareAzDeg.
+    // The scan angle formula is worldTime*rpm*2pi/60 + phaseOffset; solving
+    // for phaseOffset at the target bearing makes both the mesh and the
+    // logical scan hold still.
+    protected void ApplyAntennaStarePhase(IEntity owner)
+    {
+        float rpm = GetLiveScanRpm();
+        if (rpm <= 0.0)
+        {
+            // No rotation to offset; scan follows subject forward (stare).
+            m_fScanPhaseOffsetRad = 0.0;
+            m_bStarePhaseCleared = false;
+            return;
+        }
+
+        BaseWorld world = GetGame().GetWorld();
+        float worldTimeS = 0.0;
+        if (world)
+            worldTimeS = world.GetWorldTime() * 0.001;
+
+        float targetRad = m_fAntennaStareAzDeg * 0.017453292519943295;
+        m_fScanPhaseOffsetRad = targetRad - worldTimeS * rpm * Math.PI * 2.0 / 60.0;
+
+        // Push the live offset into the RDF settings object (Scanner reads it
+        // every frame; no re-Configure needed).
+        if (m_Radar)
+        {
+            RDF_RadarSensor sensor = m_Radar.GetSensor();
+            if (sensor)
+            {
+                RDF_RadarSettings settings = sensor.GetSettings();
+                if (settings)
+                    settings.m_ScanPhaseOffsetRad = m_fScanPhaseOffsetRad;
+            }
+        }
+
+        m_bStarePhaseCleared = false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Restore free rotation after stare: phase offset back to 0 so the scan
+    // continues from the world-clock angle.
+    protected void ClearStarePhase()
+    {
+        m_fScanPhaseOffsetRad = 0.0;
+        if (m_Radar)
+        {
+            RDF_RadarSensor sensor = m_Radar.GetSensor();
+            if (sensor)
+            {
+                RDF_RadarSettings settings = sensor.GetSettings();
+                if (settings)
+                    settings.m_ScanPhaseOffsetRad = 0.0;
+            }
+        }
+        m_bStarePhaseCleared = true;
     }
 
     override void OnDelete(IEntity owner)
@@ -191,6 +266,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!m_ManualConfig)
             m_ManualConfig = new GBRS_RadarManualConfig();
         m_ManualConfig.WriteRpl(writer);
+        writer.WriteBool(m_bAntennaStare);
+        writer.WriteFloat(m_fAntennaStareAzDeg);
         return true;
     }
 
@@ -211,6 +288,13 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!m_ManualConfig)
             m_ManualConfig = new GBRS_RadarManualConfig();
         m_ManualConfig.ReadRpl(reader);
+
+        bool stare;
+        float stareAz;
+        reader.ReadBool(stare);
+        reader.ReadFloat(stareAz);
+        m_bAntennaStare = stare;
+        m_fAntennaStareAzDeg = stareAz;
 
         if (!m_bConfigured)
             ApplyConfiguration(GetOwner());
@@ -724,6 +808,80 @@ class GBRS_RadarStationComponent : ScriptComponent
     bool IsManualMode()
     {
         return m_WorkstationMode == GBRS_RadarStationConstants.MODE_MANUAL;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // Antenna stare control. enabled=true parks the antenna at azDeg (0-360,
+    // north-up) in any workstation mode; enabled=false resumes free rotation.
+    bool IsAntennaStare()
+    {
+        return m_bAntennaStare;
+    }
+
+    float GetAntennaStareAzDeg()
+    {
+        return m_fAntennaStareAzDeg;
+    }
+
+    // Client entry (menu). Server-authoritative; broadcast so peers see the
+    // same antenna bearing.
+    bool SetAntennaStare(bool enabled, float azDeg)
+    {
+        if (IsDestroyed())
+            return false;
+
+        if (!m_bPowered)
+            return false;
+
+        float az = azDeg;
+        while (az < 0.0)
+            az = az + 360.0;
+        while (az >= 360.0)
+            az = az - 360.0;
+
+        if (IsAuthority())
+        {
+            AuthoritySetAntennaStare(enabled, az);
+            return true;
+        }
+
+        return GBRS_PlayerControllerNet.RequestAntennaStare(this, enabled, az);
+    }
+
+    // Server entry from GBRS_PlayerControllerNet.
+    bool AuthoritySetAntennaStare(bool enabled, float azDeg)
+    {
+        if (!IsAuthority())
+            return false;
+
+        if (IsDestroyed())
+            return false;
+
+        if (!m_bPowered)
+            return false;
+
+        float az = azDeg;
+        while (az < 0.0)
+            az = az + 360.0;
+        while (az >= 360.0)
+            az = az - 360.0;
+
+        m_bAntennaStare = enabled;
+        m_fAntennaStareAzDeg = az;
+        m_bStarePhaseCleared = !enabled;
+
+        Rpc(RpcDo_AntennaStare, enabled, az);
+        return true;
+    }
+
+    [RplRpc(RplChannel.Reliable, RplRcver.Broadcast, RplCondition.NoOwner)]
+    protected void RpcDo_AntennaStare(bool enabled, float azDeg)
+    {
+        m_bAntennaStare = enabled;
+        m_fAntennaStareAzDeg = azDeg;
+        m_bStarePhaseCleared = !enabled;
+        if (!enabled)
+            ClearStarePhase();
     }
 
     float GetScanRpm()
@@ -2430,6 +2588,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_fScanPhaseOffsetRad = 0.0;
         m_fAntennaFrozenAngleRad = 0.0;
         m_bAntennaFrozen = false;
+        m_bAntennaStare = false;
+        m_fAntennaStareAzDeg = 0.0;
+        m_bStarePhaseCleared = true;
         if (m_DetectVisual)
             m_DetectVisual.Clear();
         if (m_aGeomLayerBackups)

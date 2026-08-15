@@ -66,6 +66,28 @@ class GBRS_PlayerControllerNet
     }
 
     //------------------------------------------------------------------------------------------------
+    static bool RequestAntennaStare(
+        GBRS_RadarStationComponent station,
+        bool enabled,
+        float azDeg)
+    {
+        if (!station)
+            return false;
+
+        RplId stationId = station.GetStationRplId();
+        if (!stationId.IsValid())
+            return false;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(GetGame().GetPlayerController());
+        if (!playerController)
+            return false;
+
+        playerController.GBRS_RpcAsk_AntennaStare(stationId, enabled, azDeg);
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
     static GBRS_RadarStationComponent ResolveStation(RplId stationId)
     {
         if (!stationId.IsValid())
@@ -106,6 +128,12 @@ modded class SCR_PlayerController
     void GBRS_RpcAsk_ManualParam(RplId stationId, int paramIndex, float value)
     {
         Rpc(RpcAsk_GBRS_ManualParam, stationId, paramIndex, value);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_RpcAsk_AntennaStare(RplId stationId, bool enabled, float azDeg)
+    {
+        Rpc(RpcAsk_GBRS_AntennaStare, stationId, enabled, azDeg);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -173,5 +201,23 @@ modded class SCR_PlayerController
             return;
 
         station.AuthoritySetManualParam(paramIndex, value);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Server)]
+    protected void RpcAsk_GBRS_AntennaStare(RplId stationId, bool enabled, float azDeg)
+    {
+        GBRS_RadarStationComponent station = GBRS_PlayerControllerNet.ResolveStation(stationId);
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        station.AuthoritySetAntennaStare(enabled, azDeg);
     }
 }

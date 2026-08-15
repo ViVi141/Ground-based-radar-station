@@ -496,12 +496,55 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		int index = m_iFocusedManualParam;
+
+		// STARE AZ drives the antenna directly (any mode); the bearing is
+		// stored in the manual config for display/JIP.
+		if (index == 9)
+		{
+			ApplyStareFromParam(direction);
+			return;
+		}
+
 		float current = cfg.GetParam(index);
 		float step = GBRS_RadarManualConfig.StepParam(index);
 		float next = current + step * direction;
 
 		if (!m_Station.ApplyManualParam(index, next))
 			return;
+
+		RefreshManualParamList();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// STARE AZ param: nudge the antenna bearing (or disable) via the station.
+	protected void ApplyStareFromParam(int direction)
+	{
+		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
+		if (!cfg)
+			return;
+
+		float current = cfg.m_StareAzDeg;
+		float next;
+		if (current < 0.0)
+		{
+			// OFF -> turn on at the current antenna bearing (0 as fallback).
+			next = 0.0;
+		}
+		else
+		{
+			next = current + 5.0 * direction;
+		}
+
+		// -1 disables stare (ClampParam maps <0 to -1).
+		if (direction < 0 && next < 0.0)
+			next = -1.0;
+
+		float clamped = GBRS_RadarManualConfig.ClampParam(9, next);
+		cfg.m_StareAzDeg = clamped;
+		if (clamped < 0.0)
+			m_Station.SetAntennaStare(false, 0.0);
+		else
+			m_Station.SetAntennaStare(true, clamped);
 
 		RefreshManualParamList();
 	}
@@ -519,17 +562,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!m_Station.IsPowered())
 			return;
 
-		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
-		if (!cfg)
-			return;
-
-		int index = m_iFocusedManualParam;
-		float current = cfg.GetParam(index);
-		float step = GBRS_RadarManualConfig.StepParam(index);
-		if (!m_Station.ApplyManualParam(index, current - step))
-			return;
-
-		RefreshManualParamList();
+		AdjustManualParam(-1);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -656,6 +689,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!cfg)
 			return;
 
+		// Keep the STARE AZ line in sync with the station's live stare state
+		// (JIP / authority may have changed it without the config object).
+		if (m_Station.IsAntennaStare())
+			cfg.m_StareAzDeg = m_Station.GetAntennaStareAzDeg();
+		else if (cfg.m_StareAzDeg >= 0.0)
+			cfg.m_StareAzDeg = -1.0;
+
 		if (m_iFocusedManualParam < 0)
 			m_iFocusedManualParam = 0;
 		if (m_iFocusedManualParam >= GBRS_RadarManualConfig.PARAM_COUNT)
@@ -697,6 +737,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			case 6: return "AZ BW";
 			case 7: return "UPDATE";
 			case 8: return "POWER";
+			case 9: return "STARE AZ";
 		}
 		return "???";
 	}
@@ -724,6 +765,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				if (value >= 1000000.0)
 					return (value / 1000000.0).ToString(-1, 1) + " MW";
 				return (value / 1000.0).ToString(-1, 0) + " kW";
+			}
+			case 9:
+			{
+				if (value < 0.0)
+					return "OFF";
+				return value.ToString(-1, 0) + " deg";
 			}
 		}
 		return value.ToString();

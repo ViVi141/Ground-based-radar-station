@@ -27,8 +27,10 @@ class GBRS_RadarManualConfig
     float m_AzimuthBeamwidthDeg = 2.5;
     float m_UpdateIntervalS = 0.02;
     float m_PeakPowerW = 120000.0;
+    // Antenna stare bearing (0-360, north-up). -1 disables stare.
+    float m_StareAzDeg = -1.0;
 
-    static const int PARAM_COUNT = 9;
+    static const int PARAM_COUNT = 10;
 
     //------------------------------------------------------------------------------------------------
     float GetParam(int index)
@@ -44,6 +46,7 @@ class GBRS_RadarManualConfig
             case 6: return m_AzimuthBeamwidthDeg;
             case 7: return m_UpdateIntervalS;
             case 8: return m_PeakPowerW;
+            case 9: return m_StareAzDeg;
         }
         return 0.0;
     }
@@ -62,6 +65,7 @@ class GBRS_RadarManualConfig
             case 6: m_AzimuthBeamwidthDeg = value; break;
             case 7: m_UpdateIntervalS = value; break;
             case 8: m_PeakPowerW = value; break;
+            case 9: m_StareAzDeg = value; break;
         }
     }
 
@@ -107,6 +111,10 @@ class GBRS_RadarManualConfig
                 if (value < 10000.0) return 10000.0;
                 if (value > 2000000.0) return 2000000.0;
                 return value;
+            case 9: // stare bearing: -1 = disabled, else 0-360
+                if (value < 0.0) return -1.0;
+                if (value >= 360.0) return 0.0;
+                return value;
         }
         return value;
     }
@@ -126,6 +134,7 @@ class GBRS_RadarManualConfig
             case 6: return 0.5;        // 0.5 deg
             case 7: return 0.02;       // 20 ms
             case 8: return 50000.0;    // 50 kW
+            case 9: return 5.0;        // 5 deg
         }
         return 1.0;
     }
@@ -142,6 +151,7 @@ class GBRS_RadarManualConfig
         writer.WriteFloat(m_AzimuthBeamwidthDeg);
         writer.WriteFloat(m_UpdateIntervalS);
         writer.WriteFloat(m_PeakPowerW);
+        writer.WriteFloat(m_StareAzDeg);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -157,5 +167,6 @@ class GBRS_RadarManualConfig
         reader.ReadFloat(v); m_AzimuthBeamwidthDeg = v;
         reader.ReadFloat(v); m_UpdateIntervalS = v;
         reader.ReadFloat(v); m_PeakPowerW = v;
+        reader.ReadFloat(v); m_StareAzDeg = v;
     }
 }
