@@ -26,24 +26,30 @@ GBRS WLR（反炮兵）需在旋转扫描下探测 0.01 m² 弹丸并解算发�
 
 | 参数 | US 推荐 | USSR 推荐 |
 |---|---|---|
-| 峰值功率 `m_PeakPowerW` | **500,000 W** | **1,000,000 W** |
-| SNR 门限 `m_DetectionSnrDb` | **2.0 dB** | **0.0 dB** |
+| 峰值功率 `m_PeakPowerW` | **500,000 W** | **250,000 W（P-18 默认，不变）** |
+| SNR 门限 `m_DetectionSnrDb` | **2.0 dB** | **5.0 dB（不变）** |
 | 波束宽度 `m_AzimuthBeamwidthDeg` | 25°（不变） | 30°（不变） |
 | 转速 `m_ScanRpm` | 10（不变） | 6（不变） |
 | 仰角波束 | 18/35/55°（不变） | 18/35/55°（不变） |
 
-推荐组合下（波束中心 @ 15° 俯仰）：
+推荐组合下（波束中心 @ 15° 俯仰，无杂波）：
 - US 8km：8.6 dB（中心）、4.7 dB（10°）、3.0 dB（12°）——25° 波束内 12° 全 DET；
-- USSR 10km：7.6 dB（中心）、5.0 dB（10°）、1.6 dB（15°）——30° 波束全宽 DET。
+- USSR 10km：**29.8 dB（中心）**——VHF λ² 优势巨大（1.87 m 波长），P-18 默认 250 kW 已远超门限。
 
 ## 四、实现位置
 
 改动在 `scripts/Game/GBRS/GBRS_RadarStationConfig.c`：
 - `CreateUsWlr()`：`m_DetectionSnrDb 6→2`，`m_Hardware.m_PeakPowerW 120000→500000`
-- `CreateUssrWlr()`：`m_DetectionSnrDb 5→0`，`m_Hardware.m_PeakPowerW 120000→1000000`
+- `CreateUssrWlr()`：功率/门限不变；`m_DemClutterScale 0.25→0.10`（与防空对齐）
 
-## 五、剩余风险
+## 五、重要修正与剩余风险
 
+**离线链 CFAR 局限（2026-08-15 复核）**：
+- 离线链 `physical_detect` 的 `snr_db` 计入 DEM 杂波（clutter-limited），但 `apply_cfar_single_target` 的 CFAR 门限**只基于热噪声**（不含杂波）——与 RDF 的**自适应杂波 CFAR** 不一致；
+- 因此"含杂波时弹丸 SNR -35~-43 dB → 不可探测"的离线结论**不可靠**：真实 RDF 中 CFAR 会从杂波背景中挑出比局部背景亮的弹丸点；
+- WLR 弹丸探测的最终可行性**需游戏内实测**（`RDF_RadarShellFireAutoTest` 或手动发射迫击炮）。
+
+剩余风险：
 1. **波束边缘盲区**（US 15° 外）：弹丸在波束边缘时 miss，但 5-hit 门槛可靠中心命中凑够——风险可接受；
 2. **弹道模型固定 82mm**：非 82mm 弹丸解算有偏差（RDF 设计简化）；
 3. **低仰角盲区**（<18° 弹道段）：发射初期/近落点漏检（有意避免地面杂波）；

@@ -364,7 +364,11 @@ class GBRS_RadarStationConfig
 
         ApplyFullFidelity(settings);
         // VHF surface returns are weaker than X-band SHORAD clutter cells.
-        settings.m_DemClutterScale = 0.25;
+        // Offline-tuned (tools/simulate_pd_search.py): at 0.25 the DEM clutter
+        // floor dominates thermal noise and limits UH-1 Pd at 10 km to ~59%.
+        // 0.10 restores thermal-noise-limited operation (Pd ~80%, median
+        // SNR 10.3 dB) while keeping a live clutter channel.
+        settings.m_DemClutterScale = 0.10;
         // Greater-of CFAR for clutter-edge VHF EW scenes.
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_GO;
         ApplyWorkstationReadout(settings, false);
@@ -421,6 +425,9 @@ class GBRS_RadarStationConfig
     // 120 kW + 6 dB gate cannot detect 0.01 m2 projectiles at 8 km
     // (center SNR 2.4 dB). 500 kW + 2 dB gate clears the beam center
     // (8.6 dB) and most of the 25 deg beam (12 deg offset still 3.0 dB).
+    // NOTE: the offline chain models clutter-limited SNR but its CFAR gates
+    // on thermal noise only (RDF uses adaptive clutter CFAR), so projectile
+    // detection inside clutter needs in-game verification.
     static RDF_RadarSettings CreateUsWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -447,8 +454,12 @@ class GBRS_RadarStationConfig
     }
 
     // USSR counter-battery WLR (~10 km rotating search, wider beam).
-    // Offline-tuned: 10 km needs ~1 MW peak to reach 0 dB gate
-    // (center 7.6 dB, 15 deg offset 1.6 dB across the 30 deg beam).
+    // VHF hardware (P-18-like) gives a large lambda^2 advantage at 10 km:
+    // offline chain (no clutter) shows ~30 dB center SNR — far above the gate,
+    // so peak power stays at the P-18 default (250 kW, CreateP18Like). The
+    // offline CFAR model cannot reliably resolve clutter-limited projectile
+    // detection (it gates on thermal noise, not RDF's adaptive clutter CFAR),
+    // so clutter behavior needs in-game verification.
     static RDF_RadarSettings CreateUssrWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -461,16 +472,15 @@ class GBRS_RadarStationConfig
         settings.m_ScattererClassifyPerTick = 128;
         settings.m_ScattererRefreshPerTick = 256;
         settings.m_ScattererMaxEntries = 1024;
-        settings.m_DetectionSnrDb = 0.0;
+        settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
             settings.m_Hardware.m_ScanRpm = 6.0;
-            settings.m_Hardware.m_PeakPowerW = 1000000.0;
         }
         ApplyWlrProductFlags(settings);
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.
-        settings.m_DemClutterScale = 0.25;
+        settings.m_DemClutterScale = 0.10;
         ApplyWorkstationReadout(settings, false);
         settings.Validate();
         return settings;

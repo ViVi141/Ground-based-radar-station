@@ -163,26 +163,52 @@ class ScanConfig:
 
 
 def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
-    hw = s.Hardware(
-        name=f"WLR_{faction}",
-        frequency_hz=9.0e9,
-        peak_power_w=120000.0,
-        antenna_gain_dbi=32.0,
-        az_beamwidth_deg=cfg.beamwidth_deg,
-        system_loss_db=6.0,
-        noise_figure_db=5.0,
-        pulse_width_s=5.0e-7,
-        bandwidth_hz=4.0e6,
-        pulses_integrated=32,
-        coherent_integration=True,
-        enable_mti=False,
-        mti_clutter_floor=1.0e-4,
-        prf_hz=4000.0,
-        scan_rpm=cfg.rpm,
-        elevation_beams=[
-            s.ElevationBeam(n, b, w, r) for (n, b, w, r) in cfg.elevation_beams
-        ],
-    )
+    """US WLR inherits the stock X-band SHORAD hardware (9 GHz, 32 dBi);
+    USSR WLR inherits the P-18-like VHF front-end (160 MHz, 20 dBi, narrow
+    band, 12 pulses). Both are then overridden with WLR geometry (beamwidth /
+    RPM / elevation beams) from the GBRS config."""
+    if faction == "USSR":
+        hw = s.Hardware(
+            name="WLR_USSR",
+            frequency_hz=1.6e8,
+            peak_power_w=1000000.0,
+            antenna_gain_dbi=20.0,
+            az_beamwidth_deg=cfg.beamwidth_deg,
+            system_loss_db=8.0,
+            noise_figure_db=6.0,
+            pulse_width_s=6.0e-6,
+            bandwidth_hz=166666.0,
+            pulses_integrated=12,
+            coherent_integration=True,
+            enable_mti=False,
+            mti_clutter_floor=0.01,
+            prf_hz=200.0,
+            scan_rpm=cfg.rpm,
+            elevation_beams=[
+                s.ElevationBeam(n, b, w, r) for (n, b, w, r) in cfg.elevation_beams
+            ],
+        )
+    else:
+        hw = s.Hardware(
+            name=f"WLR_{faction}",
+            frequency_hz=9.0e9,
+            peak_power_w=500000.0,
+            antenna_gain_dbi=32.0,
+            az_beamwidth_deg=cfg.beamwidth_deg,
+            system_loss_db=6.0,
+            noise_figure_db=5.0,
+            pulse_width_s=5.0e-7,
+            bandwidth_hz=4.0e6,
+            pulses_integrated=32,
+            coherent_integration=True,
+            enable_mti=False,
+            mti_clutter_floor=1.0e-4,
+            prf_hz=4000.0,
+            scan_rpm=cfg.rpm,
+            elevation_beams=[
+                s.ElevationBeam(n, b, w, r) for (n, b, w, r) in cfg.elevation_beams
+            ],
+        )
     return hw
 
 
