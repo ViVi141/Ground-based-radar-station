@@ -172,7 +172,7 @@ class GBRS_RadarStationHud
         InitCanvases();
 
         if (m_Widgets.m_wListBody)
-            m_Widgets.m_wListBody.SetText("#GBRS_STR_NoContacts");
+            m_Widgets.m_wListBody.SetText("(no contacts)");
         if (m_Widgets.m_wPpiMode)
             m_Widgets.m_wPpiMode.SetText(m_Mode);
 
@@ -412,7 +412,7 @@ class GBRS_RadarStationHud
             if (az < 0.0)
                 az = az + 360.0;
             // Do not report the artificial look-up as antenna elevation.
-            m_Widgets.m_wOpticsInfo.SetTextFormat("#GBRS_STR_OpticsAzEl", F0(az));
+            m_Widgets.m_wOpticsInfo.SetText("AZ " + F0(az) + "  EL FIXED");
         }
     }
 
@@ -1060,7 +1060,7 @@ class GBRS_RadarStationHud
             AppendWlrListRows(body, row, origin, tracker);
 
         if (body == "")
-            body = "#GBRS_STR_NoContacts";
+            body = "(no contacts)";
         m_Widgets.m_wListBody.SetText(body);
 
         int tracks = 0;

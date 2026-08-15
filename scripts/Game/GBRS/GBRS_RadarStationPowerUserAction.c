@@ -9,7 +9,7 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
     [Attribute("#AR-UserAction_TurnOff", UIWidgets.EditBox, "Shown when radar is on", "")]
     protected LocalizedString m_sTurnOffName;
 
-    [Attribute("#GBRS_STR_NotEnoughSupplies", UIWidgets.EditBox, "Shown when power-on is blocked by supplies", "")]
+    [Attribute("Not enough base supplies", UIWidgets.EditBox, "Shown when power-on is blocked by supplies", "")]
     protected LocalizedString m_sCannotAffordReason;
 
     protected GBRS_RadarStationComponent m_RadarStation;
@@ -83,10 +83,10 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
     override string GetCannotPerformReason()
     {
         if (m_RadarStation && m_RadarStation.IsDestroyed())
-            return "#GBRS_STR_StationDestroyed";
+            return "Radar station destroyed";
 
         if (m_RadarStation && !m_RadarStation.IsCompositionReady())
-            return "#GBRS_STR_FinishBuildingFirst";
+            return "Finish building first";
 
         return m_sCannotAffordReason;
     }

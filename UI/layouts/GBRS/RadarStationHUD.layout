@@ -261,7 +261,7 @@ FrameWidgetClass {
                   FillWeight 1
                  }
                  Color 0.75 0.9 1 0.95
-                 Text "#GBRS_STR_Panel_Optics"
+                 Text "OPTICAL SIGHT"
                  "Font Size" 13
                  "Vertical Alignment" Center
                  FontProperties FontProperties "{69FCEDCEB00102F1}" {
@@ -373,7 +373,7 @@ FrameWidgetClass {
                 Padding 2 0 0 6
                }
                Color 0.75 0.9 1 0.95
-               Text "#GBRS_STR_Panel_AzEl"
+               Text "ELEVATION-AZIMUTH"
                "Font Size" 13
                "Vertical Alignment" Center
                FontProperties FontProperties "{69FCEDCEB00103F1}" {
@@ -894,7 +894,7 @@ FrameWidgetClass {
               FillWeight 2
              }
              Color 0.45 1 0.62 0.95
-             Text "#GBRS_STR_Panel_Ppi"
+             Text "PLAN POSITION INDICATOR"
              "Font Size" 15
              "Vertical Alignment" Center
              FontProperties FontProperties "{69FCEDCEB00104F1}" {
@@ -1199,7 +1199,7 @@ FrameWidgetClass {
             Padding 0 4 0 0
            }
            Color 0.35 0.7 0.45 0.7
-           Text "#GBRS_STR_Hint_Context"
+           Text "north-up AZ/EL"
            "Font Size" 11
            FontProperties FontProperties "{69FCEDCEB00104F4}" {
             Font "{3E7733BAC8C831F6}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
@@ -1263,7 +1263,7 @@ FrameWidgetClass {
             Padding 0 0 0 8
            }
            Color 0.8 0.92 1 0.95
-           Text "#GBRS_STR_Panel_List"
+           Text "TRACKED CONTACTS"
            "Font Size" 15
            FontProperties FontProperties "{69FCEDCEB00105F1}" {
             Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
@@ -1275,7 +1275,7 @@ FrameWidgetClass {
             Padding 0 0 0 6
            }
            Color 0.55 0.72 0.88 0.85
-           Text "#GBRS_STR_List_Header"
+           Text "NR  AZ      RNG     ALT     SPD     TYPE     SNR"
            "Font Size" 12
            FontProperties FontProperties "{69FCEDCEB00105F2}" {
             Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
@@ -1287,7 +1287,7 @@ FrameWidgetClass {
             SizeMode Fill
            }
            Color 0.7 0.88 1 0.92
-           Text "#GBRS_STR_NoContacts"
+           Text "(no contacts)"
            "Font Size" 13
            "Vertical Alignment" Top
            FontProperties FontProperties "{69FCEDCEB00105F3}" {
