@@ -20,6 +20,10 @@ class GBRS_RadarStationHud
     // PIP cameras often start underexposed; sync main HDR then lift slightly.
     static const float OPTICS_HDR_BOOST = 1.35;
 
+    static const int STATION_MARGIN = 20;
+    static const int STATION_W = 1504;
+    static const int STATION_H = 760;
+
     static const int PPI_W = 640;
     static const int PPI_H = 640;
     static const float PPI_CX = 320.0;
@@ -169,6 +173,11 @@ class GBRS_RadarStationHud
         if (!m_Widgets.Init(m_wRoot))
             Print("[GBRS HUD] widget registry incomplete", LogLevel.WARNING);
 
+        // The layout root uses 1920x1080-absolute coordinates (208,160). Re-center
+        // it on the live screen so the station panel stays centered at any
+        // resolution instead of being pinned to the top-left corner.
+        CenterRoot();
+
         InitCanvases();
 
         if (m_Widgets.m_wListBody)
@@ -197,6 +206,42 @@ class GBRS_RadarStationHud
         m_OpticsParent = null;
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
+    }
+
+    // Keep design size (RDF-style). Shrinking the root breaks Canvas SizeInUnits
+    // vs ImageWidget mapping and makes the sweep origin drift from the face center.
+    // The layout root is authored in 1920x1080 absolute coordinates; re-center it
+    // on the live screen so the whole station panel stays centered at any
+    // resolution (Workbench preview is 1920x1080, gameplay may differ).
+    protected void CenterRoot()
+    {
+        if (!m_wRoot)
+            return;
+
+        WorkspaceWidget ws = GetGame().GetWorkspace();
+        if (!ws)
+            return;
+
+        int screenW = ws.GetWidth();
+        int screenH = ws.GetHeight();
+        if (screenW < 200)
+            screenW = 1920;
+        if (screenH < 200)
+            screenH = 1080;
+
+        int left = (screenW - STATION_W) / 2;
+        int top = (screenH - STATION_H) / 2;
+        if (left < STATION_MARGIN)
+            left = STATION_MARGIN;
+        if (top < STATION_MARGIN)
+            top = STATION_MARGIN;
+
+        FrameSlot.SetAnchor(m_wRoot, 0.0, 0.0);
+        FrameSlot.SetAnchorMin(m_wRoot, 0.0, 0.0);
+        FrameSlot.SetAnchorMax(m_wRoot, 0.0, 0.0);
+        FrameSlot.SetAlignment(m_wRoot, 0.0, 0.0);
+        FrameSlot.SetSize(m_wRoot, STATION_W, STATION_H);
+        FrameSlot.SetPos(m_wRoot, left, top);
     }
 
     // Force face + canvas onto the same absolute 640x640 rect so draw units map
@@ -468,6 +513,11 @@ class GBRS_RadarStationHud
         if (now - m_LastUpdateS < UPDATE_INTERVAL)
             return;
         m_LastUpdateS = now;
+
+        // Keep the station panel centered: the layout root is authored in
+        // 1920x1080 absolute coordinates and MenuManager may re-place it.
+        // Re-assert centering every update tick (cheap FrameSlot writes).
+        CenterRoot();
 
         UpdateOpticsCamera(origin, forward);
         UpdatePpi(targets, origin, forward, tracker);
