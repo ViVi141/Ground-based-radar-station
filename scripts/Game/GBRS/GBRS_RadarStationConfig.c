@@ -417,6 +417,10 @@ class GBRS_RadarStationConfig
     }
 
     // US counter-battery WLR (~8 km rotating search).
+    // Offline-tuned (tools/simulate_wlr_projectile.py + WLR_VALIDATION.md):
+    // 120 kW + 6 dB gate cannot detect 0.01 m2 projectiles at 8 km
+    // (center SNR 2.4 dB). 500 kW + 2 dB gate clears the beam center
+    // (8.6 dB) and most of the 25 deg beam (12 deg offset still 3.0 dB).
     static RDF_RadarSettings CreateUsWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -429,11 +433,12 @@ class GBRS_RadarStationConfig
         settings.m_ScattererClassifyPerTick = 128;
         settings.m_ScattererRefreshPerTick = 256;
         settings.m_ScattererMaxEntries = 1024;
-        settings.m_DetectionSnrDb = 6.0;
+        settings.m_DetectionSnrDb = 2.0;
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 25.0;
             settings.m_Hardware.m_ScanRpm = 10.0;
+            settings.m_Hardware.m_PeakPowerW = 500000.0;
         }
         ApplyWlrProductFlags(settings);
         ApplyWorkstationReadout(settings, true);
@@ -442,6 +447,8 @@ class GBRS_RadarStationConfig
     }
 
     // USSR counter-battery WLR (~10 km rotating search, wider beam).
+    // Offline-tuned: 10 km needs ~1 MW peak to reach 0 dB gate
+    // (center 7.6 dB, 15 deg offset 1.6 dB across the 30 deg beam).
     static RDF_RadarSettings CreateUssrWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -454,11 +461,12 @@ class GBRS_RadarStationConfig
         settings.m_ScattererClassifyPerTick = 128;
         settings.m_ScattererRefreshPerTick = 256;
         settings.m_ScattererMaxEntries = 1024;
-        settings.m_DetectionSnrDb = 5.0;
+        settings.m_DetectionSnrDb = 0.0;
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
             settings.m_Hardware.m_ScanRpm = 6.0;
+            settings.m_Hardware.m_PeakPowerW = 1000000.0;
         }
         ApplyWlrProductFlags(settings);
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.
