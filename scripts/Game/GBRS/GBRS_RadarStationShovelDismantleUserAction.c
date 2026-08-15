@@ -4,13 +4,13 @@
 //! that must be cleared with SCR_CampaignBuildingGadgetToolComponent (etool).
 class GBRS_RadarStationShovelDismantleUserAction : ScriptedUserAction
 {
-    [Attribute("Dismantle wreck", UIWidgets.EditBox, "Shown when wreck can be cleared", "")]
+    [Attribute("#GBRS_STR_Shovel_DismantleWreck", UIWidgets.EditBox, "Shown when wreck can be cleared", "")]
     protected LocalizedString m_sActionName;
 
-    [Attribute("Hold entrenching tool", UIWidgets.EditBox, "Shown when etool is not held", "")]
+    [Attribute("#GBRS_STR_Shovel_NeedTool", UIWidgets.EditBox, "Shown when etool is not held", "")]
     protected LocalizedString m_sNeedShovelReason;
 
-    [Attribute("Radar must be destroyed first", UIWidgets.EditBox, "Shown when station is intact", "")]
+    [Attribute("#GBRS_STR_Shovel_NotDestroyed", UIWidgets.EditBox, "Shown when station is intact", "")]
     protected LocalizedString m_sNotDestroyedReason;
 
     protected GBRS_RadarStationComponent m_RadarStation;

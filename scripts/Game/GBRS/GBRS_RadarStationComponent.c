@@ -129,7 +129,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     {
         super.EOnInit(owner);
         if (m_WorkstationMode == "")
-            m_WorkstationMode = "PD SEARCH";
+            m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
         ApplyConfiguration(owner);
@@ -661,7 +661,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!m_bPowered)
             return false;
 
-        if (m_WorkstationMode != "LOCK")
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_LOCK)
             return false;
 
         if (!m_Radar)
@@ -854,7 +854,7 @@ class GBRS_RadarStationComponent : ScriptComponent
                 m_bAntennaFrozen = false;
             }
 
-            m_WorkstationMode = "PD SEARCH";
+            m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
             m_bPowered = true;
             ApplyWorkstationModeLocal(m_WorkstationMode);
 
@@ -890,20 +890,20 @@ class GBRS_RadarStationComponent : ScriptComponent
 
     protected bool IsValidWorkstationMode(string mode)
     {
-        if (mode == "PD SEARCH")
+        if (mode == GBRS_RadarStationConstants.MODE_PD_SEARCH)
             return true;
-        if (mode == "WLR")
+        if (mode == GBRS_RadarStationConstants.MODE_WLR)
             return true;
-        if (mode == "LOCK")
+        if (mode == GBRS_RadarStationConstants.MODE_LOCK)
             return true;
         return false;
     }
 
     protected int WorkstationModeToIndex(string mode)
     {
-        if (mode == "WLR")
+        if (mode == GBRS_RadarStationConstants.MODE_WLR)
             return 1;
-        if (mode == "LOCK")
+        if (mode == GBRS_RadarStationConstants.MODE_LOCK)
             return 2;
         return 0;
     }
@@ -911,10 +911,10 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected string IndexToWorkstationMode(int modeIndex)
     {
         if (modeIndex == 1)
-            return "WLR";
+            return GBRS_RadarStationConstants.MODE_WLR;
         if (modeIndex == 2)
-            return "LOCK";
-        return "PD SEARCH";
+            return GBRS_RadarStationConstants.MODE_LOCK;
+        return GBRS_RadarStationConstants.MODE_PD_SEARCH;
     }
 
     protected void ApplyWorkstationModeLocal(string mode)
@@ -940,19 +940,19 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!m_Radar)
             return false;
 
-        if (mode == "WLR")
+        if (mode == GBRS_RadarStationConstants.MODE_WLR)
         {
             ApplyWlrSettings(owner);
             return true;
         }
 
-        if (mode == "LOCK")
+        if (mode == GBRS_RadarStationConstants.MODE_LOCK)
         {
             ApplyLockSettings(owner);
             return true;
         }
 
-        if (mode == "PD SEARCH")
+        if (mode == GBRS_RadarStationConstants.MODE_PD_SEARCH)
         {
             ApplySearchSettings(owner);
             ConfigureLockLayer(false);

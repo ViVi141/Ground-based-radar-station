@@ -10,13 +10,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const float PERSIST_SEC_MIN = 1.2;
 	protected static const float PERSIST_SEC_MAX = 8.0;
 	protected static const float DISPLAY_CLUSTER_M = 90.0;
-	protected static const string MODE_PD_SEARCH = "PD SEARCH";
-	protected static const string MODE_WLR = "WLR";
-	protected static const string MODE_LOCK = "LOCK";
-	protected static const string HINT_NOT_AVAILABLE = "Not available";
-	protected static const string HINT_CONTEXT = "north-up AZ/EL";
-	protected static const string HINT_WLR = "WLR launch/impact";
-	protected static const string HINT_LOCK = "auto-lock vehicles";
+	protected static const string MODE_PD_SEARCH = GBRS_RadarStationConstants.MODE_PD_SEARCH;
+	protected static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
+	protected static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
+	protected static const string HINT_NOT_AVAILABLE = "#GBRS_STR_Hint_NotAvailable";
+	protected static const string HINT_CONTEXT = "#GBRS_STR_Hint_Context";
+	protected static const string HINT_WLR = "#GBRS_STR_Hint_Wlr";
+	protected static const string HINT_LOCK = "#GBRS_STR_Hint_Lock";
 
 	protected GBRS_RadarStationComponent m_Station;
 	protected bool m_bBound;

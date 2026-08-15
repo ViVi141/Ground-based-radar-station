@@ -8,7 +8,7 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
     [Attribute("Disable Scan Frustum", UIWidgets.EditBox, "Shown when scan visuals are on", "")]
     protected LocalizedString m_sDisableName;
 
-    [Attribute("Radar must be powered on", UIWidgets.EditBox, "Shown when the radar is off", "")]
+    [Attribute("#GBRS_STR_NotPowered", UIWidgets.EditBox, "Shown when the radar is off", "")]
     protected LocalizedString m_sNotPoweredReason;
 
     protected GBRS_RadarStationComponent m_RadarStation;
@@ -79,7 +79,7 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
     override string GetCannotPerformReason()
     {
         if (m_RadarStation && !m_RadarStation.IsCompositionReady())
-            return "Finish building first";
+            return "#GBRS_STR_FinishBuildingFirst";
 
         return m_sNotPoweredReason;
     }

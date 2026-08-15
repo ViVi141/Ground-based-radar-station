@@ -4,6 +4,10 @@
 Source (game bake):
   Documents/My Games/ArmaReforgerWorkbench/profile/RDF/DemData/GM_Eden/
 
+Override the profile root with the GBRS_RDF_PROFILE_ROOT environment variable
+(e.g. a standalone-game profile or a different Workbench install):
+  GBRS_RDF_PROFILE_ROOT="D:/Profiles/RDF" python tools/gbrs_eden_dem.py
+
 Matches RDF_DemRuntimeCache sampling: cell_m, terrain_y, surface_class.
 Caches a NPZ crop under tools/out/ for fast reloads.
 """
@@ -17,15 +21,20 @@ from pathlib import Path
 
 import numpy as np
 
-PROFILE_EDEN = (
-    Path.home()
-    / "Documents"
-    / "My Games"
-    / "ArmaReforgerWorkbench"
-    / "profile"
-    / "RDF"
-    / "DemData"
-    / "GM_Eden"
+PROFILE_EDEN = Path(
+    os.environ.get(
+        "GBRS_RDF_PROFILE_ROOT",
+        str(
+            Path.home()
+            / "Documents"
+            / "My Games"
+            / "ArmaReforgerWorkbench"
+            / "profile"
+            / "RDF"
+            / "DemData"
+            / "GM_Eden"
+        ),
+    )
 )
 
 # User-spawned US station from prior GBRS log.
@@ -230,7 +239,9 @@ def load_eden_full(
 ) -> EdenDemCrop:
     """Load the full GM_Eden DEM (optionally downsampled for island-wide maps).
 
-    downsample=4 turns native 4 m cells into 16 m cells.
+    downsample=4 turns native cells (RDF_DemBakeConstants.CELL_M, 2 m since
+    RDF 2026-08-06) into 16 m cells. The native cell size is always read from
+    the baked manifest.csv, so older 4 m bakes keep working unchanged.
     """
     root = dem_root if dem_root is not None else PROFILE_EDEN
     if cache_path is not None and cache_path.is_file():

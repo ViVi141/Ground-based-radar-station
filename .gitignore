@@ -1,0 +1,7 @@
+# Python bytecode caches (tools/)
+__pycache__/
+*.pyc
+
+# Workbench AI bridge plugin — development helper injected by tooling,
+# not part of the addon itself.
+scripts/WorkbenchGame/

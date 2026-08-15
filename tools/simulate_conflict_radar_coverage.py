@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import struct
 import sys
 from dataclasses import asdict, dataclass
@@ -36,13 +37,18 @@ from gbrs_eden_dem import (  # noqa: E402
     los_probe,
 )
 
-DEFAULT_ENT = (
-    Path.home()
-    / "Documents"
-    / "arma_reforger_code"
-    / "worlds"
-    / "MP"
-    / "CTI_Campaign_Eden.ent"
+DEFAULT_ENT = Path(
+    os.environ.get(
+        "GBRS_EDEN_ENT",
+        str(
+            Path.home()
+            / "Documents"
+            / "arma_reforger_code"
+            / "worlds"
+            / "MP"
+            / "CTI_Campaign_Eden.ent"
+        ),
+    )
 )
 
 # EBIN property marker used before vector3 coords/angles on Eden Conflict.
@@ -514,7 +520,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--dem-downsample",
         type=int,
         default=8,
-        help="DEM downsample factor (native cell 4 m; 8 => 32 m)",
+        help="DEM downsample factor (native cell from manifest, default 2 m; 8 => 16 m)",
     )
     parser.add_argument(
         "--azimuth-steps",

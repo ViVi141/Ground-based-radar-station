@@ -20,10 +20,6 @@ class GBRS_RadarStationHud
     // PIP cameras often start underexposed; sync main HDR then lift slightly.
     static const float OPTICS_HDR_BOOST = 1.35;
 
-    static const int STATION_MARGIN = 20;
-    static const int STATION_W = 1504;
-    static const int STATION_H = 760;
-
     static const int PPI_W = 640;
     static const int PPI_H = 640;
     static const float PPI_CX = 320.0;
@@ -39,7 +35,7 @@ class GBRS_RadarStationHud
     static const float SWEEP_HALF_DEG = 8.0;
     static const int SWEEP_SEGMENTS = 16;
     static const int MAX_LIST_ROWS = 18;
-    // Must match GBRS_RadarStationPpiController.DISPLAY_MAX_BLIPS.
+    // Must match GBRS_RadarStationMenu.DISPLAY_MAX_BLIPS.
     static const int MAX_DRAW_BLIPS = 64;
 
     // Static face is drawn on the same Canvas as sweep/blips (RHS Garmin pattern).
@@ -57,21 +53,19 @@ class GBRS_RadarStationHud
     static const int COL_WLR_LINK = ARGB(140, 200, 200, 200);
     static const int COL_LOCK = ARGB(255, 255, 70, 70);
     static const float WLR_ALERT_RADIUS_M = 120.0;
-    static const string MODE_WLR = "WLR";
-    static const string MODE_LOCK = "LOCK";
+    static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
+    static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
 
     protected static ref GBRS_RadarStationHud s_Instance;
 
     protected Widget m_wRoot;
     protected ref GBRS_RadarStationHudWidgets m_Widgets;
-    // true when this class created the root via CreateWidgets (legacy overlay).
-    protected bool m_bOwnsRoot;
 
     protected SCR_PIPCamera m_OpticsCamera;
     protected IEntity m_OpticsParent;
     protected float m_DisplayRange = 7000.0;
     protected float m_LastUpdateS;
-    protected string m_Mode = "PD SEARCH";
+    protected string m_Mode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
     protected int m_DetectedTotal;
     protected RDF_RadarLockManager m_LockManager;
     // RDF 1.0.0 ECCM decision status ("eccm=0" | "eccm slb/prf/freq/burn").
@@ -94,16 +88,6 @@ class GBRS_RadarStationHud
         if (!s_Instance)
             s_Instance = new GBRS_RadarStationHud();
         return s_Instance;
-    }
-
-    static void Show(IEntity opticsParent)
-    {
-        GetInstance().ShowInternal(opticsParent);
-    }
-
-    static void Hide()
-    {
-        GetInstance().HideInternal();
     }
 
     // Bind drawing to a MenuManager-owned layout root (does not CreateWidgets).
@@ -164,59 +148,10 @@ class GBRS_RadarStationHud
         GetInstance().Update(targets, origin, forward, range, tracker, detectedTotal, lockMgr);
     }
 
-    protected void ShowInternal(IEntity opticsParent)
-    {
-        WorkspaceWidget ws = GetGame().GetWorkspace();
-        if (!ws)
-            return;
-
-        if (m_wRoot)
-        {
-            if (m_bOwnsRoot)
-                PinRootCenter(ws);
-            m_OpticsParent = opticsParent;
-            if (!m_OpticsCamera)
-                CreateOpticsCamera(opticsParent);
-            return;
-        }
-
-        m_bOwnsRoot = true;
-        m_wRoot = ws.CreateWidgets(LAYOUT, null);
-        if (!m_wRoot)
-        {
-            Print("[GBRS HUD] CreateWidgets failed for RadarStationHUD.layout", LogLevel.ERROR);
-            return;
-        }
-
-        m_Widgets = new GBRS_RadarStationHudWidgets();
-        if (!m_Widgets.Init(m_wRoot))
-            Print("[GBRS HUD] widget registry incomplete", LogLevel.WARNING);
-
-        m_wRoot.SetVisible(true);
-        m_wRoot.SetZOrder(120);
-        PinRootCenter(ws);
-        InitCanvases();
-
-        if (m_Widgets.m_wListBody)
-            m_Widgets.m_wListBody.SetText("(no contacts)");
-        if (m_Widgets.m_wPpiMode)
-            m_Widgets.m_wPpiMode.SetText(m_Mode);
-
-        m_OpticsParent = opticsParent;
-        CreateOpticsCamera(opticsParent);
-        m_LastUpdateS = 0.0;
-        m_DetectedTotal = 0;
-        Print("[GBRS HUD] panels bound optics/azel/ppi/list registered");
-    }
-
     protected void AttachInternal(Widget root, IEntity opticsParent)
     {
         if (!root)
             return;
-
-        // Drop any prior overlay-owned root before binding menu widgets.
-        if (m_wRoot && m_bOwnsRoot)
-            HideInternal();
 
         if (m_wRoot == root)
         {
@@ -229,7 +164,6 @@ class GBRS_RadarStationHud
         if (m_wRoot)
             DetachInternal();
 
-        m_bOwnsRoot = false;
         m_wRoot = root;
         m_Widgets = new GBRS_RadarStationHudWidgets();
         if (!m_Widgets.Init(m_wRoot))
@@ -238,7 +172,7 @@ class GBRS_RadarStationHud
         InitCanvases();
 
         if (m_Widgets.m_wListBody)
-            m_Widgets.m_wListBody.SetText("(no contacts)");
+            m_Widgets.m_wListBody.SetText("#GBRS_STR_NoContacts");
         if (m_Widgets.m_wPpiMode)
             m_Widgets.m_wPpiMode.SetText(m_Mode);
 
@@ -261,35 +195,8 @@ class GBRS_RadarStationHud
         m_AzElAll = null;
         m_PpiFaceTex = null;
         m_OpticsParent = null;
-        m_bOwnsRoot = false;
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
-    }
-
-    // Keep design size (RDF-style). Shrinking the root breaks Canvas SizeInUnits
-    // vs ImageWidget mapping and makes the sweep origin drift from the face center.
-    protected void PinRootCenter(WorkspaceWidget ws)
-    {
-        if (!m_wRoot || !ws)
-            return;
-
-        int screenW = ws.GetWidth();
-        int screenH = ws.GetHeight();
-        if (screenW < 200)
-            screenW = 1920;
-        if (screenH < 200)
-            screenH = 1080;
-
-        int left = (screenW - STATION_W) / 2;
-        int top = (screenH - STATION_H) / 2;
-        if (left < STATION_MARGIN)
-            left = STATION_MARGIN;
-        if (top < STATION_MARGIN)
-            top = STATION_MARGIN;
-
-        FrameSlot.SetAnchor(m_wRoot, 0.0, 0.0);
-        FrameSlot.SetSize(m_wRoot, STATION_W, STATION_H);
-        FrameSlot.SetPos(m_wRoot, left, top);
     }
 
     // Force face + canvas onto the same absolute 640x640 rect so draw units map
@@ -370,24 +277,6 @@ class GBRS_RadarStationHud
             m_Widgets.m_wAzElCanvas.SetSizeInUnits(Vector(AZEL_W, AZEL_H, 0));
             m_Widgets.m_wAzElCanvas.SetDrawCommands(m_AzElAll);
         }
-    }
-
-    protected void HideInternal()
-    {
-        DestroyOpticsCamera();
-        if (m_bOwnsRoot && m_wRoot)
-            m_wRoot.RemoveFromHierarchy();
-        m_wRoot = null;
-        if (m_Widgets)
-            m_Widgets.Clear();
-        m_Widgets = null;
-        m_PpiAll = null;
-        m_AzElAll = null;
-        m_PpiFaceTex = null;
-        m_OpticsParent = null;
-        m_bOwnsRoot = false;
-        m_LastUpdateS = 0.0;
-        m_DetectedTotal = 0;
     }
 
     protected void CreateOpticsCamera(IEntity parent)
@@ -523,7 +412,7 @@ class GBRS_RadarStationHud
             if (az < 0.0)
                 az = az + 360.0;
             // Do not report the artificial look-up as antenna elevation.
-            m_Widgets.m_wOpticsInfo.SetText("AZ " + F0(az) + "  EL FIXED");
+            m_Widgets.m_wOpticsInfo.SetTextFormat("#GBRS_STR_OpticsAzEl", F0(az));
         }
     }
 
@@ -1171,7 +1060,7 @@ class GBRS_RadarStationHud
             AppendWlrListRows(body, row, origin, tracker);
 
         if (body == "")
-            body = "(no contacts)";
+            body = "#GBRS_STR_NoContacts";
         m_Widgets.m_wListBody.SetText(body);
 
         int tracks = 0;
