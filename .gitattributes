@@ -1,15 +1,16 @@
 # Force LF for localization runtime conf — Workbench/engine StringTableRuntime
 # parser is line-ending sensitive; git core.autocrlf would otherwise rewrite
-# these to CRLF on checkout.
-Language/*.conf text eol=lf
-*.st text eol=lf
+# these to CRLF on checkout. -text stores the blob byte-for-byte (LF) with no
+# clean/checkout conversion at all.
+Language/*.conf -text
+*.st -text
 
-# Scripts / layouts / configs keep native (repo) LF too.
-*.c text eol=lf
-*.et text eol=lf
-*.layout text eol=lf
-*.conf text eol=lf
-*.meta text eol=lf
-*.py text eol=lf
-*.json text eol=lf
-*.gproj text eol=lf
+# Scripts / layouts / configs keep repo-native LF (no conversion either).
+*.c -text
+*.et -text
+*.layout -text
+*.conf -text
+*.meta -text
+*.py -text
+*.json -text
+*.gproj -text
