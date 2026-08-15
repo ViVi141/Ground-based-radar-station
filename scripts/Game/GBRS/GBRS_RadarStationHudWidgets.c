@@ -15,12 +15,21 @@ class GBRS_RadarStationHudWidgets
     Widget m_wHintTabNext;
     Widget m_wHintSelect;
     Widget m_wHintClose;
+    Widget m_wHintParamPrev;
+    Widget m_wHintParamNext;
+    Widget m_wHintParamDec;
+    Widget m_wHintParamInc;
     Widget m_wStationRow;
     Widget m_wLeftColumn;
     Widget m_wOpticsPanel;
     Widget m_wAzElPanel;
     Widget m_wPpiPanel;
     Widget m_wListPanel;
+    Widget m_wOpticsBezel;
+    Widget m_wAzElBezel;
+    Widget m_wPpiBezel;
+    Widget m_wListBezel;
+    Widget m_wModeBarBg;
 
     // Optics panel
     TextWidget m_wOpticsTitle;
@@ -62,6 +71,15 @@ class GBRS_RadarStationHudWidgets
     TextWidget m_wListHeader;
     TextWidget m_wListBody;
     TextWidget m_wListFooter;
+    Widget m_wListTable;
+    TextWidget m_wListHType;
+    TextWidget m_wListBNr;
+    TextWidget m_wListBAz;
+    TextWidget m_wListBRng;
+    TextWidget m_wListBAlt;
+    TextWidget m_wListBSpd;
+    TextWidget m_wListBType;
+    TextWidget m_wListBSnr;
 
     bool Init(Widget root)
     {
@@ -80,8 +98,17 @@ class GBRS_RadarStationHudWidgets
         m_wHintTabNext = root.FindAnyWidget("HintTabNext");
         m_wHintSelect = root.FindAnyWidget("HintSelect");
         m_wHintClose = root.FindAnyWidget("HintClose");
+        m_wHintParamPrev = root.FindAnyWidget("HintParamPrev");
+        m_wHintParamNext = root.FindAnyWidget("HintParamNext");
+        m_wHintParamDec = root.FindAnyWidget("HintParamDec");
+        m_wHintParamInc = root.FindAnyWidget("HintParamInc");
         m_wStationRow = root.FindAnyWidget("StationRow");
         m_wLeftColumn = root.FindAnyWidget("LeftColumn");
+        m_wOpticsBezel = root.FindAnyWidget("OpticsBezel");
+        m_wAzElBezel = root.FindAnyWidget("AzElBezel");
+        m_wPpiBezel = root.FindAnyWidget("PpiBezel");
+        m_wListBezel = root.FindAnyWidget("ListBezel");
+        m_wModeBarBg = root.FindAnyWidget("ModeBarBg");
 
         m_wOpticsPanel = root.FindAnyWidget("OpticsPanel");
         m_wOpticsTitle = TextWidget.Cast(root.FindAnyWidget("OpticsTitle"));
@@ -123,6 +150,15 @@ class GBRS_RadarStationHudWidgets
         m_wListHeader = TextWidget.Cast(root.FindAnyWidget("ListHeader"));
         m_wListBody = TextWidget.Cast(root.FindAnyWidget("ListBody"));
         m_wListFooter = TextWidget.Cast(root.FindAnyWidget("ListFooter"));
+        m_wListTable = root.FindAnyWidget("ListTable");
+        m_wListHType = TextWidget.Cast(root.FindAnyWidget("ListH_Type"));
+        m_wListBNr = TextWidget.Cast(root.FindAnyWidget("ListB_Nr"));
+        m_wListBAz = TextWidget.Cast(root.FindAnyWidget("ListB_Az"));
+        m_wListBRng = TextWidget.Cast(root.FindAnyWidget("ListB_Rng"));
+        m_wListBAlt = TextWidget.Cast(root.FindAnyWidget("ListB_Alt"));
+        m_wListBSpd = TextWidget.Cast(root.FindAnyWidget("ListB_Spd"));
+        m_wListBType = TextWidget.Cast(root.FindAnyWidget("ListB_Type"));
+        m_wListBSnr = TextWidget.Cast(root.FindAnyWidget("ListB_Snr"));
 
         bool ok = true;
         ok = Require(m_wOpticsPanel, "OpticsPanel") && ok;
@@ -142,6 +178,14 @@ class GBRS_RadarStationHudWidgets
         ok = Require(m_wPpiRange, "PpiRange") && ok;
         ok = Require(m_wListBody, "ListBody") && ok;
         ok = Require(m_wListFooter, "ListFooter") && ok;
+        ok = Require(m_wListTable, "ListTable") && ok;
+        ok = Require(m_wListBNr, "ListB_Nr") && ok;
+        ok = Require(m_wListBAz, "ListB_Az") && ok;
+        ok = Require(m_wListBRng, "ListB_Rng") && ok;
+        ok = Require(m_wListBAlt, "ListB_Alt") && ok;
+        ok = Require(m_wListBSpd, "ListB_Spd") && ok;
+        ok = Require(m_wListBType, "ListB_Type") && ok;
+        ok = Require(m_wListBSnr, "ListB_Snr") && ok;
         return ok;
     }
 
@@ -168,12 +212,21 @@ class GBRS_RadarStationHudWidgets
         m_wHintTabNext = null;
         m_wHintSelect = null;
         m_wHintClose = null;
+        m_wHintParamPrev = null;
+        m_wHintParamNext = null;
+        m_wHintParamDec = null;
+        m_wHintParamInc = null;
         m_wStationRow = null;
         m_wLeftColumn = null;
         m_wOpticsPanel = null;
         m_wAzElPanel = null;
         m_wPpiPanel = null;
         m_wListPanel = null;
+        m_wOpticsBezel = null;
+        m_wAzElBezel = null;
+        m_wPpiBezel = null;
+        m_wListBezel = null;
+        m_wModeBarBg = null;
         m_wOpticsTitle = null;
         m_wOpticsInfo = null;
         m_wOpticsPlaceholder = null;
@@ -207,5 +260,14 @@ class GBRS_RadarStationHudWidgets
         m_wListHeader = null;
         m_wListBody = null;
         m_wListFooter = null;
+        m_wListTable = null;
+        m_wListHType = null;
+        m_wListBNr = null;
+        m_wListBAz = null;
+        m_wListBRng = null;
+        m_wListBAlt = null;
+        m_wListBSpd = null;
+        m_wListBType = null;
+        m_wListBSnr = null;
     }
 }

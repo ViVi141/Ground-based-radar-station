@@ -1,16 +1,11 @@
 FrameWidgetClass {
  Name "rootFrame"
  Slot FrameWidgetSlot "{69FCEDCEB0010101}" {
-  Anchor 0 0 0 0
-  PositionX 208
-  OffsetLeft 208
-  PositionY 160
-  OffsetTop 160
-  SizeX 1504
-  OffsetRight -1712
-  SizeY 760
-  OffsetBottom -920
-  Alignment 0 0
+  Anchor 0 0 1 1
+  OffsetLeft 0
+  OffsetTop 0
+  OffsetRight 0
+  OffsetBottom 0
  }
  "Z Order" 120
  Clipping False
@@ -24,7 +19,26 @@ FrameWidgetClass {
     OffsetRight 0
     OffsetBottom 0
    }
-   Color 0.02 0.05 0.08 0.55
+   Color 0.01 0.02 0.04 0.72
+   Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
+   Size 1 1
+   Progress 1
+  }
+  ImageWidgetClass "{69FCEDCEB0020100}" {
+   Name "ModeBarBg"
+   Slot FrameWidgetSlot "{69FCEDCEB0020101}" {
+    Anchor 0 0 1 0
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 48
+    OffsetBottom -48
+    Alignment 0 0
+   }
+   Color 0.015 0.04 0.055 0.94
    Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
    Size 1 1
    Progress 1
@@ -34,21 +48,38 @@ FrameWidgetClass {
    Slot FrameWidgetSlot "{69FCEDCEB00101A1}" {
     Anchor 0 0 1 0
     PositionX 0
-    OffsetLeft 0
+    OffsetLeft 12
     PositionY 0
     OffsetTop 0
     SizeX 0
     OffsetRight 0
-    SizeY 44
-    OffsetBottom -44
+    SizeY 48
+    OffsetBottom -48
     Alignment 0 0
    }
    Clipping False
    {
+    TextWidgetClass "{69FCEDCEB0020102}" {
+     Name "ModeBarTitle"
+     Slot LayoutSlot "{69FCEDCEB0020103}" {
+      Padding 0 0 16 0
+      VerticalAlign 1
+     }
+     Color 0.45 1 0.72 0.95
+     Text "GBRS"
+     "Font Size" 18
+     "Vertical Alignment" Center
+     FontProperties FontProperties "{69FCEDCEB0020104}" {
+      Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+      ShadowSize 12
+      ShadowOpacity 0.45
+     }
+    }
     HorizontalLayoutWidgetClass "{69FCEDCEB00101D0}" {
      Name "ModeTabs"
      Slot LayoutSlot "{69FCEDCEB00101D1}" {
       Padding 0 0 8 0
+      VerticalAlign 1
      }
      {
       ButtonWidgetClass "{69FCEDCEB00101A2}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
@@ -110,6 +141,7 @@ FrameWidgetClass {
      Slot LayoutSlot "{69FCEDCEB00101E1}" {
       SizeMode Fill
       HorizontalAlign 2
+      VerticalAlign 1
      }
      "Fill Origin" Right
      {
@@ -164,6 +196,74 @@ FrameWidgetClass {
        {
        }
       }
+      ButtonWidgetClass "{69FCEDCEB0020200}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintParamPrev"
+       Slot LayoutSlot "{69FCEDCEB0020201}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB0020210}" {
+         m_sActionName "MenuUp"
+         m_sLabel "Param"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB0020202}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintParamNext"
+       Slot LayoutSlot "{69FCEDCEB0020203}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB0020211}" {
+         m_sActionName "MenuDown"
+         m_sLabel "Param"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB0020204}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintParamDec"
+       Slot LayoutSlot "{69FCEDCEB0020205}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB0020212}" {
+         m_sActionName "MenuLeft"
+         m_sLabel "Value"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
+      ButtonWidgetClass "{69FCEDCEB0020206}" : "{87037226B1A2064B}UI/layouts/WidgetLibrary/Buttons/WLib_NavigationButtonSuperSmall.layout" {
+       Name "HintParamInc"
+       Slot LayoutSlot "{69FCEDCEB0020207}" {
+        Padding 0 0 12 0
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       components {
+        SCR_InputButtonComponent "{69FCEDCEB0020213}" {
+         m_sActionName "MenuRight"
+         m_sLabel "Value"
+         m_iHeightInPixel 28
+        }
+       }
+       {
+       }
+      }
       ButtonWidgetClass "{69FCEDCEB00101E8}" : "{0114A06AD44D49BD}UI/layouts/WidgetLibrary/Buttons/DialogButtonCancel.layout" {
        Name "HintClose"
        Slot LayoutSlot "{69FCEDCEB00101E9}" {
@@ -203,9 +303,7 @@ FrameWidgetClass {
       Padding 0 0 12 0
      }
      AllowWidthOverride 1
-     WidthOverride 360
-     AllowHeightOverride 1
-     HeightOverride 720
+     WidthOverride 400
      {
       VerticalLayoutWidgetClass "{69FCEDCEB0010202}" {
        Name "LeftColumn"
@@ -219,11 +317,11 @@ FrameWidgetClass {
          Name "OpticsSlot"
          Slot LayoutSlot "{69FCEDCEB0010211}" {
           Padding 0 0 0 12
+          SizeMode Fill
+          FillWeight 2
          }
          AllowWidthOverride 1
-         WidthOverride 360
-         AllowHeightOverride 1
-         HeightOverride 280
+         WidthOverride 400
          {
           OverlayWidgetClass "{69FCEDCEB0010220}" {
            Name "OpticsPanel"
@@ -339,11 +437,11 @@ FrameWidgetClass {
         SizeLayoutWidgetClass "{69FCEDCEB0010300}" {
          Name "AzElSlot"
          Slot LayoutSlot "{69FCEDCEB0010301}" {
+          SizeMode Fill
+          FillWeight 3
          }
          AllowWidthOverride 1
-         WidthOverride 360
-         AllowHeightOverride 1
-         HeightOverride 468
+         WidthOverride 400
          {          OverlayWidgetClass "{69FCEDCEB0010310}" {
            Name "AzElPanel"
            Slot AlignableSlot "{69FCEDCEB0010311}" {
@@ -492,12 +590,9 @@ FrameWidgetClass {
                 SizeLayoutWidgetClass "{69FCEDCEB0010350}" {
                  Name "AzElCanvasSize"
                  Slot LayoutSlot "{69FCEDCEB0010351}" {
+                  SizeMode Fill
                   VerticalAlign 3
                  }
-                 AllowWidthOverride 1
-                 WidthOverride 300
-                 AllowHeightOverride 1
-                 HeightOverride 400
                  {
                   FrameWidgetClass "{69FCEDCEB0010354}" {
                    Name "AzElPlotFrame"
@@ -525,11 +620,10 @@ FrameWidgetClass {
                      Name "AzElGridV0"
                      Slot FrameWidgetSlot "{69FCEDCEB0010601}" {
                       Anchor 0 0 0 1
-                      PositionX 0
                       OffsetLeft 0
                       OffsetTop 0
-                      SizeX 1
-                      OffsetRight -1
+                      SizeX 2
+                      OffsetRight -2
                       OffsetBottom 0
                      }
                      Color 0.275 0.549 0.706 0.35
@@ -620,15 +714,13 @@ FrameWidgetClass {
                     ImageWidgetClass "{69FCEDCEB001060C}" {
                      Name "AzElGridV6"
                      Slot FrameWidgetSlot "{69FCEDCEB001060D}" {
-                      Anchor 0 0 0 1
-                      PositionX 299
-                      OffsetLeft 299
+                      Anchor 1 0 1 1
+                      OffsetLeft -2
                       OffsetTop 0
-                      SizeX 1
-                      OffsetRight -300
+                      OffsetRight 0
                       OffsetBottom 0
                      }
-                     Color 0.275 0.549 0.706 0.35
+                     Color 0.275 0.549 0.706 0.45
                      Texture "{C8356C245709D063}UI/Textures/Common/gradient_transparent_white_linear_photoshop.edds"
                      Size 1 1
                      Progress 1
@@ -850,13 +942,11 @@ FrameWidgetClass {
     SizeLayoutWidgetClass "{69FCEDCEB0010400}" {
      Name "PpiSlot"
      Slot LayoutSlot "{69FCEDCEB0010401}" {
+      SizeMode Fill
+      FillWeight 1
       VerticalAlign 3
       Padding 0 0 12 0
      }
-     AllowWidthOverride 1
-     WidthOverride 760
-     AllowHeightOverride 1
-     HeightOverride 720
      {
       OverlayWidgetClass "{69FCEDCEB0010410}" {
        Name "PpiPanel"
@@ -882,7 +972,7 @@ FrameWidgetClass {
           VerticalAlign 3
           Padding 2 2 2 2
          }
-         Color 0.01 0.05 0.03 0.98
+             Color 0.006 0.035 0.02 0.98
          style rounded_2px
         }
         VerticalLayoutWidgetClass "{69FCEDCEB0010420}" {
@@ -955,13 +1045,9 @@ FrameWidgetClass {
             SizeLayoutWidgetClass "{69FCEDCEB0010432}" {
              Name "PpiCanvasSize"
              Slot OverlayWidgetSlot "{69FCEDCEB0010433}" {
-              HorizontalAlign 1
-              VerticalAlign 1
+              HorizontalAlign 3
+              VerticalAlign 3
              }
-             AllowWidthOverride 1
-             WidthOverride 640
-             AllowHeightOverride 1
-             HeightOverride 640
              {
               FrameWidgetClass "{69FCEDCEB0010436}" {
                Name "PpiCanvasFrame"
@@ -1230,9 +1316,7 @@ FrameWidgetClass {
       VerticalAlign 3
      }
      AllowWidthOverride 1
-     WidthOverride 360
-     AllowHeightOverride 1
-     HeightOverride 720
+     WidthOverride 440
      {
       OverlayWidgetClass "{69FCEDCEB0010510}" {
        Name "ListPanel"
@@ -1258,7 +1342,7 @@ FrameWidgetClass {
           VerticalAlign 3
           Padding 2 2 2 2
          }
-         Color 0.02 0.05 0.09 0.98
+             Color 0.008 0.03 0.05 0.98
          style rounded_2px
         }
         VerticalLayoutWidgetClass "{69FCEDCEB0010520}" {
@@ -1282,29 +1366,332 @@ FrameWidgetClass {
             Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
            }
           }
-          TextWidgetClass "{69FCEDCEB0010524}" {
-           Name "ListHeader"
-           Slot LayoutSlot "{69FCEDCEB0010525}" {
-            Padding 0 0 0 6
-           }
-           Color 0.55 0.72 0.88 0.85
-           Text "NR  AZ      RNG     ALT     SPD     TYPE     SNR"
-           "Font Size" 12
-           FontProperties FontProperties "{69FCEDCEB00105F2}" {
-            Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
-           }
-          }
-          TextWidgetClass "{69FCEDCEB0010526}" {
-           Name "ListBody"
-           Slot LayoutSlot "{69FCEDCEB0010527}" {
+          OverlayWidgetClass "{69FCEDCEB0030001}" {
+           Name "ListTableHost"
+           Slot LayoutSlot "{69FCEDCEB0030002}" {
             SizeMode Fill
            }
-           Color 0.7 0.88 1 0.92
-           Text "(no contacts)"
-           "Font Size" 13
-           "Vertical Alignment" Top
-           FontProperties FontProperties "{69FCEDCEB00105F3}" {
-            Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+           Clipping False
+           {
+            HorizontalLayoutWidgetClass "{69FCEDCEB0030010}" {
+             Name "ListTable"
+             Slot OverlayWidgetSlot "{69FCEDCEB0030011}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             {
+              SizeLayoutWidgetClass "{69FCEDCEB0030100}" {
+               Name "ListColNr"
+               Slot LayoutSlot "{69FCEDCEB0030101}" {
+                Padding 0 0 8 0
+               }
+               AllowWidthOverride 1
+               WidthOverride 36
+               {
+                VerticalLayoutWidgetClass "{69FCEDCEB0030102}" {
+                 Name "ListColNrInner"
+                 Slot AlignableSlot "{69FCEDCEB0030103}" {
+                  HorizontalAlign 3
+                  VerticalAlign 3
+                 }
+                 {
+                  TextWidgetClass "{69FCEDCEB0030104}" {
+                   Name "ListH_Nr"
+                   Slot LayoutSlot "{69FCEDCEB0030105}" {
+                    Padding 0 0 0 4
+                   }
+                   Color 0.55 0.72 0.88 0.9
+                   Text "NR"
+                   "Font Size" 13
+                   "Horizontal Alignment" Right
+                   FontProperties FontProperties "{69FCEDCEB0030106}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                  TextWidgetClass "{69FCEDCEB0030107}" {
+                   Name "ListB_Nr"
+                   Slot LayoutSlot "{69FCEDCEB0030108}" {
+                    SizeMode Fill
+                   }
+                   Color 0.78 0.92 1 0.95
+                   Text "--"
+                   "Font Size" 13
+                   "Horizontal Alignment" Right
+                   "Vertical Alignment" Top
+                   FontProperties FontProperties "{69FCEDCEB0030109}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+              SizeLayoutWidgetClass "{69FCEDCEB0030110}" {
+               Name "ListColAz"
+               Slot LayoutSlot "{69FCEDCEB0030111}" {
+                Padding 0 0 8 0
+               }
+               AllowWidthOverride 1
+               WidthOverride 48
+               {
+                VerticalLayoutWidgetClass "{69FCEDCEB0030112}" {
+                 Name "ListColAzInner"
+                 Slot AlignableSlot "{69FCEDCEB0030113}" {
+                  HorizontalAlign 3
+                  VerticalAlign 3
+                 }
+                 {
+                  TextWidgetClass "{69FCEDCEB0030114}" {
+                   Name "ListH_Az"
+                   Slot LayoutSlot "{69FCEDCEB0030115}" {
+                    Padding 0 0 0 4
+                   }
+                   Color 0.55 0.72 0.88 0.9
+                   Text "AZ"
+                   "Font Size" 13
+                   "Horizontal Alignment" Right
+                   FontProperties FontProperties "{69FCEDCEB0030116}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                  TextWidgetClass "{69FCEDCEB0030117}" {
+                   Name "ListB_Az"
+                   Slot LayoutSlot "{69FCEDCEB0030118}" {
+                    SizeMode Fill
+                   }
+                   Color 0.78 0.92 1 0.95
+                   Text "---"
+                   "Font Size" 13
+                   "Horizontal Alignment" Right
+                   "Vertical Alignment" Top
+                   FontProperties FontProperties "{69FCEDCEB0030119}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+              VerticalLayoutWidgetClass "{69FCEDCEB0030120}" {
+               Name "ListColRng"
+               Slot LayoutSlot "{69FCEDCEB0030121}" {
+                SizeMode Fill
+                FillWeight 1
+                Padding 0 0 8 0
+               }
+               {
+                TextWidgetClass "{69FCEDCEB0030122}" {
+                 Name "ListH_Rng"
+                 Slot LayoutSlot "{69FCEDCEB0030123}" {
+                  Padding 0 0 0 4
+                 }
+                 Color 0.55 0.72 0.88 0.9
+                 Text "RNG"
+                 "Font Size" 13
+                 "Horizontal Alignment" Right
+                 FontProperties FontProperties "{69FCEDCEB0030124}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0030125}" {
+                 Name "ListB_Rng"
+                 Slot LayoutSlot "{69FCEDCEB0030126}" {
+                  SizeMode Fill
+                 }
+                 Color 0.78 0.92 1 0.95
+                 Text "-.-"
+                 "Font Size" 13
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Top
+                 FontProperties FontProperties "{69FCEDCEB0030127}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+               }
+              }
+              VerticalLayoutWidgetClass "{69FCEDCEB0030130}" {
+               Name "ListColAlt"
+               Slot LayoutSlot "{69FCEDCEB0030131}" {
+                SizeMode Fill
+                FillWeight 1
+                Padding 0 0 8 0
+               }
+               {
+                TextWidgetClass "{69FCEDCEB0030132}" {
+                 Name "ListH_Alt"
+                 Slot LayoutSlot "{69FCEDCEB0030133}" {
+                  Padding 0 0 0 4
+                 }
+                 Color 0.55 0.72 0.88 0.9
+                 Text "ALT"
+                 "Font Size" 13
+                 "Horizontal Alignment" Right
+                 FontProperties FontProperties "{69FCEDCEB0030134}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0030135}" {
+                 Name "ListB_Alt"
+                 Slot LayoutSlot "{69FCEDCEB0030136}" {
+                  SizeMode Fill
+                 }
+                 Color 0.78 0.92 1 0.95
+                 Text "-.-"
+                 "Font Size" 13
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Top
+                 FontProperties FontProperties "{69FCEDCEB0030137}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+               }
+              }
+              VerticalLayoutWidgetClass "{69FCEDCEB0030140}" {
+               Name "ListColSpd"
+               Slot LayoutSlot "{69FCEDCEB0030141}" {
+                SizeMode Fill
+                FillWeight 1
+                Padding 0 0 8 0
+               }
+               {
+                TextWidgetClass "{69FCEDCEB0030142}" {
+                 Name "ListH_Spd"
+                 Slot LayoutSlot "{69FCEDCEB0030143}" {
+                  Padding 0 0 0 4
+                 }
+                 Color 0.55 0.72 0.88 0.9
+                 Text "SPD"
+                 "Font Size" 13
+                 "Horizontal Alignment" Right
+                 FontProperties FontProperties "{69FCEDCEB0030144}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+                TextWidgetClass "{69FCEDCEB0030145}" {
+                 Name "ListB_Spd"
+                 Slot LayoutSlot "{69FCEDCEB0030146}" {
+                  SizeMode Fill
+                 }
+                 Color 0.78 0.92 1 0.95
+                 Text "---"
+                 "Font Size" 13
+                 "Horizontal Alignment" Right
+                 "Vertical Alignment" Top
+                 FontProperties FontProperties "{69FCEDCEB0030147}" {
+                  Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                 }
+                }
+               }
+              }
+              SizeLayoutWidgetClass "{69FCEDCEB0030150}" {
+               Name "ListColType"
+               Slot LayoutSlot "{69FCEDCEB0030151}" {
+                Padding 0 0 8 0
+               }
+               AllowWidthOverride 1
+               WidthOverride 56
+               {
+                VerticalLayoutWidgetClass "{69FCEDCEB0030152}" {
+                 Name "ListColTypeInner"
+                 Slot AlignableSlot "{69FCEDCEB0030153}" {
+                  HorizontalAlign 3
+                  VerticalAlign 3
+                 }
+                 {
+                  TextWidgetClass "{69FCEDCEB0030154}" {
+                   Name "ListH_Type"
+                   Slot LayoutSlot "{69FCEDCEB0030155}" {
+                    Padding 0 0 0 4
+                   }
+                   Color 0.55 0.72 0.88 0.9
+                   Text "TYPE"
+                   "Font Size" 13
+                   "Horizontal Alignment" Left
+                   FontProperties FontProperties "{69FCEDCEB0030156}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                  TextWidgetClass "{69FCEDCEB0030157}" {
+                   Name "ListB_Type"
+                   Slot LayoutSlot "{69FCEDCEB0030158}" {
+                    SizeMode Fill
+                   }
+                   Color 0.78 0.92 1 0.95
+                   Text "----"
+                   "Font Size" 13
+                   "Horizontal Alignment" Left
+                   "Vertical Alignment" Top
+                   FontProperties FontProperties "{69FCEDCEB0030159}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+              SizeLayoutWidgetClass "{69FCEDCEB0030160}" {
+               Name "ListColSnr"
+               Slot LayoutSlot "{69FCEDCEB0030161}" {
+                Padding 0 0 0 0
+               }
+               AllowWidthOverride 1
+               WidthOverride 44
+               {
+                VerticalLayoutWidgetClass "{69FCEDCEB0030162}" {
+                 Name "ListColSnrInner"
+                 Slot AlignableSlot "{69FCEDCEB0030163}" {
+                  HorizontalAlign 3
+                  VerticalAlign 3
+                 }
+                 {
+                  TextWidgetClass "{69FCEDCEB0030164}" {
+                   Name "ListH_Snr"
+                   Slot LayoutSlot "{69FCEDCEB0030165}" {
+                    Padding 0 0 0 4
+                   }
+                   Color 0.55 0.72 0.88 0.9
+                   Text "SNR"
+                   "Font Size" 13
+                   "Horizontal Alignment" Right
+                   FontProperties FontProperties "{69FCEDCEB0030166}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                  TextWidgetClass "{69FCEDCEB0030167}" {
+                   Name "ListB_Snr"
+                   Slot LayoutSlot "{69FCEDCEB0030168}" {
+                    SizeMode Fill
+                   }
+                   Color 0.78 0.92 1 0.95
+                   Text "--"
+                   "Font Size" 13
+                   "Horizontal Alignment" Right
+                   "Vertical Alignment" Top
+                   FontProperties FontProperties "{69FCEDCEB0030169}" {
+                    Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+            TextWidgetClass "{69FCEDCEB0010526}" {
+             Name "ListBody"
+             Slot OverlayWidgetSlot "{69FCEDCEB0030020}" {
+              HorizontalAlign 3
+              VerticalAlign 3
+             }
+             "Is Visible" 0
+             Color 0.7 0.88 1 0.92
+             Text "(no contacts)"
+             "Font Size" 13
+             "Vertical Alignment" Top
+             FontProperties FontProperties "{69FCEDCEB00105F3}" {
+              Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+             }
+            }
            }
           }
           TextWidgetClass "{69FCEDCEB0010528}" {

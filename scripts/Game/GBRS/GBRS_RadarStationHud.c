@@ -20,9 +20,9 @@ class GBRS_RadarStationHud
     // PIP cameras often start underexposed; sync main HDR then lift slightly.
     static const float OPTICS_HDR_BOOST = 1.35;
 
-    static const int STATION_MARGIN = 20;
-    static const int STATION_W = 1504;
-    static const int STATION_H = 760;
+    static const int STATION_MARGIN = 0;
+    static const int STATION_W = 1920;
+    static const int STATION_H = 1080;
 
     static const int PPI_W = 640;
     static const int PPI_H = 640;
@@ -38,24 +38,28 @@ class GBRS_RadarStationHud
 
     static const float SWEEP_HALF_DEG = 8.0;
     static const int SWEEP_SEGMENTS = 16;
-    static const int MAX_LIST_ROWS = 18;
+    static const int MAX_LIST_ROWS = 24;
     // Must match GBRS_RadarStationMenu.DISPLAY_MAX_BLIPS.
     static const int MAX_DRAW_BLIPS = 64;
 
     // Static face is drawn on the same Canvas as sweep/blips (RHS Garmin pattern).
-    static const int COL_PPI_SWEEP = ARGB(240, 130, 255, 180);
-    static const int COL_PPI_WEDGE = ARGB(50, 50, 210, 120);
-    static const int COL_VEHICLE = ARGB(255, 80, 255, 140);
-    static const int COL_PROJ = ARGB(255, 255, 180, 50);
-    static const int COL_EMITTER = ARGB(255, 255, 100, 235);
-    static const int COL_ANON = ARGB(255, 255, 235, 150);
-    static const int COL_FALSEPLOT = ARGB(255, 255, 90, 90);
-    static const int COL_NLOS = ARGB(255, 100, 230, 255);
-    static const int COL_VEL = ARGB(190, 100, 255, 190);
+    static const int COL_PPI_SWEEP = ARGB(250, 90, 255, 170);
+    static const int COL_PPI_WEDGE = ARGB(70, 40, 220, 130);
+    static const int COL_VEHICLE = ARGB(255, 90, 255, 150);
+    static const int COL_PROJ = ARGB(255, 255, 190, 55);
+    static const int COL_EMITTER = ARGB(255, 255, 110, 240);
+    static const int COL_ANON = ARGB(255, 255, 240, 160);
+    static const int COL_FALSEPLOT = ARGB(255, 255, 95, 95);
+    static const int COL_NLOS = ARGB(255, 110, 235, 255);
+    static const int COL_VEL = ARGB(200, 110, 255, 200);
     static const int COL_WLR_LAUNCH = ARGB(220, 255, 160, 40);
     static const int COL_WLR_IMPACT = ARGB(220, 80, 180, 255);
     static const int COL_WLR_LINK = ARGB(140, 200, 200, 200);
+    static const int COL_WLR_REMAIN = ARGB(220, 255, 210, 80);
+    static const int COL_WLR_TEXT = ARGB(255, 255, 235, 180);
+    static const int COL_WLR_SHELL = ARGB(255, 255, 220, 70);
     static const int COL_LOCK = ARGB(255, 255, 70, 70);
+    static const int COL_AZEL_GRID = ARGB(120, 80, 160, 200);
     static const float WLR_ALERT_RADIUS_M = 120.0;
     static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
     static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
@@ -126,14 +130,107 @@ class GBRS_RadarStationHud
         if (inst.m_Widgets && inst.m_Widgets.m_wPpiMode)
             inst.m_Widgets.m_wPpiMode.SetText(mode);
 
-        // The contacts panel doubles as the manual-tuning panel in MANUAL mode;
-        // retitle it so the operator knows which view they are looking at.
+        inst.ApplyModeChrome(mode);
+
         if (inst.m_Widgets && inst.m_Widgets.m_wListTitle)
         {
             if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
                 inst.m_Widgets.m_wListTitle.SetText("MANUAL TUNING");
+            else if (mode == GBRS_RadarStationConstants.MODE_WLR)
+                inst.m_Widgets.m_wListTitle.SetText("WLR FIRE SOLUTIONS");
             else
                 inst.m_Widgets.m_wListTitle.SetText("TRACKED CONTACTS");
+        }
+
+        if (inst.m_Widgets && inst.m_Widgets.m_wListHType)
+        {
+            if (mode == GBRS_RadarStationConstants.MODE_WLR)
+                inst.m_Widgets.m_wListHType.SetText("SHELL");
+            else
+                inst.m_Widgets.m_wListHType.SetText("TYPE");
+        }
+
+        if (inst.m_Widgets && inst.m_Widgets.m_wPpiHint)
+        {
+            if (mode == GBRS_RadarStationConstants.MODE_WLR)
+                inst.m_Widgets.m_wPpiHint.SetText("LCH orange  IMP cyan  ETA at impact");
+            else
+                inst.m_Widgets.m_wPpiHint.SetText("north-up AZ/EL");
+        }
+
+        bool showTable = true;
+        if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+            showTable = false;
+        else if (mode == GBRS_RadarStationConstants.MODE_WLR)
+            showTable = false;
+        inst.SetContactsTableVisible(showTable);
+    }
+
+    protected void SetContactsTableVisible(bool contacts)
+    {
+        if (!m_Widgets)
+            return;
+
+        if (m_Widgets.m_wListTable)
+            m_Widgets.m_wListTable.SetVisible(contacts);
+        if (m_Widgets.m_wListBody)
+            m_Widgets.m_wListBody.SetVisible(!contacts);
+    }
+
+    protected void ApplyModeChrome(string mode)
+    {
+        if (!m_Widgets)
+            return;
+
+        Color ppi = Color.FromRGBA(30, 140, 80, 242);
+        Color list = Color.FromRGBA(45, 95, 140, 242);
+        Color optics = Color.FromRGBA(55, 130, 190, 242);
+        Color azel = Color.FromRGBA(40, 105, 155, 242);
+        Color modeCol = Color.FromRGBA(90, 255, 160, 255);
+
+        if (mode == GBRS_RadarStationConstants.MODE_WLR)
+        {
+            ppi = Color.FromRGBA(170, 110, 30, 242);
+            list = Color.FromRGBA(160, 100, 35, 242);
+            optics = Color.FromRGBA(150, 95, 30, 242);
+            azel = Color.FromRGBA(145, 90, 28, 242);
+            modeCol = Color.FromRGBA(255, 190, 70, 255);
+        }
+        else if (mode == GBRS_RadarStationConstants.MODE_LOCK)
+        {
+            ppi = Color.FromRGBA(160, 45, 40, 242);
+            list = Color.FromRGBA(150, 50, 48, 242);
+            optics = Color.FromRGBA(145, 48, 45, 242);
+            azel = Color.FromRGBA(140, 42, 40, 242);
+            modeCol = Color.FromRGBA(255, 95, 80, 255);
+        }
+        else if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+        {
+            ppi = Color.FromRGBA(30, 120, 150, 242);
+            list = Color.FromRGBA(35, 130, 165, 242);
+            optics = Color.FromRGBA(40, 125, 160, 242);
+            azel = Color.FromRGBA(32, 115, 150, 242);
+            modeCol = Color.FromRGBA(80, 210, 255, 255);
+        }
+
+        if (m_Widgets.m_wPpiBezel)
+            m_Widgets.m_wPpiBezel.SetColor(ppi);
+        if (m_Widgets.m_wListBezel)
+            m_Widgets.m_wListBezel.SetColor(list);
+        if (m_Widgets.m_wOpticsBezel)
+            m_Widgets.m_wOpticsBezel.SetColor(optics);
+        if (m_Widgets.m_wAzElBezel)
+            m_Widgets.m_wAzElBezel.SetColor(azel);
+        if (m_Widgets.m_wPpiMode)
+            m_Widgets.m_wPpiMode.SetColor(modeCol);
+        if (m_Widgets.m_wListBody)
+        {
+            if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+                m_Widgets.m_wListBody.SetColor(Color.FromRGBA(160, 235, 255, 240));
+            else if (mode == GBRS_RadarStationConstants.MODE_WLR)
+                m_Widgets.m_wListBody.SetColor(Color.FromRGBA(255, 214, 140, 245));
+            else
+                m_Widgets.m_wListBody.SetColor(Color.FromRGBA(185, 230, 255, 235));
         }
     }
 
@@ -161,8 +258,12 @@ class GBRS_RadarStationHud
         GBRS_RadarStationHud inst = GetInstance();
         inst.m_ManualParamText = text;
         inst.m_ManualFocusedParam = focusedIndex;
+        inst.SetContactsTableVisible(false);
         if (inst.m_Widgets && inst.m_Widgets.m_wListBody)
+        {
             inst.m_Widgets.m_wListBody.SetText(text);
+            inst.m_Widgets.m_wListBody.SetColor(Color.FromRGBA(160, 235, 255, 240));
+        }
     }
 
     // MANUAL workstation mode: footer line under the parameter list.
@@ -206,15 +307,14 @@ class GBRS_RadarStationHud
         if (!m_Widgets.Init(m_wRoot))
             Print("[GBRS HUD] widget registry incomplete", LogLevel.WARNING);
 
-        // The layout root uses 1920x1080-absolute coordinates (208,160). Re-center
-        // it on the live screen so the station panel stays centered at any
-        // resolution instead of being pinned to the top-left corner.
         CenterRoot();
-
         InitCanvases();
 
         if (m_Widgets.m_wListBody)
+        {
             m_Widgets.m_wListBody.SetText("(no contacts)");
+            m_Widgets.m_wListBody.SetVisible(false);
+        }
         if (m_Widgets.m_wPpiMode)
             m_Widgets.m_wPpiMode.SetText(m_Mode);
 
@@ -239,42 +339,78 @@ class GBRS_RadarStationHud
         m_OpticsParent = null;
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
+        GBRS_RadarWlrBallisticSolver.Clear();
     }
 
-    // Keep design size (RDF-style). Shrinking the root breaks Canvas SizeInUnits
-    // vs ImageWidget mapping and makes the sweep origin drift from the face center.
-    // The layout root is authored in 1920x1080 absolute coordinates; re-center it
-    // on the live screen so the whole station panel stays centered at any
-    // resolution (Workbench preview is 1920x1080, gameplay may differ).
+    // Fill the live screen. MenuManager may re-place the authored root; re-assert
+    // stretch every feed tick so the workstation stays full-screen.
     protected void CenterRoot()
     {
         if (!m_wRoot)
             return;
 
-        WorkspaceWidget ws = GetGame().GetWorkspace();
-        if (!ws)
+        FrameSlot.SetAnchorMin(m_wRoot, 0.0, 0.0);
+        FrameSlot.SetAnchorMax(m_wRoot, 1.0, 1.0);
+        FrameSlot.SetAlignment(m_wRoot, 0.0, 0.0);
+        FrameSlot.SetOffsets(m_wRoot, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    // Size the PPI canvas to the largest square inside its host. Drawing stays
+    // in 640-unit space so the face texture and sweep stay aligned.
+    protected void SyncPpiSquare()
+    {
+        if (!m_wRoot || !m_Widgets || !m_Widgets.m_wPpiCanvas)
             return;
 
-        int screenW = ws.GetWidth();
-        int screenH = ws.GetHeight();
-        if (screenW < 200)
-            screenW = 1920;
-        if (screenH < 200)
-            screenH = 1080;
+        Widget host = m_wRoot.FindAnyWidget("PpiCanvasHost");
+        if (!host)
+            host = m_Widgets.m_wPpiCanvas.GetParent();
+        if (!host)
+            return;
 
-        int left = (screenW - STATION_W) / 2;
-        int top = (screenH - STATION_H) / 2;
-        if (left < STATION_MARGIN)
-            left = STATION_MARGIN;
-        if (top < STATION_MARGIN)
-            top = STATION_MARGIN;
+        float hw;
+        float hh;
+        host.GetScreenSize(hw, hh);
+        if (hw < 64.0 || hh < 64.0)
+            return;
 
-        FrameSlot.SetAnchor(m_wRoot, 0.0, 0.0);
-        FrameSlot.SetAnchorMin(m_wRoot, 0.0, 0.0);
-        FrameSlot.SetAnchorMax(m_wRoot, 0.0, 0.0);
-        FrameSlot.SetAlignment(m_wRoot, 0.0, 0.0);
-        FrameSlot.SetSize(m_wRoot, STATION_W, STATION_H);
-        FrameSlot.SetPos(m_wRoot, left, top);
+        WorkspaceWidget ws = GetGame().GetWorkspace();
+        if (ws)
+        {
+            float dpi = ws.DPIScale(1.0);
+            if (dpi > 0.001)
+            {
+                hw = hw / dpi;
+                hh = hh / dpi;
+            }
+        }
+
+        float side = hw;
+        if (hh < hw)
+            side = hh;
+
+        m_PpiW = PPI_W;
+        m_PpiH = PPI_H;
+        m_PpiCx = PPI_CX;
+        m_PpiCy = PPI_CY;
+        m_PpiR = PPI_R;
+
+        FrameSlot.SetAnchorMin(m_Widgets.m_wPpiCanvas, 0.5, 0.5);
+        FrameSlot.SetAnchorMax(m_Widgets.m_wPpiCanvas, 0.5, 0.5);
+        FrameSlot.SetAlignment(m_Widgets.m_wPpiCanvas, 0.5, 0.5);
+        FrameSlot.SetPos(m_Widgets.m_wPpiCanvas, 0.0, 0.0);
+        FrameSlot.SetSize(m_Widgets.m_wPpiCanvas, side, side);
+        m_Widgets.m_wPpiCanvas.SetSizeInUnits(Vector(PPI_W, PPI_H, 0));
+    }
+
+    protected void SyncAzElSize()
+    {
+        if (!m_Widgets || !m_Widgets.m_wAzElCanvas)
+            return;
+
+        m_AzElW = AZEL_W;
+        m_AzElH = AZEL_H;
+        m_Widgets.m_wAzElCanvas.SetSizeInUnits(Vector(AZEL_W, AZEL_H, 0));
     }
 
     // Force face + canvas onto the same absolute 640x640 rect so draw units map
@@ -310,6 +446,18 @@ class GBRS_RadarStationHud
         names.Insert("PpiCrossHSize");
         names.Insert("PpiCrossVSize");
         names.Insert("PpiCoreSize");
+        names.Insert("AzElGridV0");
+        names.Insert("AzElGridV1");
+        names.Insert("AzElGridV2");
+        names.Insert("AzElGridV3");
+        names.Insert("AzElGridV4");
+        names.Insert("AzElGridV5");
+        names.Insert("AzElGridV6");
+        names.Insert("AzElGridH0");
+        names.Insert("AzElGridH1");
+        names.Insert("AzElGridH2");
+        names.Insert("AzElGridH3");
+        names.Insert("AzElGridH4");
 
         int i = 0;
         while (i < names.Count())
@@ -338,9 +486,8 @@ class GBRS_RadarStationHud
             Print("[GBRS HUD] failed to LoadTexture GBRS_PpiFace", LogLevel.WARNING);
 
         HideDuplicatePpiFaceLayers();
-
-        if (m_Widgets)
-            PinPpiSquare(m_Widgets.m_wPpiCanvas);
+        SyncPpiSquare();
+        SyncAzElSize();
 
         if (m_Widgets && m_Widgets.m_wPpiCanvas)
         {
@@ -551,6 +698,8 @@ class GBRS_RadarStationHud
         // 1920x1080 absolute coordinates and MenuManager may re-place it.
         // Re-assert centering every update tick (cheap FrameSlot writes).
         CenterRoot();
+        SyncPpiSquare();
+        SyncAzElSize();
 
         UpdateOpticsCamera(origin, forward);
         UpdatePpi(targets, origin, forward, tracker);
@@ -677,9 +826,6 @@ class GBRS_RadarStationHud
             m_PpiAll.Insert(edge);
         }
 
-        if (m_Mode == MODE_WLR)
-            DrawWlrAlerts(origin, tracker);
-
         vector lockPos;
         bool hasLock = false;
         if (m_Mode == MODE_LOCK && m_LockManager)
@@ -722,6 +868,9 @@ class GBRS_RadarStationHud
                 index = index + 1;
             }
         }
+
+        if (m_Mode == MODE_WLR)
+            DrawWlrAlerts(origin, tracker);
 
         m_Widgets.m_wPpiCanvas.SetDrawCommands(m_PpiAll);
     }
@@ -805,6 +954,7 @@ class GBRS_RadarStationHud
         if (!tracks)
             return;
 
+        float nowS = GetWorldTimeS();
         float alertNorm = WLR_ALERT_RADIUS_M / m_DisplayRange;
         float alertUnit = alertNorm * m_PpiR;
         if (alertUnit < 6.0)
@@ -818,11 +968,18 @@ class GBRS_RadarStationHud
             if (!tr || !tr.m_Confirmed)
                 continue;
 
-            RDF_RadarWlrFix fix = tr.m_LastWlrFix;
-            if (!fix)
-                continue;
+            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
+            RDF_RadarWlrFix fix = null;
+            if (sol)
+                fix = sol.m_Fix;
+            string id = "W" + PadNum(tr.m_TrackId, 2);
+            vector live = GBRS_RadarWlrBallisticSolver.PredictLive(tr, nowS);
 
-            if (fix.m_LaunchValid && fix.m_ImpactValid)
+            float sx;
+            float sy;
+            bool liveOnPpi = WorldToPpi(origin, live, sx, sy);
+
+            if (fix && fix.m_LaunchValid && fix.m_ImpactValid)
             {
                 float lx0;
                 float ly0;
@@ -832,25 +989,173 @@ class GBRS_RadarStationHud
                 {
                     if (WorldToPpiClamped(origin, fix.m_ImpactPos, lx1, ly1))
                     {
-                        array<float> linkVerts = new array<float>();
-                        AppendUnitPoint(linkVerts, lx0, ly0);
-                        AppendUnitPoint(linkVerts, lx1, ly1);
-                        LineDrawCommand link = new LineDrawCommand();
-                        link.m_iColor = COL_WLR_LINK;
-                        link.m_fWidth = UnitSizeToPixels(1.5);
-                        if (link.m_fWidth < 1.0)
-                            link.m_fWidth = 1.0;
-                        link.m_Vertices = linkVerts;
-                        m_PpiAll.Insert(link);
+                        DrawDashedPpiLine(lx0, ly0, lx1, ly1, COL_WLR_LINK, 1.4, 16);
+                        if (liveOnPpi)
+                            DrawSolidPpiLine(sx, sy, lx1, ly1, COL_WLR_REMAIN, 2.0);
                     }
                 }
             }
 
-            if (fix.m_LaunchValid)
+            if (fix && fix.m_LaunchValid)
+            {
                 DrawPpiAlertRing(origin, fix.m_LaunchPos, alertUnit, COL_WLR_LAUNCH);
-            if (fix.m_ImpactValid)
+                float lx;
+                float ly;
+                if (WorldToPpiClamped(origin, fix.m_LaunchPos, lx, ly))
+                {
+                    DrawPpiSquare(lx, ly, 5.0, COL_WLR_LAUNCH);
+                    DrawPpiLabel(lx, ly, "LCH " + id, COL_WLR_LAUNCH);
+                }
+            }
+
+            if (fix && fix.m_ImpactValid)
+            {
                 DrawPpiAlertRing(origin, fix.m_ImpactPos, alertUnit, COL_WLR_IMPACT);
+                float ix;
+                float iy;
+                if (WorldToPpiClamped(origin, fix.m_ImpactPos, ix, iy))
+                {
+                    DrawPpiCross(ix, iy, 7.0, COL_WLR_IMPACT);
+                    string eta = FormatEtaS(fix.m_ImpactTimeS - nowS);
+                    DrawPpiLabel(ix, iy, "IMP " + eta, COL_WLR_IMPACT);
+                }
+            }
+
+            if (liveOnPpi)
+            {
+                DrawPpiChevron(sx, sy, tr.m_FilteredVelocity[0], tr.m_FilteredVelocity[2], COL_WLR_SHELL);
+                if (!fix || !fix.m_ImpactValid)
+                    DrawPpiLabel(sx, sy, id, COL_WLR_TEXT);
+            }
         }
+    }
+
+    protected void DrawSolidPpiLine(float x0, float y0, float x1, float y1, int color, float widthUnit)
+    {
+        array<float> verts = new array<float>();
+        AppendUnitPoint(verts, x0, y0);
+        AppendUnitPoint(verts, x1, y1);
+        LineDrawCommand link = new LineDrawCommand();
+        link.m_iColor = color;
+        link.m_fWidth = UnitSizeToPixels(widthUnit);
+        if (link.m_fWidth < 1.0)
+            link.m_fWidth = 1.0;
+        link.m_Vertices = verts;
+        m_PpiAll.Insert(link);
+    }
+
+    protected void DrawDashedPpiLine(float x0, float y0, float x1, float y1, int color, float widthUnit, int dashes)
+    {
+        if (dashes < 2)
+            dashes = 2;
+
+        float dashesF = dashes;
+        int i = 0;
+        while (i < dashes)
+        {
+            int odd = i % 2;
+            if (odd == 1)
+            {
+                i = i + 1;
+                continue;
+            }
+
+            float t0 = i;
+            t0 = t0 / dashesF;
+            float t1 = i + 1;
+            t1 = t1 / dashesF;
+            float ax = x0 + (x1 - x0) * t0;
+            float ay = y0 + (y1 - y0) * t0;
+            float bx = x0 + (x1 - x0) * t1;
+            float by = y0 + (y1 - y0) * t1;
+            DrawSolidPpiLine(ax, ay, bx, by, color, widthUnit);
+            i = i + 1;
+        }
+    }
+
+    protected void DrawPpiSquare(float cx, float cy, float half, int color)
+    {
+        array<float> verts = new array<float>();
+        AppendUnitPoint(verts, cx - half, cy - half);
+        AppendUnitPoint(verts, cx + half, cy - half);
+        AppendUnitPoint(verts, cx + half, cy + half);
+        AppendUnitPoint(verts, cx - half, cy + half);
+        AppendUnitPoint(verts, cx - half, cy - half);
+        LineDrawCommand sq = new LineDrawCommand();
+        sq.m_iColor = color;
+        sq.m_fWidth = UnitSizeToPixels(1.6);
+        if (sq.m_fWidth < 1.0)
+            sq.m_fWidth = 1.0;
+        sq.m_Vertices = verts;
+        m_PpiAll.Insert(sq);
+    }
+
+    protected void DrawPpiCross(float cx, float cy, float half, int color)
+    {
+        DrawSolidPpiLine(cx - half, cy, cx + half, cy, color, 1.8);
+        DrawSolidPpiLine(cx, cy - half, cx, cy + half, color, 1.8);
+    }
+
+    protected void DrawPpiChevron(float bx, float by, float dirX, float dirZ, int color)
+    {
+        float len = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+        float px = 0.0;
+        float py = -1.0;
+        if (len > 0.001)
+        {
+            px = dirX / len;
+            py = -dirZ / len;
+        }
+
+        float size = 8.0;
+        float tx = -py;
+        float ty = px;
+        float noseX = bx + px * size;
+        float noseY = by + py * size;
+        float leftX = bx - px * size * 0.55 + tx * size * 0.45;
+        float leftY = by - py * size * 0.55 + ty * size * 0.45;
+        float rightX = bx - px * size * 0.55 - tx * size * 0.45;
+        float rightY = by - py * size * 0.55 - ty * size * 0.45;
+
+        array<float> verts = new array<float>();
+        AppendUnitPoint(verts, noseX, noseY);
+        AppendUnitPoint(verts, leftX, leftY);
+        AppendUnitPoint(verts, rightX, rightY);
+        PolygonDrawCommand chev = new PolygonDrawCommand();
+        chev.m_iColor = color;
+        chev.m_Vertices = verts;
+        m_PpiAll.Insert(chev);
+    }
+
+    protected void DrawPpiLabel(float unitX, float unitY, string text, int color)
+    {
+        if (text == "")
+            return;
+        if (!m_Widgets || !m_Widgets.m_wPpiCanvas)
+            return;
+
+        float tx = unitX + 10.0;
+        float ty = unitY - 8.0;
+        if (tx > m_PpiCx + m_PpiR - 90.0)
+            tx = unitX - 92.0;
+        if (ty < m_PpiCy - m_PpiR + 6.0)
+            ty = unitY + 10.0;
+
+        vector posPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(tx, ty, 0.0));
+        vector sizePx = m_Widgets.m_wPpiCanvas.SizeToPixels(Vector(13.0, 13.0, 0.0));
+        float fontSize = sizePx[0];
+        if (fontSize < 11.0)
+            fontSize = 11.0;
+
+        TextDrawCommand cmd = new TextDrawCommand();
+        cmd.m_sText = text;
+        cmd.m_Position = posPx;
+        cmd.m_iColor = color;
+        cmd.m_fSize = fontSize;
+        cmd.m_Pivot = Vector(0.0, 0.0, 0.0);
+        cmd.m_fRotation = 0.0;
+        cmd.m_iFontPropertiesId = 0;
+        m_PpiAll.Insert(cmd);
     }
 
     protected void DrawPpiAlertRing(vector origin, vector worldPos, float radiusUnit, int color)
@@ -1053,6 +1358,8 @@ class GBRS_RadarStationHud
             m_AzElAll = new array<ref CanvasWidgetCommand>();
         m_AzElAll.Clear();
 
+        DrawAzElGrid();
+
         if (targets)
         {
             int index = 0;
@@ -1094,24 +1401,90 @@ class GBRS_RadarStationHud
         m_Widgets.m_wAzElCanvas.SetDrawCommands(m_AzElAll);
     }
 
+    // Draw AZ/EL grid in canvas units so every line survives UI scale.
+    // Layout ImageWidget 1px lines vanish at the right edge in-game.
+    protected void DrawAzElGrid()
+    {
+        if (!m_Widgets || !m_Widgets.m_wAzElCanvas)
+            return;
+
+        float inset = 1.0;
+        float x0 = inset;
+        float y0 = inset;
+        float x1 = m_AzElW - inset;
+        float y1 = m_AzElH - inset;
+
+        int i = 0;
+        while (i <= 6)
+        {
+            float x = x0 + (x1 - x0) * i / 6.0;
+            DrawAzElGridLine(x, y0, x, y1);
+            i = i + 1;
+        }
+
+        i = 0;
+        while (i <= 4)
+        {
+            float y = y0 + (y1 - y0) * i / 4.0;
+            DrawAzElGridLine(x0, y, x1, y);
+            i = i + 1;
+        }
+    }
+
+    protected void DrawAzElGridLine(float x0, float y0, float x1, float y1)
+    {
+        array<float> verts = new array<float>();
+        vector p0 = m_Widgets.m_wAzElCanvas.PosToPixels(Vector(x0, y0, 0.0));
+        vector p1 = m_Widgets.m_wAzElCanvas.PosToPixels(Vector(x1, y1, 0.0));
+        verts.Insert(p0[0]);
+        verts.Insert(p0[1]);
+        verts.Insert(p1[0]);
+        verts.Insert(p1[1]);
+
+        LineDrawCommand line = new LineDrawCommand();
+        line.m_iColor = COL_AZEL_GRID;
+        vector widthPx = m_Widgets.m_wAzElCanvas.SizeToPixels(Vector(1.5, 1.5, 0.0));
+        line.m_fWidth = widthPx[0];
+        if (line.m_fWidth < 1.0)
+            line.m_fWidth = 1.0;
+        line.m_Vertices = verts;
+        m_AzElAll.Insert(line);
+    }
+
     protected void UpdateList(
         array<ref RDF_RadarTarget> targets,
         vector origin,
         RDF_RadarProjectileTracker tracker)
     {
-        if (!m_Widgets || !m_Widgets.m_wListBody)
+        if (!m_Widgets)
             return;
 
-        // MANUAL mode: the contacts panel shows the operator parameter list
-        // instead of radar contacts; the menu owns its content.
         if (m_Mode == GBRS_RadarStationConstants.MODE_MANUAL)
         {
-            if (m_ManualParamText != "")
+            SetContactsTableVisible(false);
+            if (m_Widgets.m_wListBody && m_ManualParamText != "")
                 m_Widgets.m_wListBody.SetText(m_ManualParamText);
             return;
         }
 
-        string body = "";
+        if (m_Mode == MODE_WLR)
+        {
+            SetContactsTableVisible(false);
+            if (m_Widgets.m_wListBody)
+                m_Widgets.m_wListBody.SetText(BuildWlrSolutionBody(origin, tracker));
+            UpdateListFooter(0, tracker);
+            return;
+        }
+
+        SetContactsTableVisible(true);
+
+        string colNr = "";
+        string colAz = "";
+        string colRng = "";
+        string colAlt = "";
+        string colSpd = "";
+        string colType = "";
+        string colSnr = "";
         int row = 0;
         if (targets)
         {
@@ -1134,26 +1507,56 @@ class GBRS_RadarStationHud
                 float altKm = t.m_Position[1] / 1000.0;
                 float spd = t.m_Velocity.Length();
 
-                string line = PadNum(row, 2) + "  "
-                    + PadNum(az, 3) + "   "
-                    + Fmt1(rngKm) + "   "
-                    + Fmt1(altKm) + "   "
-                    + PadNum(spd, 3) + "   "
-                    + TypeTag(t) + "   "
-                    + F0(t.m_SnrDb) + "dB";
-                if (body != "")
-                    body = body + "\n";
-                body = body + line;
+                colNr = AppendColLine(colNr, PadNum(row, 2));
+                colAz = AppendColLine(colAz, PadNum(az, 3));
+                colRng = AppendColLine(colRng, Fmt1(rngKm));
+                colAlt = AppendColLine(colAlt, Fmt1(altKm));
+                colSpd = AppendColLine(colSpd, PadNum(spd, 3));
+                colType = AppendColLine(colType, TypeTag(t));
+                colSnr = AppendColLine(colSnr, F0(t.m_SnrDb));
                 row = row + 1;
             }
         }
 
-        if (m_Mode == MODE_WLR && tracker)
-            AppendWlrListRows(body, row, origin, tracker);
+        if (row == 0)
+        {
+            colNr = "--";
+            colAz = "---";
+            colRng = "-.-";
+            colAlt = "-.-";
+            colSpd = "---";
+            colType = "----";
+            colSnr = "--";
+        }
 
-        if (body == "")
-            body = "(no contacts)";
-        m_Widgets.m_wListBody.SetText(body);
+        SetListCol(m_Widgets.m_wListBNr, colNr);
+        SetListCol(m_Widgets.m_wListBAz, colAz);
+        SetListCol(m_Widgets.m_wListBRng, colRng);
+        SetListCol(m_Widgets.m_wListBAlt, colAlt);
+        SetListCol(m_Widgets.m_wListBSpd, colSpd);
+        SetListCol(m_Widgets.m_wListBType, colType);
+        SetListCol(m_Widgets.m_wListBSnr, colSnr);
+
+        UpdateListFooter(row, tracker);
+    }
+
+    protected void SetListCol(TextWidget w, string text)
+    {
+        if (w)
+            w.SetText(text);
+    }
+
+    protected string AppendColLine(string col, string cell)
+    {
+        if (col == "")
+            return cell;
+        return col + "\n" + cell;
+    }
+
+    protected void UpdateListFooter(int row, RDF_RadarProjectileTracker tracker)
+    {
+        if (!m_Widgets || !m_Widgets.m_wListFooter)
+            return;
 
         int tracks = 0;
         int wlrFixes = 0;
@@ -1167,7 +1570,8 @@ class GBRS_RadarStationHud
                     if (!tr || !tr.m_Confirmed)
                         continue;
                     tracks = tracks + 1;
-                    if (tr.m_LastWlrFix && tr.m_LastWlrFix.m_LaunchValid)
+                    RDF_RadarWlrFix wfix = GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
+                    if (wfix && wfix.m_LaunchValid)
                         wlrFixes = wlrFixes + 1;
                 }
             }
@@ -1177,87 +1581,185 @@ class GBRS_RadarStationHud
         if (detected < row)
             detected = row;
 
-        if (m_Widgets && m_Widgets.m_wListFooter)
+        string footer = "DET " + detected.ToString()
+            + "   TRK " + tracks.ToString()
+            + "   RNG " + RangeLabel(m_DisplayRange);
+
+        if (m_Mode == MODE_WLR)
         {
-            string footer = "DET " + detected.ToString()
-                + "   TRK " + tracks.ToString()
-                + "   RNG " + RangeLabel(m_DisplayRange);
-
-            if (m_Mode == MODE_WLR)
-            {
-                footer = footer + "   WLR " + wlrFixes.ToString();
-            }
-            else if (m_Mode == MODE_LOCK)
-            {
-                string lockStatus = "SEARCH";
-                if (m_LockManager)
-                    lockStatus = m_LockManager.GetStatusShort();
-                footer = footer + "   " + lockStatus;
-
-                // RDF 1.0.0 fire-control bridge: TRACKING lock authorizes fire
-                // for external weapons polling TryGetFireSolution.
-                if (m_LockManager && m_LockManager.IsLocked())
-                    footer = footer + "   FIRE";
-            }
-
-            // RDF 1.0.0 ECCM decision status: "eccm=0" hides; active jam shows
-            // the countermeasure set (slb / prf / freq / burn).
-            if (m_EccmStatus != "eccm=0")
-                footer = footer + "   " + m_EccmStatus;
-
-            m_Widgets.m_wListFooter.SetText(footer);
+            footer = footer + "   WLR " + wlrFixes.ToString();
         }
+        else if (m_Mode == MODE_LOCK)
+        {
+            string lockStatus = "SEARCH";
+            if (m_LockManager)
+                lockStatus = m_LockManager.GetStatusShort();
+            footer = footer + "   " + lockStatus;
+
+            if (m_LockManager && m_LockManager.IsLocked())
+                footer = footer + "   FIRE";
+        }
+
+        if (m_EccmStatus != "eccm=0")
+            footer = footer + "   " + m_EccmStatus;
+
+        m_Widgets.m_wListFooter.SetText(footer);
     }
 
-    protected void AppendWlrListRows(
-        out string body,
-        out int row,
-        vector origin,
-        RDF_RadarProjectileTracker tracker)
+    protected string BuildWlrSolutionBody(vector origin, RDF_RadarProjectileTracker tracker)
     {
         if (!tracker)
-            return;
+            return "(no fire solutions)\nwaiting for ballistic fit";
 
         array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
         if (!all)
-            return;
+            return "(no fire solutions)\nwaiting for ballistic fit";
+
+        float nowS = GetWorldTimeS();
+        string body = "";
+        int shown = 0;
 
         foreach (RDF_RadarTrack tr : all)
         {
             if (!tr || !tr.m_Confirmed)
                 continue;
-            if (!tr.m_LastWlrFix)
-                continue;
-            if (!tr.m_LastWlrFix.m_LaunchValid && !tr.m_LastWlrFix.m_ImpactValid)
-                continue;
-            if (row >= MAX_LIST_ROWS)
-                break;
 
-            string line = "W" + PadNum(tr.m_TrackId, 2);
-            if (tr.m_LastWlrFix.m_LaunchValid)
-            {
-                vector ld = tr.m_LastWlrFix.m_LaunchPos - origin;
-                float laz = Math.Atan2(ld[0], ld[2]) * Math.RAD2DEG;
-                if (laz < 0.0)
-                    laz = laz + 360.0;
-                float lkm = ld.Length() / 1000.0;
-                line = line + "  LCH " + PadNum(laz, 3) + " " + Fmt1(lkm) + "km";
-            }
-            if (tr.m_LastWlrFix.m_ImpactValid)
-            {
-                vector id = tr.m_LastWlrFix.m_ImpactPos - origin;
-                float iaz = Math.Atan2(id[0], id[2]) * Math.RAD2DEG;
-                if (iaz < 0.0)
-                    iaz = iaz + 360.0;
-                float ikm = id.Length() / 1000.0;
-                line = line + "  IMP " + PadNum(iaz, 3) + " " + Fmt1(ikm) + "km";
-            }
+            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
+            RDF_RadarWlrFix fix = null;
+            if (sol)
+                fix = sol.m_Fix;
+            if (!fix)
+                continue;
+            if (!fix.m_LaunchValid && !fix.m_ImpactValid)
+                continue;
+            if (shown >= 8)
+                break;
 
             if (body != "")
                 body = body + "\n";
-            body = body + line;
-            row = row + 1;
+
+            string id = "W" + PadNum(tr.m_TrackId, 2);
+            string eta = "--";
+            string tof = "--";
+            if (fix.m_ImpactValid)
+            {
+                eta = FormatEtaS(fix.m_ImpactTimeS - nowS);
+                if (fix.m_LaunchValid)
+                {
+                    float tofS = fix.m_ImpactTimeS - fix.m_LaunchTimeS;
+                    if (tofS < 0.0)
+                        tofS = 0.0;
+                    tof = Fmt1(tofS) + "s";
+                }
+            }
+
+            string dragTag = "PRI";
+            float dragK = GBRS_RadarWlrBallisticSolver.K_PRIOR;
+            if (sol)
+            {
+                dragK = sol.m_AirDrag;
+                if (sol.m_DragEstimated)
+                    dragTag = "EST";
+            }
+
+            body = body + id + "  ETA " + eta + "  TOF " + tof
+                + "  " + dragTag + " " + FormatDrag(dragK);
+
+            if (fix.m_LaunchValid)
+            {
+                body = body + "\n LCH  " + FormatWorldXZ(fix.m_LaunchPos)
+                    + "  " + FormatWorldGrid(fix.m_LaunchPos)
+                    + "  " + FormatAzRng(origin, fix.m_LaunchPos);
+            }
+            else
+            {
+                body = body + "\n LCH  --";
+            }
+
+            if (fix.m_ImpactValid)
+            {
+                body = body + "\n IMP  " + FormatWorldXZ(fix.m_ImpactPos)
+                    + "  " + FormatWorldGrid(fix.m_ImpactPos)
+                    + "  " + FormatAzRng(origin, fix.m_ImpactPos);
+            }
+            else
+            {
+                body = body + "\n IMP  --";
+            }
+
+            shown = shown + 1;
         }
+
+        if (body == "")
+            return "(no fire solutions)\nwaiting for ballistic fit";
+        return body;
+    }
+
+    protected float GetWorldTimeS()
+    {
+        ChimeraWorld world = ChimeraWorld.CastFrom(GetGame().GetWorld());
+        if (!world)
+            return 0.0;
+        return world.GetWorldTime() * 0.001;
+    }
+
+    protected string FormatEtaS(float etaS)
+    {
+        if (etaS <= 0.05)
+            return "NOW";
+        if (etaS >= 100.0)
+            return F0(etaS) + "s";
+        return Fmt1(etaS) + "s";
+    }
+
+    protected string FormatDrag(float k)
+    {
+        int scaled = (int)(k * 1000000.0 + 0.5);
+        if (k < 0.0)
+            scaled = (int)(k * 1000000.0 - 0.5);
+        if (scaled < 0)
+            scaled = 0;
+        string digits = scaled.ToString();
+        while (digits.Length() < 6)
+            digits = "0" + digits;
+        return "0." + digits;
+    }
+
+    protected string FormatWorldXZ(vector pos)
+    {
+        return "E" + PadCoord(pos[0]) + " N" + PadCoord(pos[2]);
+    }
+
+    protected string FormatWorldGrid(vector pos)
+    {
+        string grid = SCR_MapEntity.GetGridLabel(pos, 1, 4, " ");
+        if (grid == "")
+            return "";
+        return grid;
+    }
+
+    protected string FormatAzRng(vector origin, vector worldPos)
+    {
+        vector d = worldPos - origin;
+        float az = Math.Atan2(d[0], d[2]) * Math.RAD2DEG;
+        if (az < 0.0)
+            az = az + 360.0;
+        float km = d.Length() / 1000.0;
+        return "AZ" + PadNum(az, 3) + " " + Fmt1(km) + "km";
+    }
+
+    protected string PadCoord(float metres)
+    {
+        int v = (int)(metres + 0.5);
+        if (metres < 0.0)
+            v = (int)(metres - 0.5);
+        if (v < 0)
+            return v.ToString();
+
+        string s = v.ToString();
+        while (s.Length() < 6)
+            s = "0" + s;
+        return s;
     }
 
     protected int BlipColor(RDF_RadarTarget t)
@@ -1291,6 +1793,8 @@ class GBRS_RadarStationHud
             return "----";
         if (t.m_IsFalsePlot)
             return "FAKE";
+        if (m_Mode == MODE_WLR)
+            return "SHELL";
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
             return "PROJ";
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)

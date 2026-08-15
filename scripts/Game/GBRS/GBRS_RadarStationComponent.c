@@ -778,6 +778,17 @@ class GBRS_RadarStationComponent : ScriptComponent
         float clamped = GBRS_RadarManualConfig.ClampParam(paramIndex, value);
         m_ManualConfig.SetParam(paramIndex, clamped);
         Rpc(RpcDo_ManualParam, paramIndex, clamped);
+
+        // STARE AZ parks the antenna; do not ResetSession via ApplyManualSettings.
+        if (paramIndex == 9)
+        {
+            if (clamped < 0.0)
+                AuthoritySetAntennaStare(false, 0.0);
+            else
+                AuthoritySetAntennaStare(true, clamped);
+            return true;
+        }
+
         ApplyManualSettings(GetOwner());
         return true;
     }
@@ -792,6 +803,9 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         m_ManualConfig.SetParam(paramIndex, value);
+        if (paramIndex == 9)
+            return;
+
         ApplyManualSettings(GetOwner());
     }
 
@@ -821,6 +835,27 @@ class GBRS_RadarStationComponent : ScriptComponent
     float GetAntennaStareAzDeg()
     {
         return m_fAntennaStareAzDeg;
+    }
+
+    // Live RDF scan angle in degrees (same convention as STARE AZ).
+    float GetLiveScanAngleDeg()
+    {
+        float rpm = GetLiveScanRpm();
+        BaseWorld world = GetGame().GetWorld();
+        float worldTimeS = 0.0;
+        if (world)
+            worldTimeS = world.GetWorldTime() * 0.001;
+
+        float angleRad = m_fScanPhaseOffsetRad;
+        if (rpm > 0.0)
+            angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
+
+        float deg = angleRad * Math.RAD2DEG;
+        while (deg < 0.0)
+            deg = deg + 360.0;
+        while (deg >= 360.0)
+            deg = deg - 360.0;
+        return deg;
     }
 
     // Client entry (menu). Server-authoritative; broadcast so peers see the

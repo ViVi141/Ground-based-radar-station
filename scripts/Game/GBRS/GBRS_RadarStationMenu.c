@@ -35,7 +35,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const string ACTION_TAB_NEXT = "MenuTabRight";
 	protected static const string ACTION_SELECT = "MenuSelect";
 	protected static const string ACTION_CLOSE = "MenuBack";
+	protected static const string ACTION_PARAM_PREV = "MenuUp";
+	protected static const string ACTION_PARAM_NEXT = "MenuDown";
+	protected static const string ACTION_PARAM_DEC = "MenuLeft";
+	protected static const string ACTION_PARAM_INC = "MenuRight";
 	protected static const int MODE_NAV_COOLDOWN_MS = 180;
+	protected bool m_bManualActionsBound;
 
 	// MANUAL mode: focused parameter index (0..PARAM_COUNT-1).
 	protected int m_iFocusedManualParam;
@@ -306,8 +311,89 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			}
 		}
 
+		if (widgets.m_wHintParamPrev)
+		{
+			SCR_InputButtonComponent paramPrev =
+				SCR_InputButtonComponent.Cast(widgets.m_wHintParamPrev.FindHandler(SCR_InputButtonComponent));
+			if (paramPrev)
+			{
+				MuteInputButtonSounds(paramPrev);
+				paramPrev.m_OnActivated.Insert(OnNavParamPrev);
+			}
+		}
+
+		if (widgets.m_wHintParamNext)
+		{
+			SCR_InputButtonComponent paramNext =
+				SCR_InputButtonComponent.Cast(widgets.m_wHintParamNext.FindHandler(SCR_InputButtonComponent));
+			if (paramNext)
+			{
+				MuteInputButtonSounds(paramNext);
+				paramNext.m_OnActivated.Insert(OnNavParamNext);
+			}
+		}
+
+		if (widgets.m_wHintParamDec)
+		{
+			SCR_InputButtonComponent paramDec =
+				SCR_InputButtonComponent.Cast(widgets.m_wHintParamDec.FindHandler(SCR_InputButtonComponent));
+			if (paramDec)
+			{
+				MuteInputButtonSounds(paramDec);
+				paramDec.m_OnActivated.Insert(OnNavParamDec);
+			}
+		}
+
+		if (widgets.m_wHintParamInc)
+		{
+			SCR_InputButtonComponent paramInc =
+				SCR_InputButtonComponent.Cast(widgets.m_wHintParamInc.FindHandler(SCR_InputButtonComponent));
+			if (paramInc)
+			{
+				MuteInputButtonSounds(paramInc);
+				paramInc.m_OnActivated.Insert(OnNavParamInc);
+			}
+		}
+
 		m_bNavBound = true;
+		BindManualActions();
 		RefreshNavHintGlyphs();
+		SetManualNavHintsVisible(m_ActiveMode == MODE_MANUAL);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void BindManualActions()
+	{
+		if (m_bManualActionsBound)
+			return;
+
+		InputManager inputManager = GetGame().GetInputManager();
+		if (!inputManager)
+			return;
+
+		inputManager.AddActionListener(ACTION_PARAM_PREV, EActionTrigger.DOWN, OnManualActionPrev);
+		inputManager.AddActionListener(ACTION_PARAM_NEXT, EActionTrigger.DOWN, OnManualActionNext);
+		inputManager.AddActionListener(ACTION_PARAM_DEC, EActionTrigger.DOWN, OnManualActionDec);
+		inputManager.AddActionListener(ACTION_PARAM_INC, EActionTrigger.DOWN, OnManualActionInc);
+		m_bManualActionsBound = true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void UnbindManualActions()
+	{
+		if (!m_bManualActionsBound)
+			return;
+
+		InputManager inputManager = GetGame().GetInputManager();
+		if (inputManager)
+		{
+			inputManager.RemoveActionListener(ACTION_PARAM_PREV, EActionTrigger.DOWN, OnManualActionPrev);
+			inputManager.RemoveActionListener(ACTION_PARAM_NEXT, EActionTrigger.DOWN, OnManualActionNext);
+			inputManager.RemoveActionListener(ACTION_PARAM_DEC, EActionTrigger.DOWN, OnManualActionDec);
+			inputManager.RemoveActionListener(ACTION_PARAM_INC, EActionTrigger.DOWN, OnManualActionInc);
+		}
+
+		m_bManualActionsBound = false;
 	}
 
 	// Mode bar / nav hints inherit WLib hover+click sounds; mute to avoid
@@ -348,6 +434,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void UnbindNavigation()
 	{
+		UnbindManualActions();
 		m_bNavBound = false;
 	}
 
@@ -404,37 +491,67 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavTabPrev(SCR_InputButtonComponent button, string actionName)
 	{
-		if (m_ActiveMode == MODE_MANUAL)
-		{
-			// TabLeft in manual mode decreases the focused parameter.
-			DecreaseManualParam();
-			return;
-		}
 		CycleModeTab(-1);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavTabNext(SCR_InputButtonComponent button, string actionName)
 	{
-		if (m_ActiveMode == MODE_MANUAL)
-		{
-			// TabRight in manual mode cycles to the next parameter.
-			CycleManualParam(1);
-			return;
-		}
 		CycleModeTab(1);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavSelect(SCR_InputButtonComponent button, string actionName)
 	{
-		if (m_ActiveMode == MODE_MANUAL)
-		{
-			// MenuSelect in manual mode increases the focused parameter.
-			AdjustManualParam(1);
-			return;
-		}
 		ActivateFocusedModeTab();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnNavParamPrev(SCR_InputButtonComponent button, string actionName)
+	{
+		CycleManualParam(-1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnNavParamNext(SCR_InputButtonComponent button, string actionName)
+	{
+		CycleManualParam(1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnNavParamDec(SCR_InputButtonComponent button, string actionName)
+	{
+		AdjustManualParam(-1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnNavParamInc(SCR_InputButtonComponent button, string actionName)
+	{
+		AdjustManualParam(1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnManualActionPrev()
+	{
+		CycleManualParam(-1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnManualActionNext()
+	{
+		CycleManualParam(1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnManualActionDec()
+	{
+		AdjustManualParam(-1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnManualActionInc()
+	{
+		AdjustManualParam(1);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -461,9 +578,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
-	// MANUAL mode: move the focused parameter up/down (TabLeft/Right).
+	// MANUAL mode: move the focused parameter up/down (MenuUp/MenuDown).
 	protected void CycleManualParam(int delta)
 	{
+		if (m_ActiveMode != MODE_MANUAL)
+			return;
+
 		if (!CanAcceptModeNav())
 			return;
 
@@ -481,6 +601,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	// MANUAL mode: increase the focused parameter by one step (MenuSelect).
 	protected void AdjustManualParam(int direction)
 	{
+		if (m_ActiveMode != MODE_MANUAL)
+			return;
+
 		if (!m_Station)
 			return;
 
@@ -488,6 +611,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		if (!m_Station.IsPowered())
+			return;
+
+		if (!CanAcceptModeNav())
 			return;
 
 		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
@@ -495,73 +621,18 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		int index = m_iFocusedManualParam;
-
-		// STARE AZ drives the antenna directly (any mode); the bearing is
-		// stored in the manual config for display/JIP.
-		if (index == 9)
-		{
-			ApplyStareFromParam(direction);
-			return;
-		}
-
 		float current = cfg.GetParam(index);
 		float step = GBRS_RadarManualConfig.StepParam(index);
 		float next = current + step * direction;
+
+		// STARE AZ: from OFF, any nudge parks at the live scan bearing.
+		if (index == 9 && current < 0.0)
+			next = m_Station.GetLiveScanAngleDeg();
 
 		if (!m_Station.ApplyManualParam(index, next))
 			return;
 
 		RefreshManualParamList();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	// STARE AZ param: nudge the antenna bearing (or disable) via the station.
-	protected void ApplyStareFromParam(int direction)
-	{
-		GBRS_RadarManualConfig cfg = m_Station.GetManualConfig();
-		if (!cfg)
-			return;
-
-		float current = cfg.m_StareAzDeg;
-		float next;
-		if (current < 0.0)
-		{
-			// OFF -> turn on at the current antenna bearing (0 as fallback).
-			next = 0.0;
-		}
-		else
-		{
-			next = current + 5.0 * direction;
-		}
-
-		// -1 disables stare (ClampParam maps <0 to -1).
-		if (direction < 0 && next < 0.0)
-			next = -1.0;
-
-		float clamped = GBRS_RadarManualConfig.ClampParam(9, next);
-		cfg.m_StareAzDeg = clamped;
-		if (clamped < 0.0)
-			m_Station.SetAntennaStare(false, 0.0);
-		else
-			m_Station.SetAntennaStare(true, clamped);
-
-		RefreshManualParamList();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	// Manual decrease (MenuTabPrev in manual mode = -step on the focused param).
-	protected void DecreaseManualParam()
-	{
-		if (!m_Station)
-			return;
-
-		if (!m_Station.IsManualMode())
-			return;
-
-		if (!m_Station.IsPowered())
-			return;
-
-		AdjustManualParam(-1);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -636,25 +707,25 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		else if (m_iFocusedModeTab == 3)
 			manualActive = true;
 
-		SetTabEmphasis(widgets.m_wModeTabPd, pdActive);
-		SetTabEmphasis(widgets.m_wModeTabWlr, wlrActive);
-		SetTabEmphasis(widgets.m_wModeTabLock, lockActive);
-		SetTabEmphasis(widgets.m_wModeTabManual, manualActive);
+		SetTabEmphasis(widgets.m_wModeTabPd, pdActive, Color.FromRGBA(70, 255, 170, 255));
+		SetTabEmphasis(widgets.m_wModeTabWlr, wlrActive, Color.FromRGBA(255, 190, 70, 255));
+		SetTabEmphasis(widgets.m_wModeTabLock, lockActive, Color.FromRGBA(255, 95, 80, 255));
+		SetTabEmphasis(widgets.m_wModeTabManual, manualActive, Color.FromRGBA(80, 210, 255, 255));
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void SetTabEmphasis(Widget tab, bool active)
+	protected void SetTabEmphasis(Widget tab, bool active, Color activeColor)
 	{
 		if (!tab)
 			return;
 
 		if (active)
 		{
-			tab.SetColor(Color.FromRGBA(80, 220, 140, 255));
+			tab.SetColor(activeColor);
 			return;
 		}
 
-		tab.SetColor(Color.FromRGBA(120, 140, 130, 180));
+		tab.SetColor(Color.FromRGBA(58, 78, 74, 150));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -704,15 +775,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		int i = 0;
 		while (i < GBRS_RadarManualConfig.PARAM_COUNT)
 		{
-			string marker = "  ";
+			string marker = "    ";
 			if (i == m_iFocusedManualParam)
-				marker = "> ";
+				marker = " >> ";
 
 			string name = ManualParamName(i);
 			float value = cfg.GetParam(i);
 			string valueStr = ManualParamValue(i, value);
 
-			string line = marker + PadParamName(name) + " " + valueStr;
+			string line = marker + PadParamName(name) + "  " + valueStr;
 			if (body != "")
 				body = body + "\n";
 			body = body + line;
@@ -723,7 +794,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		GBRS_RadarStationHud.SetManualParamFooter(
 			"PARAM " + (m_iFocusedManualParam + 1).ToString()
 			+ "/" + GBRS_RadarManualConfig.PARAM_COUNT.ToString()
-			+ "  Select=+  TabL=-  TabR=next");
+			+ "  Up/Dn select  Left/Right value");
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -782,7 +853,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected string PadParamName(string name)
 	{
-		while (name.Length() < 9)
+		while (name.Length() < 10)
 			name = name + " ";
 		return name;
 	}
@@ -803,9 +874,27 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		else if (m_ActiveMode == MODE_LOCK)
 			hint = HINT_LOCK;
 		else if (m_ActiveMode == MODE_MANUAL)
-			hint = "Select + / TabL - / TabR next  |  STARE AZ parks antenna";
+			hint = "Up/Dn parameter   Left/Right value   Tab change mode";
 
 		widgets.m_wPpiHint.SetText(hint);
+		SetManualNavHintsVisible(m_ActiveMode == MODE_MANUAL);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void SetManualNavHintsVisible(bool visible)
+	{
+		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
+		if (!widgets)
+			return;
+
+		if (widgets.m_wHintParamPrev)
+			widgets.m_wHintParamPrev.SetVisible(visible);
+		if (widgets.m_wHintParamNext)
+			widgets.m_wHintParamNext.SetVisible(visible);
+		if (widgets.m_wHintParamDec)
+			widgets.m_wHintParamDec.SetVisible(visible);
+		if (widgets.m_wHintParamInc)
+			widgets.m_wHintParamInc.SetVisible(visible);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -824,6 +913,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		RefreshInputButton(widgets.m_wHintTabNext, ACTION_TAB_NEXT, device);
 		RefreshInputButton(widgets.m_wHintSelect, ACTION_SELECT, device);
 		RefreshInputButton(widgets.m_wHintClose, ACTION_CLOSE, device);
+		RefreshInputButton(widgets.m_wHintParamPrev, ACTION_PARAM_PREV, device);
+		RefreshInputButton(widgets.m_wHintParamNext, ACTION_PARAM_NEXT, device);
+		RefreshInputButton(widgets.m_wHintParamDec, ACTION_PARAM_DEC, device);
+		RefreshInputButton(widgets.m_wHintParamInc, ACTION_PARAM_INC, device);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -883,7 +976,36 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				return;
 		}
 
+		if (m_ActiveMode == MODE_MANUAL)
+		{
+			FocusManualList();
+			return;
+		}
+
 		FocusModeTabIndex(m_iFocusedModeTab);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void FocusManualList()
+	{
+		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
+		if (!widgets)
+			return;
+
+		Widget target = widgets.m_wListBody;
+		if (!target)
+			target = widgets.m_wListPanel;
+		if (!target)
+			return;
+
+		WorkspaceWidget workspace = GetGame().GetWorkspace();
+		if (!workspace)
+			return;
+
+		if (workspace.GetFocusedWidget() == target)
+			return;
+
+		workspace.SetFocusedWidget(target);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -989,6 +1111,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		UpdateModeTabVisuals();
 		UpdateContextHint();
+		FocusForCurrentDevice();
 	}
 
 	//------------------------------------------------------------------------------------------------

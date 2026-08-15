@@ -24,12 +24,19 @@ class GBRS_RadarStationConfig
             return false;
 
         // Counter-battery product: IncludeProjectiles on, vehicles off.
+        // Workstation readout sets KeepEntityTruth=false, so RDF measurement
+        // synthesis strips type to ANONYMOUS. Discovery is already
+        // projectile-only — dropping anything that is not PROJECTILE made the
+        // PPI empty at every range.
         if (settings && settings.m_IncludeProjectiles && !settings.m_IncludeVehicles)
         {
-            if (target.m_Type != ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
-                return false;
-
-            return true;
+            if (target.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+                return true;
+            if (target.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_ANONYMOUS)
+                return true;
+            if (target.m_IsAnonymous)
+                return true;
+            return false;
         }
 
         if (!settings || !settings.m_Hardware || !settings.m_Hardware.m_EnableMti)
@@ -388,7 +395,7 @@ class GBRS_RadarStationConfig
             return;
 
         settings.m_SectorHalfAngleDeg = 180.0;
-        settings.m_UpdateInterval = 0.15;
+        settings.m_UpdateInterval = 0.05;
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
@@ -396,24 +403,24 @@ class GBRS_RadarStationConfig
         // after switching from PD SEARCH (stock RDF WLR is stare / ScanRpm=0).
         // Infantry must never enter WLR discovery/display — only shells/rockets.
         settings.m_EnableMechanicalScan = true;
-        settings.m_WeaponLocateMinHits = 5;
-        settings.m_WeaponLocateMinSpanS = 1.0;
+        settings.m_WeaponLocateMinHits = 3;
+        settings.m_WeaponLocateMinSpanS = 0.8;
         settings.m_TrackConfirmHits = 2;
         settings.m_UseBoundsCenter = false;
         settings.m_UseLocalOffset = false;
         settings.m_OriginOffset = "0 0 0";
-        settings.m_MinDistance = 40.0;
+        settings.m_MinDistance = 15.0;
         settings.m_EnablePhysicalDetection = true;
         settings.m_KeepUndetected = false;
 
         if (settings.m_Hardware)
         {
             // No MTI: ballistic Doppler is not a slow-clutter notch problem.
-            // Ground clutter is handled by elevation look-up + CFAR instead.
+            // DEM clutter is off in ApplyWlrFidelity, so a horizon beam can
+            // cover the near/flat portion of the trajectory.
             settings.m_Hardware.m_EnableMti = false;
             settings.m_Hardware.ClearElevationBeams();
-            // Boresights sit well above the horizon so main-beam DEM clutter
-            // is mostly sidelobe / lower-skirt energy, not boresight terrain.
+            settings.m_Hardware.AddElevationBeam("mortar_horizon", 8.0, 16.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_low", 18.0, 22.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 26.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_high", 55.0, 26.0, -0.5);
@@ -452,6 +459,10 @@ class GBRS_RadarStationConfig
         }
         ApplyWlrProductFlags(settings);
         ApplyWorkstationReadout(settings, true);
+        // WLR ballistic fit requires projectile-typed tracks. Workstation
+        // readout strips type to ANONYMOUS, which makes SolveWeaponLocate
+        // no-op and hides launch/impact/ETA. Keep class, not vehicle names.
+        settings.m_KeepEntityTruth = true;
         settings.Validate();
         return settings;
     }
@@ -485,6 +496,7 @@ class GBRS_RadarStationConfig
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.
         settings.m_DemClutterScale = 0.10;
         ApplyWorkstationReadout(settings, false);
+        settings.m_KeepEntityTruth = true;
         settings.Validate();
         return settings;
     }
