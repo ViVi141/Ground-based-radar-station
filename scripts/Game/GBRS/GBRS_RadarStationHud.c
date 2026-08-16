@@ -1,4 +1,23 @@
 // GBRS station HUD — layout owns panel geometry; widgets registry binds every part.
+
+// Persistent WLR display entry: keeps a solved launch -> impact chain on the
+// PPI for a while after the raw RDF track has been dropped or has impacted,
+// so the operator does not see the launch/impact markers blink out immediately.
+class GBRS_WlrPersistDisplay
+{
+    int m_TrackId;
+    string m_Id;
+    vector m_LaunchPos;
+    vector m_ImpactPos;
+    vector m_LivePos;
+    vector m_LiveVel;
+    float m_LastSeenS;
+    float m_ImpactTimeS;
+    bool m_HasLaunch;
+    bool m_HasImpact;
+    bool m_HasLive;
+}
+
 class GBRS_RadarStationHud
 {
     static const ResourceName LAYOUT =
@@ -68,8 +87,12 @@ class GBRS_RadarStationHud
     static const int COL_TRACK = ARGB(255, 90, 255, 150);
     static const int COL_TRACK_TENT = ARGB(200, 210, 220, 100);
     static const int COL_TRACK_COAST = ARGB(230, 140, 210, 255);
+    static const int COL_TRACK_LABEL = ARGB(220, 220, 255, 210);
     static const int COL_AZEL_GRID = ARGB(120, 80, 160, 200);
     static const float WLR_ALERT_RADIUS_M = 120.0;
+    static const float WLR_PERSIST_S = 20.0;
+    static const float WLR_IMPACT_PERSIST_S = 3.0;
+    static const int MAX_WLR_PERSIST = 16;
     static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
     static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
 
@@ -102,6 +125,7 @@ class GBRS_RadarStationHud
     protected ref array<ref CanvasWidgetCommand> m_PpiAll;
     protected ref array<ref CanvasWidgetCommand> m_AzElAll;
     protected ref SharedItemRef m_PpiFaceTex;
+    protected ref array<ref GBRS_WlrPersistDisplay> m_WlrPersist;
 
     static GBRS_RadarStationHud GetInstance()
     {
@@ -320,6 +344,11 @@ class GBRS_RadarStationHud
         if (!m_Widgets.Init(m_wRoot))
             Print("[GBRS HUD] widget registry incomplete", LogLevel.WARNING);
 
+        if (!m_WlrPersist)
+            m_WlrPersist = new array<ref GBRS_WlrPersistDisplay>();
+        else
+            m_WlrPersist.Clear();
+
         CenterRoot();
         InitCanvases();
 
@@ -350,6 +379,8 @@ class GBRS_RadarStationHud
         m_AzElAll = null;
         m_PpiFaceTex = null;
         m_OpticsParent = null;
+        if (m_WlrPersist)
+            m_WlrPersist.Clear();
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
         GBRS_RadarWlrBallisticSolver.Clear();
@@ -715,6 +746,7 @@ class GBRS_RadarStationHud
         SyncAzElSize();
 
         UpdateOpticsCamera(origin, forward);
+        UpdateWlrPersist(origin, tracker);
         UpdatePpi(targets, origin, forward, tracker);
         UpdateAzEl(targets, origin, tracker);
         UpdateList(targets, origin, tracker);
@@ -864,7 +896,7 @@ class GBRS_RadarStationHud
             }
 
             DrawWlrShellTracks(origin, tracker);
-            DrawWlrAlerts(origin, tracker);
+            DrawWlrAlerts(origin);
         }
         else
         {
@@ -881,15 +913,17 @@ class GBRS_RadarStationHud
         if (!tracker)
             return;
 
-        array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
-        if (!all)
+        // Use the same confirmed-track clustering as PD/LOCK TWS so duplicate
+        // tracker files for one physical shell do not flood the PPI.
+        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        if (!tracks)
             return;
 
         int drawn = 0;
         int i = 0;
-        while (i < all.Count())
+        while (i < tracks.Count())
         {
-            RDF_RadarTrack tr = all.Get(i);
+            RDF_RadarTrack tr = tracks.Get(i);
             i = i + 1;
             if (!tr)
                 continue;
@@ -901,13 +935,8 @@ class GBRS_RadarStationHud
             if (!WorldToPpi(origin, tr.m_FilteredPosition, bx, by))
                 continue;
 
-            int color = COL_TRACK_TENT;
-            float half = 5.0;
-            if (tr.m_Confirmed)
-            {
-                color = COL_WLR_SHELL;
-                half = 7.0;
-            }
+            int color = COL_WLR_SHELL;
+            float half = 7.0;
 
             DrawPpiSquare(bx, by, half, color);
 
@@ -917,6 +946,11 @@ class GBRS_RadarStationHud
             TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
             if (speed >= 3.0)
                 DrawPpiChevron(bx, by, dirX, dirZ, color);
+
+            // Confirmed shell tracks get a map-grid coordinate label so the
+            // operator can read launch-side positions directly from the PPI.
+            string id = "W" + PadNum(tr.m_TrackId, 2);
+            DrawPpiLabel(bx, by, id + " " + GetPpiMapLabel(tr.m_FilteredPosition), COL_WLR_TEXT);
 
             drawn = drawn + 1;
         }
@@ -1004,6 +1038,9 @@ class GBRS_RadarStationHud
             TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
             if (speed >= 3.0)
                 DrawPpiChevron(bx, by, dirX, dirZ, color);
+
+            // TWS tracks show map-grid coordinates directly on the PPI.
+            DrawPpiLabel(bx, by, GetPpiMapLabel(tr.m_FilteredPosition), COL_TRACK_LABEL);
 
             drawn = drawn + 1;
         }
@@ -1299,15 +1336,111 @@ class GBRS_RadarStationHud
         return true;
     }
 
-    protected void DrawWlrAlerts(vector origin, RDF_RadarProjectileTracker tracker)
+    // Merge live WLR tracks into a persistent display list so launch/impact
+    // markers do not blink out the moment the raw track disappears.
+    protected void UpdateWlrPersist(vector origin, RDF_RadarProjectileTracker tracker)
     {
-        if (!tracker || !m_Widgets || !m_Widgets.m_wPpiCanvas)
+        if (!m_WlrPersist)
+            m_WlrPersist = new array<ref GBRS_WlrPersistDisplay>();
+
+        float worldNowS = GetWorldTimeS();
+
+        if (tracker)
+        {
+            // Use the clustered/confirmed display set so duplicate tracker files
+            // for the same physical shell do not create duplicate LCH/IMP chains.
+            array<ref RDF_RadarTrack> all = CollectDisplayTracks(tracker, origin);
+            if (all)
+            {
+                int i = 0;
+                while (i < all.Count())
+                {
+                    RDF_RadarTrack tr = all.Get(i);
+                    i = i + 1;
+                    if (!tr)
+                        continue;
+
+                    GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
+                    RDF_RadarWlrFix fix = null;
+                    if (sol)
+                        fix = sol.m_Fix;
+                    if (!fix)
+                        continue;
+                    if (!fix.m_LaunchValid && !fix.m_ImpactValid)
+                        continue;
+
+                    GBRS_WlrPersistDisplay entry = FindWlrPersist(tr.m_TrackId);
+                    if (!entry)
+                    {
+                        entry = new GBRS_WlrPersistDisplay();
+                        entry.m_TrackId = tr.m_TrackId;
+                        m_WlrPersist.Insert(entry);
+                    }
+
+                    entry.m_Id = "W" + PadNum(tr.m_TrackId, 2);
+                    entry.m_LastSeenS = worldNowS;
+                    entry.m_HasLaunch = fix.m_LaunchValid;
+                    if (fix.m_LaunchValid)
+                        entry.m_LaunchPos = fix.m_LaunchPos;
+                    entry.m_HasImpact = fix.m_ImpactValid;
+                    if (fix.m_ImpactValid)
+                    {
+                        entry.m_ImpactPos = fix.m_ImpactPos;
+                        entry.m_ImpactTimeS = fix.m_ImpactTimeS;
+                    }
+
+                    vector live = GBRS_RadarWlrBallisticSolver.PredictLive(tr, GetWorldTimeS());
+                    entry.m_LivePos = live;
+                    entry.m_LiveVel = tr.m_FilteredVelocity;
+                    entry.m_HasLive = true;
+                }
+            }
+        }
+
+        // Keep the last known live shell position for the persist window so
+        // the chain does not break when a track briefly coasts or drops.
+
+        int k = m_WlrPersist.Count() - 1;
+        while (k >= 0)
+        {
+            GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(k);
+            k = k - 1;
+            if (!entry)
+                continue;
+            if ((worldNowS - entry.m_LastSeenS) > WLR_PERSIST_S)
+                m_WlrPersist.Remove(k + 1);
+            else if (entry.m_HasImpact && (worldNowS - entry.m_ImpactTimeS) > WLR_IMPACT_PERSIST_S)
+                m_WlrPersist.Remove(k + 1);
+        }
+
+        while (m_WlrPersist.Count() > MAX_WLR_PERSIST)
+            m_WlrPersist.Remove(0);
+    }
+
+    protected GBRS_WlrPersistDisplay FindWlrPersist(int trackId)
+    {
+        if (!m_WlrPersist)
+            return null;
+
+        int i = 0;
+        while (i < m_WlrPersist.Count())
+        {
+            GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(i);
+            i = i + 1;
+            if (entry && entry.m_TrackId == trackId)
+                return entry;
+        }
+
+        return null;
+    }
+
+    protected void DrawWlrAlerts(vector origin)
+    {
+        if (!m_Widgets || !m_Widgets.m_wPpiCanvas)
             return;
         if (m_DisplayRange <= 0.0)
             return;
-
-        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
-        if (!tracks)
+        if (!m_WlrPersist)
             return;
 
         float nowS = GetWorldTimeS();
@@ -1318,71 +1451,78 @@ class GBRS_RadarStationHud
         if (alertUnit > 22.0)
             alertUnit = 22.0;
 
-        for (int i = 0; i < tracks.Count(); i++)
+        int i = 0;
+        while (i < m_WlrPersist.Count())
         {
-            RDF_RadarTrack tr = tracks.Get(i);
-            if (!tr || !tr.m_Confirmed)
+            GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(i);
+            i = i + 1;
+            if (!entry)
+                continue;
+            if (!entry.m_HasLaunch && !entry.m_HasImpact && !entry.m_HasLive)
+                continue;
+            if (entry.m_HasImpact && (nowS - entry.m_ImpactTimeS) > WLR_IMPACT_PERSIST_S)
                 continue;
 
-            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-            RDF_RadarWlrFix fix = null;
-            if (sol)
-                fix = sol.m_Fix;
-            string id = "W" + PadNum(tr.m_TrackId, 2);
-            vector live = GBRS_RadarWlrBallisticSolver.PredictLive(tr, nowS);
-
+            string id = entry.m_Id;
             float sx;
             float sy;
-            bool liveOnPpi = WorldToPpi(origin, live, sx, sy);
+            bool liveOnPpi = false;
+            if (entry.m_HasLive)
+            {
+                // After impact the live shell is gone; keep the chain as a
+                // launch -> impact line instead of a frozen mid-air point.
+                if (!entry.m_HasImpact || nowS < entry.m_ImpactTimeS)
+                    liveOnPpi = WorldToPpi(origin, entry.m_LivePos, sx, sy);
+            }
 
-            if (fix && fix.m_LaunchValid && fix.m_ImpactValid)
+            if (entry.m_HasLaunch && entry.m_HasImpact)
             {
                 float lx0;
                 float ly0;
                 float lx1;
                 float ly1;
-                if (WorldToPpiClamped(origin, fix.m_LaunchPos, lx0, ly0))
+                if (WorldToPpiClamped(origin, entry.m_LaunchPos, lx0, ly0))
                 {
-                    if (WorldToPpiClamped(origin, fix.m_ImpactPos, lx1, ly1))
+                    if (WorldToPpiClamped(origin, entry.m_ImpactPos, lx1, ly1))
                     {
-                        DrawDashedPpiLine(lx0, ly0, lx1, ly1, COL_WLR_LINK, 1.4, 16);
+                        // Always connect launch and impact with a clear solid
+                        // line; then overlay the live-remaining segment.
+                        DrawSolidPpiLine(lx0, ly0, lx1, ly1, COL_WLR_LINK, 2.2);
                         if (liveOnPpi)
-                            DrawSolidPpiLine(sx, sy, lx1, ly1, COL_WLR_REMAIN, 2.0);
+                            DrawDashedPpiLine(sx, sy, lx1, ly1, COL_WLR_REMAIN, 2.2, 12);
                     }
                 }
             }
 
-            if (fix && fix.m_LaunchValid)
+            if (entry.m_HasLaunch)
             {
-                DrawPpiAlertRing(origin, fix.m_LaunchPos, alertUnit, COL_WLR_LAUNCH);
+                DrawPpiAlertRing(origin, entry.m_LaunchPos, alertUnit, COL_WLR_LAUNCH);
                 float lx;
                 float ly;
-                if (WorldToPpiClamped(origin, fix.m_LaunchPos, lx, ly))
+                if (WorldToPpiClamped(origin, entry.m_LaunchPos, lx, ly))
                 {
                     DrawPpiSquare(lx, ly, 5.0, COL_WLR_LAUNCH);
-                    DrawPpiLabel(lx, ly, "LCH " + id, COL_WLR_LAUNCH);
+                    DrawPpiLabel(lx, ly, "LCH " + id + " " + GetPpiMapLabel(entry.m_LaunchPos), COL_WLR_LAUNCH);
                 }
             }
 
-            if (fix && fix.m_ImpactValid)
+            if (entry.m_HasImpact)
             {
-                DrawPpiAlertRing(origin, fix.m_ImpactPos, alertUnit, COL_WLR_IMPACT);
+                DrawPpiAlertRing(origin, entry.m_ImpactPos, alertUnit, COL_WLR_IMPACT);
                 float ix;
                 float iy;
-                if (WorldToPpiClamped(origin, fix.m_ImpactPos, ix, iy))
+                if (WorldToPpiClamped(origin, entry.m_ImpactPos, ix, iy))
                 {
                     DrawPpiCross(ix, iy, 7.0, COL_WLR_IMPACT);
-                    string eta = FormatEtaS(fix.m_ImpactTimeS - nowS);
-                    DrawPpiLabel(ix, iy, "IMP " + eta, COL_WLR_IMPACT);
+                    string eta = FormatEtaS(entry.m_ImpactTimeS - nowS);
+                    DrawPpiLabel(ix, iy, "IMP " + eta + " " + GetPpiMapLabel(entry.m_ImpactPos), COL_WLR_IMPACT);
                 }
             }
 
-            if (liveOnPpi)
-            {
-                DrawPpiChevron(sx, sy, tr.m_FilteredVelocity[0], tr.m_FilteredVelocity[2], COL_WLR_SHELL);
-                if (!fix || !fix.m_ImpactValid)
-                    DrawPpiLabel(sx, sy, id, COL_WLR_TEXT);
-            }
+            // If the raw shell track has dropped but the solution is still
+            // within the persist window, keep a frozen last-known shell marker.
+            if (liveOnPpi && (nowS - entry.m_LastSeenS) > 0.5)
+                DrawPpiChevron(sx, sy, entry.m_LiveVel[0], entry.m_LiveVel[2], COL_WLR_SHELL);
         }
     }
 
@@ -2083,12 +2223,15 @@ class GBRS_RadarStationHud
             {
                 foreach (RDF_RadarTrack tr : all)
                 {
-                    if (!tr || !tr.m_Confirmed)
+                    if (!tr)
                         continue;
-                    tracks = tracks + 1;
                     RDF_RadarWlrFix wfix = GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
-                    if (wfix && wfix.m_LaunchValid)
-                        wlrFixes = wlrFixes + 1;
+                    if (wfix && (wfix.m_LaunchValid || wfix.m_ImpactValid))
+                    {
+                        tracks = tracks + 1;
+                        if (wfix.m_LaunchValid)
+                            wlrFixes = wlrFixes + 1;
+                    }
                 }
             }
         }
@@ -2127,7 +2270,7 @@ class GBRS_RadarStationHud
         if (!tracker)
             return "(no fire solutions)\nwaiting for ballistic fit";
 
-        array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
+        array<ref RDF_RadarTrack> all = CollectDisplayTracks(tracker, origin);
         if (!all)
             return "(no fire solutions)\nwaiting for ballistic fit";
 
@@ -2137,7 +2280,7 @@ class GBRS_RadarStationHud
 
         foreach (RDF_RadarTrack tr : all)
         {
-            if (!tr || !tr.m_Confirmed)
+            if (!tr)
                 continue;
 
             GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
@@ -2248,9 +2391,20 @@ class GBRS_RadarStationHud
 
     protected string FormatWorldGrid(vector pos)
     {
-        string grid = SCR_MapEntity.GetGridLabel(pos, 1, 4, " ");
+        // Match the player map's default 3-digit grid display (e.g. "001 001").
+        string grid = SCR_MapEntity.GetGridLabel(pos, 0, 3, " ");
         if (grid == "")
             return "";
+        return grid;
+    }
+
+    // Short map label for PPI callouts: prefer the map grid, fall back to
+    // raw E/N metres if the map helper has no grid data.
+    protected string GetPpiMapLabel(vector pos)
+    {
+        string grid = FormatWorldGrid(pos);
+        if (grid == "")
+            return FormatWorldXZ(pos);
         return grid;
     }
 

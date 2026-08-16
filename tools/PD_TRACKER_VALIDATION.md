@@ -1,0 +1,56 @@
+# PD 轨道碎片化离线验证
+
+脚本：`tools/simulate_pd_tracker.py`
+输出：`tools/out/pd_tracker_validation.json`
+
+## 为什么需要这个验证
+
+原来的 `simulate_pd_search.py` 只验证探测概率：
+
+- UH-1 在波束中心/扫描照射下的 Pd
+- SNR / CFAR 是否够
+
+它没有验证：
+
+- 机械扫描下 tracker 能否跨波束间隙 coast
+- 测量噪声是否会把同一架飞机拆成多条 track
+- PPI 上同时存在的航迹数量是否正常
+
+所以防空也可能出现“混乱感知和绘制”。
+
+## 验证内容
+
+模拟 3 架 UH-1 从不同方位径向飞向雷达，统计：
+
+- `tracks_per_aircraft`：每架飞机被拆成几条航迹
+- `fragmented_aircraft`：被拆成多条航迹的飞机数量
+- `stable_aircraft`：能形成稳定确认航迹的飞机数量
+- `max_alive` / `mean_alive`：PPI 上同时存在的航迹数量
+- `fragmentation_ratio`：总航迹数 / 飞机数
+
+## 当前结果（离线模型）
+
+| 阵营 | 配置 | 每架飞机航迹数 | 判定 |
+|---|---|---|---|
+| US | 当前（关噪声、8°/600m、maxMiss 600） | 4 / 4 / 4 | FAIL |
+| US | 旧（噪声 3.5、4°/400m、maxMiss 6） | 7 / 7 / 7 | FAIL |
+| USSR | 当前（关噪声、8°/600m、maxMiss 600） | 1 / 1 / 1 | PASS |
+| USSR | 旧（噪声 3.5、4°/400m、maxMiss 6） | 11 / 14 / 10 | FAIL |
+
+说明：
+
+- 苏军宽波束 + 慢扫描在当前模型下能稳定保持 1 条航迹/架
+- 美军窄波束 + 快扫描在当前模型下仍可能把一架飞机拆成多条航迹
+- 这提示美军 PD 的窄波束机械扫描仍需要进一步调 tracker 或显示聚类
+
+## 运行方法
+
+```bash
+python tools/simulate_pd_tracker.py
+```
+
+## 局限
+
+- 简化 GNN tracker，不是 RDF 1:1
+- 没有模拟 JPDA、PRF 盲速、旋翼边带等全部细节
+- 主要用于快速暴露轨道碎片化和 PPI 航迹数量异常

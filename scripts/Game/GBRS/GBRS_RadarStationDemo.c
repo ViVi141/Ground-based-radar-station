@@ -19,6 +19,10 @@ class GBRS_RadarStationDemo
     protected static GBRS_RadarStationComponent s_QueryFoundStation;
     protected static float s_QueryBestDistSq;
 
+    // Demo-only world-space debug visuals (scan frustum, shell spheres, air
+    // target marker, map overlay). Keep off for clean PPI-only testing.
+    protected static bool DEBUG_VISUALS = false;
+
     protected static const ResourceName AIR_TARGET_PREFAB =
         "{6BDF7D3E72D31F29}Prefabs/Scenarios/SP01/SP01_Mi8MT_unarmed_transport.et";
     protected static const ResourceName SHELL_PREFAB =
@@ -243,7 +247,7 @@ class GBRS_RadarStationDemo
         m_PrevStare = m_Station.IsAntennaStare();
         m_PrevStareAzDeg = m_Station.GetAntennaStareAzDeg();
         m_DemoOwnsStare = false;
-        m_Station.SetScanVisualEnabled(true);
+        m_Station.SetScanVisualEnabled(DEBUG_VISUALS);
         m_Station.SetPoweredForAutoTest(true);
         if (!m_Station.IsPowered())
         {
@@ -413,12 +417,13 @@ class GBRS_RadarStationDemo
                     m_LastFireWallS = nowS;
             }
             PruneLiveShells();
-            DrawLiveShellMarkers();
+            if (DEBUG_VISUALS)
+                DrawLiveShellMarkers();
         }
 
         AccumulateLatestScan();
 
-        if (m_AirTarget)
+        if (DEBUG_VISUALS && m_AirTarget)
             RDF_RadarAutoTestMapOverlay.SetAircraft(m_AirTarget, "GBRS Demo");
 
         if ((nowS - m_LastStatusWallS) >= STATUS_PRINT_S)
@@ -986,8 +991,11 @@ class GBRS_RadarStationDemo
         if (physics)
             physics.SetVelocity(Vector(0.0, 0.0, vrMs));
 
-        int markerFlags = ShapeFlags.NOOUTLINE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP | ShapeFlags.ONCE;
-        Shape.CreateSphere(ARGBF(1, 0.2, 1, 0.2), markerFlags, pos, 6.0);
+        if (DEBUG_VISUALS)
+        {
+            int markerFlags = ShapeFlags.NOOUTLINE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP | ShapeFlags.ONCE;
+            Shape.CreateSphere(ARGBF(1, 0.2, 1, 0.2), markerFlags, pos, 6.0);
+        }
     }
 
     //------------------------------------------------------------------------------------------------

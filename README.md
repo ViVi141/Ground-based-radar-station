@@ -114,3 +114,6 @@ GBRS_RadarStationDemo.Stop();
 
 - `docs/CURRENT_PROGRESS.md` — 施工垫 / 放置相关笔记
 - `tools/PD_VALIDATION.md`、`tools/WLR_VALIDATION.md` — 离线探测标定
+- `tools/WLR_TRACKER_VALIDATION.md` — WLR 轨道碎片化 / PPI 杂乱离线验证
+- `tools/PD_TRACKER_VALIDATION.md` — PD 轨道碎片化 / PPI 杂乱离线验证
+- `tools/WLR_ACCURACY_VALIDATION.md` — WLR 弹道解算精度离线验证

@@ -145,8 +145,16 @@ class GBRS_RadarStationConfig
         settings.m_TrackCoastOnMiss = true;
         settings.m_TrackCoastOnDopplerNull = true;
         settings.m_TrackCoastGateGrowPerMiss = 0.25;
-        settings.m_TrackCoastMaxSec = 8.0;
-        settings.m_TrackMaxMisses = 6;
+        settings.m_TrackCoastMaxSec = 12.0;
+        // RDF clamps TrackMaxMisses to 32. For a rotating narrow beam that is
+        // still too few misses to coast between beam passes at fast update
+        // intervals; GBRS_RadarProjectileTrackerFix raises the tracker's own
+        // miss allowance when mechanical scan is enabled.
+        settings.m_TrackMaxMisses = 32;
+        // Wider association gates reduce track fragmentation from measurement
+        // noise during mechanical scans.
+        settings.m_TrackGateAzimuthDeg = 8.0;
+        settings.m_TrackGateRangeM = 600.0;
         if (!settings.m_MeasurementModel)
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
@@ -177,6 +185,10 @@ class GBRS_RadarStationConfig
             return;
 
         ApplyRealisticChannelOptIn(settings);
+        // WLR tracker stability matters more than operator-facing noise. Clear
+        // measurement noise so low-SNR shell plots do not jump outside the
+        // association gates and fragment one shell into many tracks.
+        settings.ClearMeasurementNoise();
         settings.m_EnableDemClutter = false;
         settings.m_EnableDemSpanOcclusion = false;
         settings.m_EnableCoarseRd = true;
@@ -190,8 +202,12 @@ class GBRS_RadarStationConfig
         settings.m_EnableEsmReceive = false;
         settings.m_EnableRwrReporting = true;
         settings.m_EnableMeasurementSynthesis = true;
-        settings.m_EnableCfarGate = true;
-        settings.m_EnableCfarThermalFill = true;
+        // WLR projectile detection is intentionally thermal-noise-limited.
+        // CFAR was enabled by ApplyRealisticChannelOptIn, but offline validation
+        // and RDF's own ShellFire test both run without CFAR; in-game CFAR made
+        // small shell returns intermittent, which fragmented the tracker.
+        settings.m_EnableCfarGate = false;
+        settings.m_EnableCfarThermalFill = false;
         settings.m_EnableAtmosphericLoss = true;
         settings.m_EnableWeatherDrivenRainLoss = true;
         settings.m_EnableBallisticPrediction = true;
@@ -201,7 +217,7 @@ class GBRS_RadarStationConfig
         settings.m_FairScanCursor = true;
         settings.m_TrackCoastOnMiss = true;
         settings.m_TrackCoastOnDopplerNull = false;
-        settings.m_TrackCoastMaxSec = 4.0;
+        settings.m_TrackCoastMaxSec = 12.0;
         // Greater-of CFAR for clutter-edge VHF EW scenes.
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_GO;
         if (!settings.m_MeasurementModel)
@@ -406,6 +422,10 @@ class GBRS_RadarStationConfig
         settings.m_WeaponLocateMinHits = 3;
         settings.m_WeaponLocateMinSpanS = 0.8;
         settings.m_TrackConfirmHits = 2;
+        // Slightly wider association gates than RDF defaults so measurement
+        // noise does not split one shell into several tracker files.
+        settings.m_TrackGateAzimuthDeg = 8.0;
+        settings.m_TrackGateRangeM = 600.0;
         settings.m_UseBoundsCenter = false;
         settings.m_UseLocalOffset = false;
         settings.m_OriginOffset = "0 0 0";
@@ -459,6 +479,10 @@ class GBRS_RadarStationConfig
         }
         ApplyWlrProductFlags(settings);
         ApplyWorkstationReadout(settings, true);
+        // Keep WLR measurement clean: workstation readout re-adds noise, which
+        // fragments fast-moving projectile tracks. RDF's own WLR tests clear
+        // measurement noise for the same reason.
+        settings.ClearMeasurementNoise();
         // WLR ballistic fit requires projectile-typed tracks. Workstation
         // readout strips type to ANONYMOUS, which makes SolveWeaponLocate
         // no-op and hides launch/impact/ETA. Keep class, not vehicle names.
@@ -496,6 +520,8 @@ class GBRS_RadarStationConfig
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.
         settings.m_DemClutterScale = 0.10;
         ApplyWorkstationReadout(settings, false);
+        // Keep WLR measurement clean; see US WLR comment.
+        settings.ClearMeasurementNoise();
         settings.m_KeepEntityTruth = true;
         settings.Validate();
         return settings;

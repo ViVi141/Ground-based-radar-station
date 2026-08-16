@@ -10,8 +10,8 @@
 1. 公开事件 API：`scripts/Game/GBRS/GBRS_RadarStationEvents.c`
    - `OnRadarContact` / `OnRadarContactLost` / `OnWlrSolution` / `OnLockChanged` / `OnRadarDestroyed`
 2. Root 组合体使用官方 `SCR_CampaignBuildingCompositionComponent "{5E96A067C097D570}"`，避免 E_ 上出现重复组件。
-3. Outline / 布局兜底：雷达始终使用 `FRB_RadarStation_S_01.et`，建造值 160。
-4. **根因修复**：原版 `EvaluateBuildingStatus` 在 `ToBuildValue==0` 时会立刻 `SpawnComposition()` 并删掉四角桩。雷达强制建造值 160。
+3. Outline / 布局兜底：雷达始终使用 `FRB_RadarStation_S_01.et`，建造值 250。
+4. **根因修复**：原版 `EvaluateBuildingStatus` 在 `ToBuildValue==0` 时会立刻 `SpawnComposition()` 并删掉四角桩。雷达强制建造值 250。
 5. 施工期间推迟 RDF `Configure`，减轻 `Cannot set entity as ACTIVE, it's not registered!`。
 6. E_ stub Flags 与官方 FreeRoam 对齐：`0x100000 0x403`。
 

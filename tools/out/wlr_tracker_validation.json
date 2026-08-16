@@ -1,0 +1,150 @@
+{
+  "script": "simulate_wlr_tracker.py",
+  "description": "Offline WLR tracker fragmentation / PPI clutter validation",
+  "factions": {
+    "US": {
+      "current_gbrs": {
+        "faction": "US",
+        "range_m": 8000.0,
+        "noise_scale": 0.0,
+        "gate_az_deg": 8.0,
+        "gate_range_m": 600.0,
+        "max_misses": 96,
+        "coast_max_s": 12.0,
+        "total_shells": 5,
+        "total_tracks_ever": 5,
+        "tracks_per_shell": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1
+        },
+        "fragmented_shells": 0,
+        "stable_shells": 5,
+        "max_alive": 5,
+        "mean_alive": 2.84,
+        "max_confirmed_alive": 5,
+        "mean_confirmed_alive": 2.83,
+        "fragmentation_ratio": 1.0,
+        "verdict": "PASS"
+      },
+      "legacy": {
+        "faction": "US",
+        "range_m": 8000.0,
+        "noise_scale": 3.5,
+        "gate_az_deg": 4.0,
+        "gate_range_m": 400.0,
+        "max_misses": 6,
+        "coast_max_s": 4.0,
+        "total_shells": 5,
+        "total_tracks_ever": 5,
+        "tracks_per_shell": {
+          "1": 3,
+          "2": 1,
+          "3": 1,
+          "4": 0,
+          "5": 0
+        },
+        "fragmented_shells": 1,
+        "stable_shells": 3,
+        "max_alive": 5,
+        "mean_alive": 2.84,
+        "max_confirmed_alive": 5,
+        "mean_confirmed_alive": 2.83,
+        "fragmentation_ratio": 1.0,
+        "verdict": "FAIL"
+      },
+      "summary": {
+        "current_verdict": "PASS",
+        "legacy_verdict": "FAIL",
+        "current_tracks_per_shell": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1
+        },
+        "legacy_tracks_per_shell": {
+          "1": 3,
+          "2": 1,
+          "3": 1,
+          "4": 0,
+          "5": 0
+        }
+      }
+    },
+    "USSR": {
+      "current_gbrs": {
+        "faction": "USSR",
+        "range_m": 10000.0,
+        "noise_scale": 0.0,
+        "gate_az_deg": 8.0,
+        "gate_range_m": 600.0,
+        "max_misses": 96,
+        "coast_max_s": 12.0,
+        "total_shells": 5,
+        "total_tracks_ever": 5,
+        "tracks_per_shell": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1
+        },
+        "fragmented_shells": 0,
+        "stable_shells": 5,
+        "max_alive": 5,
+        "mean_alive": 2.84,
+        "max_confirmed_alive": 5,
+        "mean_confirmed_alive": 2.83,
+        "fragmentation_ratio": 1.0,
+        "verdict": "PASS"
+      },
+      "legacy": {
+        "faction": "USSR",
+        "range_m": 10000.0,
+        "noise_scale": 3.5,
+        "gate_az_deg": 4.0,
+        "gate_range_m": 400.0,
+        "max_misses": 6,
+        "coast_max_s": 4.0,
+        "total_shells": 5,
+        "total_tracks_ever": 5,
+        "tracks_per_shell": {
+          "1": 2,
+          "2": 0,
+          "3": 2,
+          "4": 1,
+          "5": 0
+        },
+        "fragmented_shells": 2,
+        "stable_shells": 3,
+        "max_alive": 5,
+        "mean_alive": 2.84,
+        "max_confirmed_alive": 5,
+        "mean_confirmed_alive": 2.83,
+        "fragmentation_ratio": 1.0,
+        "verdict": "FAIL"
+      },
+      "summary": {
+        "current_verdict": "PASS",
+        "legacy_verdict": "FAIL",
+        "current_tracks_per_shell": {
+          "1": 1,
+          "2": 1,
+          "3": 1,
+          "4": 1,
+          "5": 1
+        },
+        "legacy_tracks_per_shell": {
+          "1": 2,
+          "2": 0,
+          "3": 2,
+          "4": 1,
+          "5": 0
+        }
+      }
+    }
+  }
+}

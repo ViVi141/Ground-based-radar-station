@@ -1,0 +1,146 @@
+{
+  "script": "simulate_pd_tracker.py",
+  "description": "Offline PD tracker fragmentation / PPI clutter validation",
+  "factions": {
+    "US": {
+      "current_gbrs": {
+        "faction": "US",
+        "range_m": 7000.0,
+        "update_interval_s": 0.02,
+        "scan_rpm": 10.0,
+        "beamwidth_deg": 2.5,
+        "noise_scale": 0.0,
+        "gate_az_deg": 8.0,
+        "gate_range_m": 600.0,
+        "max_misses": 600,
+        "coast_max_s": 12.0,
+        "total_aircraft": 3,
+        "total_tracks_ever": 12,
+        "tracks_per_aircraft": {
+          "1": 4,
+          "2": 4,
+          "3": 4
+        },
+        "fragmented_aircraft": 3,
+        "stable_aircraft": 3,
+        "max_alive": 6,
+        "mean_alive": 4.18,
+        "max_confirmed_alive": 6,
+        "mean_confirmed_alive": 4.18,
+        "fragmentation_ratio": 4.0,
+        "verdict": "FAIL"
+      },
+      "legacy": {
+        "faction": "US",
+        "range_m": 7000.0,
+        "update_interval_s": 0.02,
+        "scan_rpm": 10.0,
+        "beamwidth_deg": 2.5,
+        "noise_scale": 3.5,
+        "gate_az_deg": 4.0,
+        "gate_range_m": 400.0,
+        "max_misses": 6,
+        "coast_max_s": 8.0,
+        "total_aircraft": 3,
+        "total_tracks_ever": 21,
+        "tracks_per_aircraft": {
+          "1": 7,
+          "2": 7,
+          "3": 7
+        },
+        "fragmented_aircraft": 3,
+        "stable_aircraft": 0,
+        "max_alive": 1,
+        "mean_alive": 0.11,
+        "max_confirmed_alive": 1,
+        "mean_confirmed_alive": 0.1,
+        "fragmentation_ratio": 7.0,
+        "verdict": "FAIL"
+      },
+      "summary": {
+        "current_verdict": "FAIL",
+        "legacy_verdict": "FAIL",
+        "current_tracks_per_aircraft": {
+          "1": 4,
+          "2": 4,
+          "3": 4
+        },
+        "legacy_tracks_per_aircraft": {
+          "1": 7,
+          "2": 7,
+          "3": 7
+        }
+      }
+    },
+    "USSR": {
+      "current_gbrs": {
+        "faction": "USSR",
+        "range_m": 10000.0,
+        "update_interval_s": 0.04,
+        "scan_rpm": 6.0,
+        "beamwidth_deg": 6.0,
+        "noise_scale": 0.0,
+        "gate_az_deg": 8.0,
+        "gate_range_m": 600.0,
+        "max_misses": 600,
+        "coast_max_s": 12.0,
+        "total_aircraft": 3,
+        "total_tracks_ever": 3,
+        "tracks_per_aircraft": {
+          "1": 1,
+          "2": 1,
+          "3": 1
+        },
+        "fragmented_aircraft": 0,
+        "stable_aircraft": 3,
+        "max_alive": 3,
+        "mean_alive": 2.98,
+        "max_confirmed_alive": 3,
+        "mean_confirmed_alive": 2.98,
+        "fragmentation_ratio": 1.0,
+        "verdict": "PASS"
+      },
+      "legacy": {
+        "faction": "USSR",
+        "range_m": 10000.0,
+        "update_interval_s": 0.04,
+        "scan_rpm": 6.0,
+        "beamwidth_deg": 6.0,
+        "noise_scale": 3.5,
+        "gate_az_deg": 4.0,
+        "gate_range_m": 400.0,
+        "max_misses": 6,
+        "coast_max_s": 8.0,
+        "total_aircraft": 3,
+        "total_tracks_ever": 35,
+        "tracks_per_aircraft": {
+          "1": 11,
+          "2": 14,
+          "3": 10
+        },
+        "fragmented_aircraft": 3,
+        "stable_aircraft": 0,
+        "max_alive": 5,
+        "mean_alive": 0.41,
+        "max_confirmed_alive": 4,
+        "mean_confirmed_alive": 0.29,
+        "fragmentation_ratio": 11.67,
+        "verdict": "FAIL"
+      },
+      "summary": {
+        "current_verdict": "PASS",
+        "legacy_verdict": "FAIL",
+        "current_tracks_per_aircraft": {
+          "1": 1,
+          "2": 1,
+          "3": 1
+        },
+        "legacy_tracks_per_aircraft": {
+          "1": 11,
+          "2": 14,
+          "3": 10
+        }
+      }
+    }
+  }
+}

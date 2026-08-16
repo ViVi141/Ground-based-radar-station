@@ -261,11 +261,11 @@
   "radar_mast_agl_m": 8.0,
   "presets": {
     "us": {
-      "label": "US RPL-5 PD SEARCH 7 km",
+      "label": "US AN/TPN-19 PD SEARCH 7 km",
       "range_m": 7000.0,
-      "union_covered_km2": 43.820032,
-      "land_coverage_pct": 85.0738553905489,
-      "max_overlap": 33,
+      "union_covered_km2": 46.386176,
+      "land_coverage_pct": 90.05586370052285,
+      "max_overlap": 48,
       "per_base": [
         {
           "name": "MainBaseNorth",
@@ -275,7 +275,7 @@
             "y": 9.59375,
             "z": 11035.3173828125
           },
-          "covered_km2": 3.062784
+          "covered_km2": 4.25472
         },
         {
           "name": "MainBaseSouth",
@@ -285,7 +285,7 @@
             "y": 10.5625,
             "z": 1539.541015625
           },
-          "covered_km2": 1.712128
+          "covered_km2": 2.219008
         },
         {
           "name": "MajorBaseChotain",
@@ -295,7 +295,7 @@
             "y": 15.875,
             "z": 6697.97998046875
           },
-          "covered_km2": 2.791424
+          "covered_km2": 3.898368
         },
         {
           "name": "MajorBaseLamentin",
@@ -305,7 +305,7 @@
             "y": 10.71875,
             "z": 6029.31884765625
           },
-          "covered_km2": 0.555008
+          "covered_km2": 0.687104
         },
         {
           "name": "MajorBaseMorton",
@@ -315,7 +315,7 @@
             "y": 10.1875,
             "z": 3846.8740234375
           },
-          "covered_km2": 2.904064
+          "covered_km2": 4.140032
         },
         {
           "name": "MilitaryBaseAirfield",
@@ -325,7 +325,7 @@
             "y": 36.25,
             "z": 11947.7041015625
           },
-          "covered_km2": 3.582976
+          "covered_km2": 5.302272
         },
         {
           "name": "MilitaryBaseLevie",
@@ -335,7 +335,7 @@
             "y": 171.69500732421875,
             "z": 4306.380859375
           },
-          "covered_km2": 4.52608
+          "covered_km2": 6.554624
         },
         {
           "name": "MilitaryBaseVilleneuf",
@@ -345,7 +345,7 @@
             "y": 188.07200622558594,
             "z": 5816.2822265625
           },
-          "covered_km2": 8.116224
+          "covered_km2": 11.677696
         },
         {
           "name": "SmallBaseAndresBeacon",
@@ -355,7 +355,7 @@
             "y": 91.94940185546875,
             "z": 8200.0859375
           },
-          "covered_km2": 2.377728
+          "covered_km2": 3.316736
         },
         {
           "name": "SmallBaseBlackLake",
@@ -365,7 +365,7 @@
             "y": 218.7689971923828,
             "z": 2946.152099609375
           },
-          "covered_km2": 1.271808
+          "covered_km2": 1.636352
         },
         {
           "name": "SmallBaseGoatbay",
@@ -375,7 +375,7 @@
             "y": 13.050000190734863,
             "z": 3119.35888671875
           },
-          "covered_km2": 3.968
+          "covered_km2": 5.761024
         },
         {
           "name": "SmallBaseHornbeamValley",
@@ -385,7 +385,7 @@
             "y": 35.35059928894043,
             "z": 8334.04296875
           },
-          "covered_km2": 3.119104
+          "covered_km2": 4.267008
         },
         {
           "name": "SmallBaseLake",
@@ -395,7 +395,7 @@
             "y": 66.66360092163086,
             "z": 6237.203125
           },
-          "covered_km2": 4.33664
+          "covered_km2": 6.053888
         },
         {
           "name": "SmallBaseMaidensBay",
@@ -405,7 +405,7 @@
             "y": 45.00450134277344,
             "z": 10701.9404296875
           },
-          "covered_km2": 4.765696
+          "covered_km2": 6.872064
         },
         {
           "name": "SmallBaseMine",
@@ -415,7 +415,7 @@
             "y": 203.781005859375,
             "z": 3897.4208984375
           },
-          "covered_km2": 1.419264
+          "covered_km2": 1.849344
         },
         {
           "name": "SmallBasePennantsPass",
@@ -425,7 +425,7 @@
             "y": 231.13499450683594,
             "z": 2174.00390625
           },
-          "covered_km2": 1.38752
+          "covered_km2": 1.764352
         },
         {
           "name": "SmallBaseRichemont",
@@ -435,7 +435,7 @@
             "y": 72.04090118408203,
             "z": 4993.6328125
           },
-          "covered_km2": 4.606976
+          "covered_km2": 6.382592
         },
         {
           "name": "SmallBaseShepherds",
@@ -445,7 +445,7 @@
             "y": 126.625,
             "z": 4471.08984375
           },
-          "covered_km2": 3.680256
+          "covered_km2": 5.105664
         },
         {
           "name": "SmallBaseSimonsWood",
@@ -455,7 +455,7 @@
             "y": 89.3364028930664,
             "z": 5135.61083984375
           },
-          "covered_km2": 4.195328
+          "covered_km2": 5.838848
         },
         {
           "name": "SmallBaseTillersFind",
@@ -465,7 +465,7 @@
             "y": 71.03120040893555,
             "z": 6997.68798828125
           },
-          "covered_km2": 3.898368
+          "covered_km2": 5.39648
         },
         {
           "name": "TownBaseChotain",
@@ -475,7 +475,7 @@
             "y": 127.91400146484375,
             "z": 6075.384765625
           },
-          "covered_km2": 6.228992
+          "covered_km2": 8.910848
         },
         {
           "name": "TownBaseDuras",
@@ -485,7 +485,7 @@
             "y": 99.875,
             "z": 2709.18310546875
           },
-          "covered_km2": 2.276352
+          "covered_km2": 3.003392
         },
         {
           "name": "TownBaseEntre_Deux",
@@ -495,7 +495,7 @@
             "y": 224.8459930419922,
             "z": 7178.423828125
           },
-          "covered_km2": 6.3488
+          "covered_km2": 8.935424
         },
         {
           "name": "TownBaseFigari",
@@ -505,7 +505,7 @@
             "y": 61.83409881591797,
             "z": 5495.6767578125
           },
-          "covered_km2": 4.574208
+          "covered_km2": 6.257664
         },
         {
           "name": "TownBaseGravette",
@@ -515,7 +515,7 @@
             "y": 38.83180046081543,
             "z": 7883.36181640625
           },
-          "covered_km2": 3.124224
+          "covered_km2": 4.344832
         },
         {
           "name": "TownBaseKermovan",
@@ -525,7 +525,7 @@
             "y": 17.97840976715088,
             "z": 9667.345703125
           },
-          "covered_km2": 4.038656
+          "covered_km2": 5.81632
         },
         {
           "name": "TownBaseLaruns",
@@ -535,7 +535,7 @@
             "y": 124.9990005493164,
             "z": 5281.078125
           },
-          "covered_km2": 5.94432
+          "covered_km2": 8.426496
         },
         {
           "name": "TownBaseLe_Moule",
@@ -545,7 +545,7 @@
             "y": 114.16300201416016,
             "z": 5438.08984375
           },
-          "covered_km2": 3.892224
+          "covered_km2": 5.49888
         },
         {
           "name": "TownBaseLevie",
@@ -555,7 +555,7 @@
             "y": 140.80099487304688,
             "z": 4816.251953125
           },
-          "covered_km2": 5.527552
+          "covered_km2": 7.953408
         },
         {
           "name": "TownBaseMeaux",
@@ -565,7 +565,7 @@
             "y": 28.810199737548828,
             "z": 9770.458984375
           },
-          "covered_km2": 4.923392
+          "covered_km2": 6.97344
         },
         {
           "name": "TownBaseMontignac",
@@ -575,7 +575,7 @@
             "y": 183.54299926757812,
             "z": 6980.6298828125
           },
-          "covered_km2": 7.815168
+          "covered_km2": 11.24352
         },
         {
           "name": "TownBaseProvins",
@@ -585,7 +585,7 @@
             "y": 96.61309814453125,
             "z": 5895.0732421875
           },
-          "covered_km2": 5.50912
+          "covered_km2": 7.63392
         },
         {
           "name": "TownBaseRegina",
@@ -595,7 +595,7 @@
             "y": 147.43299865722656,
             "z": 2175.3330078125
           },
-          "covered_km2": 1.421312
+          "covered_km2": 1.938432
         },
         {
           "name": "TownBaseTyrone",
@@ -605,7 +605,7 @@
             "y": 60.43980026245117,
             "z": 8921.314453125
           },
-          "covered_km2": 3.740672
+          "covered_km2": 5.183488
         },
         {
           "name": "TownBaseVernon",
@@ -615,7 +615,7 @@
             "y": 83.51419830322266,
             "z": 2292.27294921875
           },
-          "covered_km2": 2.213888
+          "covered_km2": 2.952192
         },
         {
           "name": "TownBaseVileneuf",
@@ -625,16 +625,16 @@
             "y": 84.0625,
             "z": 6493.6640625
           },
-          "covered_km2": 4.201472
+          "covered_km2": 5.982208
         }
       ]
     },
     "ussr": {
-      "label": "USSR TPN-19 PD SEARCH 10 km",
+      "label": "USSR RPL-5 PD SEARCH 10 km",
       "range_m": 10000.0,
-      "union_covered_km2": 43.942912,
-      "land_coverage_pct": 85.31241923619808,
-      "max_overlap": 33,
+      "union_covered_km2": 46.493696,
+      "land_coverage_pct": 90.2646070654659,
+      "max_overlap": 48,
       "per_base": [
         {
           "name": "MainBaseNorth",
@@ -644,7 +644,7 @@
             "y": 9.59375,
             "z": 11035.3173828125
           },
-          "covered_km2": 3.062784
+          "covered_km2": 4.25472
         },
         {
           "name": "MainBaseSouth",
@@ -654,7 +654,7 @@
             "y": 10.5625,
             "z": 1539.541015625
           },
-          "covered_km2": 1.712128
+          "covered_km2": 2.219008
         },
         {
           "name": "MajorBaseChotain",
@@ -664,7 +664,7 @@
             "y": 15.875,
             "z": 6697.97998046875
           },
-          "covered_km2": 2.791424
+          "covered_km2": 3.898368
         },
         {
           "name": "MajorBaseLamentin",
@@ -674,7 +674,7 @@
             "y": 10.71875,
             "z": 6029.31884765625
           },
-          "covered_km2": 0.555008
+          "covered_km2": 0.687104
         },
         {
           "name": "MajorBaseMorton",
@@ -684,7 +684,7 @@
             "y": 10.1875,
             "z": 3846.8740234375
           },
-          "covered_km2": 2.904064
+          "covered_km2": 4.140032
         },
         {
           "name": "MilitaryBaseAirfield",
@@ -694,7 +694,7 @@
             "y": 36.25,
             "z": 11947.7041015625
           },
-          "covered_km2": 3.740672
+          "covered_km2": 5.566464
         },
         {
           "name": "MilitaryBaseLevie",
@@ -704,7 +704,7 @@
             "y": 171.69500732421875,
             "z": 4306.380859375
           },
-          "covered_km2": 4.52608
+          "covered_km2": 6.554624
         },
         {
           "name": "MilitaryBaseVilleneuf",
@@ -714,7 +714,7 @@
             "y": 188.07200622558594,
             "z": 5816.2822265625
           },
-          "covered_km2": 8.123392
+          "covered_km2": 11.68896
         },
         {
           "name": "SmallBaseAndresBeacon",
@@ -724,7 +724,7 @@
             "y": 91.94940185546875,
             "z": 8200.0859375
           },
-          "covered_km2": 2.377728
+          "covered_km2": 3.316736
         },
         {
           "name": "SmallBaseBlackLake",
@@ -734,7 +734,7 @@
             "y": 218.7689971923828,
             "z": 2946.152099609375
           },
-          "covered_km2": 1.271808
+          "covered_km2": 1.636352
         },
         {
           "name": "SmallBaseGoatbay",
@@ -744,7 +744,7 @@
             "y": 13.050000190734863,
             "z": 3119.35888671875
           },
-          "covered_km2": 3.968
+          "covered_km2": 5.761024
         },
         {
           "name": "SmallBaseHornbeamValley",
@@ -754,7 +754,7 @@
             "y": 35.35059928894043,
             "z": 8334.04296875
           },
-          "covered_km2": 3.122176
+          "covered_km2": 4.27008
         },
         {
           "name": "SmallBaseLake",
@@ -764,7 +764,7 @@
             "y": 66.66360092163086,
             "z": 6237.203125
           },
-          "covered_km2": 4.33664
+          "covered_km2": 6.053888
         },
         {
           "name": "SmallBaseMaidensBay",
@@ -774,7 +774,7 @@
             "y": 45.00450134277344,
             "z": 10701.9404296875
           },
-          "covered_km2": 4.765696
+          "covered_km2": 6.872064
         },
         {
           "name": "SmallBaseMine",
@@ -784,7 +784,7 @@
             "y": 203.781005859375,
             "z": 3897.4208984375
           },
-          "covered_km2": 1.419264
+          "covered_km2": 1.849344
         },
         {
           "name": "SmallBasePennantsPass",
@@ -794,7 +794,7 @@
             "y": 231.13499450683594,
             "z": 2174.00390625
           },
-          "covered_km2": 1.38752
+          "covered_km2": 1.764352
         },
         {
           "name": "SmallBaseRichemont",
@@ -804,7 +804,7 @@
             "y": 72.04090118408203,
             "z": 4993.6328125
           },
-          "covered_km2": 4.606976
+          "covered_km2": 6.382592
         },
         {
           "name": "SmallBaseShepherds",
@@ -814,7 +814,7 @@
             "y": 126.625,
             "z": 4471.08984375
           },
-          "covered_km2": 3.680256
+          "covered_km2": 5.105664
         },
         {
           "name": "SmallBaseSimonsWood",
@@ -824,7 +824,7 @@
             "y": 89.3364028930664,
             "z": 5135.61083984375
           },
-          "covered_km2": 4.195328
+          "covered_km2": 5.838848
         },
         {
           "name": "SmallBaseTillersFind",
@@ -834,7 +834,7 @@
             "y": 71.03120040893555,
             "z": 6997.68798828125
           },
-          "covered_km2": 3.898368
+          "covered_km2": 5.39648
         },
         {
           "name": "TownBaseChotain",
@@ -844,7 +844,7 @@
             "y": 127.91400146484375,
             "z": 6075.384765625
           },
-          "covered_km2": 6.255616
+          "covered_km2": 8.953856
         },
         {
           "name": "TownBaseDuras",
@@ -854,7 +854,7 @@
             "y": 99.875,
             "z": 2709.18310546875
           },
-          "covered_km2": 2.276352
+          "covered_km2": 3.003392
         },
         {
           "name": "TownBaseEntre_Deux",
@@ -864,7 +864,7 @@
             "y": 224.8459930419922,
             "z": 7178.423828125
           },
-          "covered_km2": 6.362112
+          "covered_km2": 8.955904
         },
         {
           "name": "TownBaseFigari",
@@ -874,7 +874,7 @@
             "y": 61.83409881591797,
             "z": 5495.6767578125
           },
-          "covered_km2": 4.574208
+          "covered_km2": 6.257664
         },
         {
           "name": "TownBaseGravette",
@@ -884,7 +884,7 @@
             "y": 38.83180046081543,
             "z": 7883.36181640625
           },
-          "covered_km2": 3.124224
+          "covered_km2": 4.344832
         },
         {
           "name": "TownBaseKermovan",
@@ -894,7 +894,7 @@
             "y": 17.97840976715088,
             "z": 9667.345703125
           },
-          "covered_km2": 4.038656
+          "covered_km2": 5.81632
         },
         {
           "name": "TownBaseLaruns",
@@ -904,7 +904,7 @@
             "y": 124.9990005493164,
             "z": 5281.078125
           },
-          "covered_km2": 6.012928
+          "covered_km2": 8.538112
         },
         {
           "name": "TownBaseLe_Moule",
@@ -914,7 +914,7 @@
             "y": 114.16300201416016,
             "z": 5438.08984375
           },
-          "covered_km2": 3.924992
+          "covered_km2": 5.548032
         },
         {
           "name": "TownBaseLevie",
@@ -924,7 +924,7 @@
             "y": 140.80099487304688,
             "z": 4816.251953125
           },
-          "covered_km2": 5.572608
+          "covered_km2": 8.026112
         },
         {
           "name": "TownBaseMeaux",
@@ -934,7 +934,7 @@
             "y": 28.810199737548828,
             "z": 9770.458984375
           },
-          "covered_km2": 4.95616
+          "covered_km2": 7.020544
         },
         {
           "name": "TownBaseMontignac",
@@ -944,7 +944,7 @@
             "y": 183.54299926757812,
             "z": 6980.6298828125
           },
-          "covered_km2": 7.815168
+          "covered_km2": 11.24352
         },
         {
           "name": "TownBaseProvins",
@@ -954,7 +954,7 @@
             "y": 96.61309814453125,
             "z": 5895.0732421875
           },
-          "covered_km2": 5.50912
+          "covered_km2": 7.63392
         },
         {
           "name": "TownBaseRegina",
@@ -964,7 +964,7 @@
             "y": 147.43299865722656,
             "z": 2175.3330078125
           },
-          "covered_km2": 1.421312
+          "covered_km2": 1.938432
         },
         {
           "name": "TownBaseTyrone",
@@ -974,7 +974,7 @@
             "y": 60.43980026245117,
             "z": 8921.314453125
           },
-          "covered_km2": 3.748864
+          "covered_km2": 5.194752
         },
         {
           "name": "TownBaseVernon",
@@ -984,7 +984,7 @@
             "y": 83.51419830322266,
             "z": 2292.27294921875
           },
-          "covered_km2": 2.213888
+          "covered_km2": 2.952192
         },
         {
           "name": "TownBaseVileneuf",
@@ -994,7 +994,7 @@
             "y": 84.0625,
             "z": 6493.6640625
           },
-          "covered_km2": 4.201472
+          "covered_km2": 5.982208
         }
       ]
     }

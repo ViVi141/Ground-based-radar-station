@@ -411,8 +411,8 @@ def run(args: argparse.Namespace) -> int:
     )
 
     presets = [
-        ("us", US_RANGE_M, "US RPL-5 PD SEARCH 7 km"),
-        ("ussr", USSR_RANGE_M, "USSR TPN-19 PD SEARCH 10 km"),
+        ("us", US_RANGE_M, "US AN/TPN-19 PD SEARCH 7 km"),
+        ("ussr", USSR_RANGE_M, "USSR RPL-5 PD SEARCH 10 km"),
     ]
 
     report: dict = {

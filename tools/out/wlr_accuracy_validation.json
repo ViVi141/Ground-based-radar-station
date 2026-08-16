@@ -1,0 +1,38 @@
+{
+  "script": "simulate_wlr_accuracy.py",
+  "description": "WLR launch/impact solution accuracy from noisy measurements",
+  "trials": 200,
+  "noise_scale": 0.0,
+  "true_launch": [
+    14.930906206467267,
+    24.521029884611455,
+    84.677376919155
+  ],
+  "true_impact": [
+    268.7609873191643,
+    18.136849541335458,
+    1524.2193012056823
+  ],
+  "solved_trials": 200,
+  "launch_error_m": {
+    "count": 200,
+    "mean_m": 26.2,
+    "median_m": 26.2,
+    "p90_m": 26.2,
+    "max_m": 26.2
+  },
+  "impact_error_m": {
+    "count": 200,
+    "mean_m": 15.2,
+    "median_m": 15.2,
+    "p90_m": 15.2,
+    "max_m": 15.2
+  },
+  "fit_rms_m": {
+    "count": 200,
+    "mean_m": 0.3,
+    "median_m": 0.3,
+    "p90_m": 0.3,
+    "max_m": 0.3
+  }
+}
