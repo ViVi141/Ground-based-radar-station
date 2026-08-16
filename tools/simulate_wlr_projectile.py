@@ -6,7 +6,7 @@ Validates the two things the GBRS WLR config depends on:
      10 km (USSR) with the configured hardware + elevation beams + SNR gate?
   2. Rotating-scan hit budget: with mechanical scan at 10/6 RPM and a
      25/30 deg azimuth beam, how many illumination windows (>= the
-     WeaponLocateMinHits=5 gate) fit inside a mortar shell flight?
+     WeaponLocateMinHits=3 gate) fit inside a mortar shell flight?
 
 Then sweeps beamwidth / RPM / SNR gate to recommend tuning if the current
 config cannot meet both goals.
@@ -37,8 +37,8 @@ DT_S = 0.05
 PROJECTILE_RCS_M2 = 0.01
 
 # WLR quality gates (mirror RDF tracker defaults / GBRS config).
-WLR_MIN_HITS = 5
-WLR_MIN_SPAN_S = 1.0
+WLR_MIN_HITS = 3
+WLR_MIN_SPAN_S = 0.8
 
 
 def integrate_ballistic(
@@ -171,7 +171,7 @@ def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
         hw = s.Hardware(
             name="WLR_USSR",
             frequency_hz=1.6e8,
-            peak_power_w=1000000.0,
+            peak_power_w=250000.0,
             antenna_gain_dbi=20.0,
             az_beamwidth_deg=cfg.beamwidth_deg,
             system_loss_db=8.0,
@@ -348,9 +348,10 @@ def main() -> None:
     us_cfg = ScanConfig(
         beamwidth_deg=25.0,
         rpm=10.0,
-        snr_gate_db=6.0,
-        update_interval_s=0.15,
+        snr_gate_db=4.0,
+        update_interval_s=0.05,
         elevation_beams=[
+            ("mortar_horizon", 8.0, 16.0, 0.0),
             ("mortar_low", 18.0, 22.0, 0.0),
             ("mortar_mid", 35.0, 26.0, 0.0),
             ("mortar_high", 55.0, 26.0, -0.5),
@@ -360,8 +361,9 @@ def main() -> None:
         beamwidth_deg=30.0,
         rpm=6.0,
         snr_gate_db=5.0,
-        update_interval_s=0.15,
+        update_interval_s=0.05,
         elevation_beams=[
+            ("mortar_horizon", 8.0, 16.0, 0.0),
             ("mortar_low", 18.0, 22.0, 0.0),
             ("mortar_mid", 35.0, 26.0, 0.0),
             ("mortar_high", 55.0, 26.0, -0.5),

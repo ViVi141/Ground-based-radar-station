@@ -4,8 +4,8 @@
 Validates the GBRS pulse-Doppler air-search presets against UH-1 class
 targets (mean RCS ~16 m2, rotor sidebands) at the configured range:
 
-  US   RPL-5  : 7 km, 10 RPM, 2.5 deg beam, SNR gate 8 dB, CFAR-CA
-  USSR TPN-19 : 10 km, 6 RPM, 6 deg beam, SNR gate 5 dB, CFAR-GO, DEM 0.25
+  US   SHORAD (TPN-19 mesh, X-band PD): 7 km, 10 RPM, 2.5 deg, SNR 8 dB
+  USSR P-18-like VHF EW (RPL-5 mesh): 10 km, 6 RPM, 6 deg, SNR 5 dB, DEM 0.10
 
 Scenarios:
   1. Beam-center SNR at max range (ideal illumination)
@@ -79,7 +79,7 @@ def main() -> None:
     us_hw, us_set = s.make_us()
     ussr_hw, ussr_set = s.make_ussr()
 
-    print("\n--- US RPL-5 @ 7 km (UH-1, cruise AGL 80 m) ---")
+    print("\n--- US SHORAD @ 7 km (UH-1, cruise AGL 80 m) ---")
     report_scenario("beam center, head-on 50 m/s", us_hw, us_set, 7000, 50.0, 0.0, "center")
     report_scenario("beam center, tangential 0 m/s", us_hw, us_set, 7000, 0.0, 0.0, "center")
     report_scenario("scan illumination, head-on 50", us_hw, us_set, 7000, 50.0, 0.0, "scan")
@@ -87,7 +87,7 @@ def main() -> None:
     report_scenario("random dwell, head-on 50", us_hw, us_set, 7000, 50.0, 0.0, "dwell")
     report_scenario("random dwell, tangential 0", us_hw, us_set, 7000, 0.0, 0.0, "dwell")
 
-    print("\n--- US RPL-5 @ 5 km (mid-range) ---")
+    print("\n--- US SHORAD @ 5 km (mid-range) ---")
     us_set5 = s.Settings(
         range_m=5000.0, update_interval_s=0.02, detection_snr_db=8.0,
         dem_clutter_scale=1.0,
@@ -95,7 +95,7 @@ def main() -> None:
     report_scenario("scan illumination, head-on 50", us_hw, us_set5, 5000, 50.0, 0.0, "scan")
     report_scenario("scan illumination, tangential 0", us_hw, us_set5, 5000, 0.0, 0.0, "scan")
 
-    print("\n--- USSR TPN-19 @ 10 km (UH-1, cruise AGL 80 m) ---")
+    print("\n--- USSR P-18 VHF EW @ 10 km (UH-1, cruise AGL 80 m) ---")
     report_scenario("beam center, head-on 50 m/s", ussr_hw, ussr_set, 10000, 50.0, 0.0, "center")
     report_scenario("beam center, tangential 0 m/s", ussr_hw, ussr_set, 10000, 0.0, 0.0, "center")
     report_scenario("scan illumination, head-on 50", ussr_hw, ussr_set, 10000, 50.0, 0.0, "scan")
@@ -103,10 +103,10 @@ def main() -> None:
     report_scenario("random dwell, head-on 50", ussr_hw, ussr_set, 10000, 50.0, 0.0, "dwell")
     report_scenario("random dwell, tangential 0", ussr_hw, ussr_set, 10000, 0.0, 0.0, "dwell")
 
-    print("\n--- USSR TPN-19 @ 7 km (closer) ---")
+    print("\n--- USSR P-18 VHF EW @ 7 km (closer) ---")
     ussr_set7 = s.Settings(
         range_m=7000.0, update_interval_s=0.04, detection_snr_db=5.0,
-        dem_clutter_scale=0.25,
+        dem_clutter_scale=0.10,
     )
     report_scenario("scan illumination, head-on 50", ussr_hw, ussr_set7, 7000, 50.0, 0.0, "scan")
     report_scenario("scan illumination, tangential 0", ussr_hw, ussr_set7, 7000, 0.0, 0.0, "scan")

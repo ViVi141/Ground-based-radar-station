@@ -210,7 +210,7 @@ class DetectResult:
 
 def make_us() -> tuple[Hardware, Settings]:
     hw = Hardware(
-        name="US_RPL5",
+        name="US_SHORAD_PD",
         frequency_hz=9.0e9,
         peak_power_w=120000.0,
         antenna_gain_dbi=32.0,
@@ -242,7 +242,7 @@ def make_us() -> tuple[Hardware, Settings]:
 
 def make_ussr() -> tuple[Hardware, Settings]:
     hw = Hardware(
-        name="USSR_TPN19",
+        name="USSR_P18_PD",
         frequency_hz=1.6e8,
         peak_power_w=350000.0,
         antenna_gain_dbi=20.0,
@@ -267,7 +267,7 @@ def make_ussr() -> tuple[Hardware, Settings]:
         range_m=10000.0,
         update_interval_s=0.04,
         detection_snr_db=5.0,
-        dem_clutter_scale=0.25,
+        dem_clutter_scale=0.10,
     )
     return hw, settings
 

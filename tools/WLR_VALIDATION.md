@@ -1,56 +1,47 @@
-# WLR 弹丸探测离线验证与调参结论
+# WLR 弹丸探测离线验证
 
-日期：2026-08-15
-脚本：`tools/simulate_wlr_projectile.py`（复用 `simulate_clutter_cover.py` 的 1:1 物理链）
+日期：2026-08-16
+脚本：`tools/simulate_wlr_projectile.py`（无 DEM 杂波，与局内 `ApplyWlrFidelity` 关闭地面杂波一致）
 
 ## 一、验证目标
 
-GBRS WLR（反炮兵）需在旋转扫描下探测 0.01 m² 弹丸并解算发射/落点。验证两点：
-1. SNR 可行性（8 km US / 10 km USSR 弹丸探测）；
-2. 旋转扫描命中预算（WeaponLocate 需 ≥5 次命中）。
+0.01 m² 弹丸（82 mm 迫击炮）在旋转扫描下能否过 SNR 门限，以及照射窗口是否够 `WeaponLocateMinHits = 3`。
 
-## 二、发现的问题（当前配置 FAIL）
+当前局内配置：
+- US：8 km，500 kW，25°，10 RPM，门限 **4.0 dB**，更新 0.05 s
+- USSR：10 km，P-18 默认 **250 kW**，30°，6 RPM，门限 5.0 dB
 
-| 指标 | US 8km（当前） | USSR 10km（当前） |
+## 二、当前配置（PASS）
+
+| 指标 | US 8 km | USSR 10 km |
 |---|---|---|
-| 波束中心最大 SNR | **2.4 dB**（gate 6 → FAIL） | **-1.6 dB**（gate 5 → FAIL） |
-| 波束边缘（12°）SNR | -3.2 dB | ~-6 dB |
-| 照射窗口数（25s 飞行） | 45（≥5，PASS） | 51（≥5，PASS） |
+| 波束中心最大 SNR | **8.6 dB**（门限 4.0 → PASS） | **23.8 dB**（门限 5.0 → PASS） |
+| 仰角 15 / 25 / 40 / 55° | 全部 DET | 全部 DET |
+| 照射窗口（约 90 s 弹道） | 136（≥3，PASS） | 154（≥3，PASS） |
 
-- **SNR 不足是主因**：当前 120 kW + 6/5 dB 门限对 0.01 m² 弹丸不可达；
-- **命中窗口充足**：旋转扫描本身不是瓶颈（波束每次扫过产生多个 dwell）；
-- 波束宽度对中心 SNR 无影响（绝对增益固定 32 dBi），只影响边缘衰减；
-- 方位偏移显著恶化 SNR：10° 偏移 -4 dB、12° 偏移 -5.6 dB。
+美军方位偏移：0° 8.6 dB DET，10° 4.7 dB DET，**12° 3.0 dB miss**（低于 4 dB 门限，波束边缘）。
 
-## 三、离线调参推荐（已验证 PASS）
+苏军 23.8 dB 对应真实 250 kW。旧报告里的 29.8 dB 是脚本误用 1 MW（+6 dB）造成的，不是射频更强。
 
-| 参数 | US 推荐 | USSR 推荐 |
+## 三、功率敏感性（US 8 km，波束中心）
+
+| 峰值功率 | 最大 SNR | 对 6 dB 门限 |
 |---|---|---|
-| 峰值功率 `m_PeakPowerW` | **500,000 W** | **250,000 W（P-18 默认，不变）** |
-| SNR 门限 `m_DetectionSnrDb` | **2.0 dB** | **5.0 dB（不变）** |
-| 波束宽度 `m_AzimuthBeamwidthDeg` | 25°（不变） | 30°（不变） |
-| 转速 `m_ScanRpm` | 10（不变） | 6（不变） |
-| 仰角波束 | 18/35/55°（不变） | 18/35/55°（不变） |
+| 120 kW | 2.4 dB | FAIL |
+| 250 kW | 5.6 dB | FAIL |
+| **500 kW（现用）** | **8.6 dB** | PASS |
 
-推荐组合下（波束中心 @ 15° 俯仰，无杂波）：
-- US 8km：8.6 dB（中心）、4.7 dB（10°）、3.0 dB（12°）——25° 波束内 12° 全 DET；
-- USSR 10km：**29.8 dB（中心）**——VHF λ² 优势巨大（1.87 m 波长），P-18 默认 250 kW 已远超门限。
+现用门限是 4 dB，500 kW 中心有约 4.6 dB 余量。
 
 ## 四、实现位置
 
-改动在 `scripts/Game/GBRS/GBRS_RadarStationConfig.c`：
-- `CreateUsWlr()`：`m_DetectionSnrDb 6→2`，`m_Hardware.m_PeakPowerW 120000→500000`
-- `CreateUssrWlr()`：功率/门限不变；`m_DemClutterScale 0.25→0.10`（与防空对齐）
+`scripts/Game/GBRS/GBRS_RadarStationConfig.c`：
+- `CreateUsWlr()`：500 kW，门限 4.0 dB
+- `CreateUssrWlr()`：P-18 250 kW，门限 5.0 dB；`m_DemClutterScale = 0.10`（局内 WLR 已关 DEM 杂波，该缩放不影响这条离线链）
 
-## 五、重要修正与剩余风险
+## 五、剩余风险
 
-**离线链 CFAR 局限（2026-08-15 复核）**：
-- 离线链 `physical_detect` 的 `snr_db` 计入 DEM 杂波（clutter-limited），但 `apply_cfar_single_target` 的 CFAR 门限**只基于热噪声**（不含杂波）——与 RDF 的**自适应杂波 CFAR** 不一致；
-- 因此"含杂波时弹丸 SNR -35~-43 dB → 不可探测"的离线结论**不可靠**：真实 RDF 中 CFAR 会从杂波背景中挑出比局部背景亮的弹丸点；
-- WLR 弹丸探测的最终可行性**需游戏内实测**（`RDF_RadarShellFireAutoTest` 或手动发射迫击炮）。
-
-剩余风险：
-1. **波束边缘盲区**（US 15° 外）：弹丸在波束边缘时 miss，但 5-hit 门槛可靠中心命中凑够——风险可接受；
-2. **弹道模型固定 82mm**：非 82mm 弹丸解算有偏差（RDF 设计简化）；
-3. **低仰角盲区**（<18° 弹道段）：发射初期/近落点漏检（有意避免地面杂波）；
-4. 建议后续用游戏内 `RDF_RadarShellFireAutoTest` 或手动发射迫击炮实测验证。
+1. 离线链按热噪声限制；若以后重新打开 WLR DEM 杂波，这条结论不能直接用。
+2. 美军 12° 方位边缘会 miss，靠多次中心照射凑满 3 hit。
+3. 弹道按 82 mm 固定；低仰角段仍可能漏。
+4. 解算质量需局内打炮确认（`RDF_RadarShellFireAutoTest`）。
