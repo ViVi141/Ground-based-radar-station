@@ -15,7 +15,7 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
   Hierarchy "{69FCEDCE10021003}" {
    Enabled 1
   }
-  SCR_CampaignBuildingCompositionComponent "{69FCEDCE10021030}" {
+  SCR_CampaignBuildingCompositionComponent "{5E96A067C097D570}" {
    m_AudioSourceConfigurationSpawn SCR_AudioSourceConfiguration "{69FCEDCE10021031}" {
     m_sSoundEventName "SOUND_BUILD_VEHICLE_FUEL_STATION"
    }

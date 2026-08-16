@@ -60,38 +60,5 @@ GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRad
     }
    }
   }
-  // Disable the stock generator's own destruction manager (relay forwards
-  // blast damage to the station root instead).
-  SCR_DestructionMultiPhaseComponent "{5624A88D86EFE8BA}" {
-   Enabled 0
-   EnableDamage 0
-  }
-  // Static obstacle-style body: SimState Collision + Static 0 is the official
-  // pattern for a static object hittable by bullets AND explosions. A centered
-  // PhysicsBoxGeometry (half extents 1.1 x 0.9 x 1.1 => 2.2 x 1.8 x 2.2m)
-  // guarantees the hit/damage center sits on the generator model body so
-  // projectile penetration and explosion falloff do not land far below it.
-  RigidBody "{5872F0EB7DFB5A9D}" {
-   Static 0
-   SimState Collision
-   ResponseIndex "Normal"
-   Geometries {
-    PhysicsBoxGeometry Default {
-     Extents 2.2 1.8 2.2
-    }
-   }
-  }
-  // Relay: engine delivers the blast here, OnDamage forwards it to the station
-  // root's 5000 HP pool. Huge child HP so the part never dies on its own.
-  // 1.0: power loss is the real threat - full damage relays to the root.
-  GBRS_RadarStationChildDamageComponent "{69FCEDCE20021020}" {
-   m_fRelayMultiplier 1.0
-   "Additional hit zones" {
-    SCR_HitZone Default {
-     HZDefault 1
-     MaxHealth 1000000
-    }
-   }
-  }
  }
 }

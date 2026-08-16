@@ -129,6 +129,18 @@ class GBRS_RadarStationComponent : ScriptComponent
     // One-frame guard so ClearStarePhase runs exactly once after stare off.
     protected bool m_bStarePhaseCleared = true;
 
+    // Lightweight contact tracking for public events / Conflict early warning.
+    // Keyed by RDF scatterer id because plots lose m_Entity after workstation
+    // readout strips identity.
+    protected static const float CONTACT_LOST_TIMEOUT_S = 5.0;
+    protected static const float CONTACT_UPDATE_INTERVAL_S = 0.5;
+    protected ref map<int, ref RDF_RadarTarget> m_Contacts;
+    protected ref map<int, float> m_ContactLastSeen;
+    protected ref map<int, bool> m_WlrFiredTrackIds;
+    protected float m_fNextContactUpdateS;
+    protected bool m_bLockLayerEnabled;
+    protected int m_iActiveConflictContacts;
+
     override void OnPostInit(IEntity owner)
     {
         SetEventMask(owner, EntityEvent.INIT | EntityEvent.FRAME);
@@ -141,6 +153,12 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
         if (!m_ManualConfig)
             m_ManualConfig = new GBRS_RadarManualConfig();
+        if (!m_Contacts)
+            m_Contacts = new map<int, ref RDF_RadarTarget>();
+        if (!m_ContactLastSeen)
+            m_ContactLastSeen = new map<int, float>();
+        if (!m_WlrFiredTrackIds)
+            m_WlrFiredTrackIds = new map<int, bool>();
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
         ApplyConfiguration(owner);
@@ -174,6 +192,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         SyncAntennaBoneSpin(owner);
         SyncEntityYawAntenna(owner);
         RenderScanVisuals(owner);
+        UpdateContactEvents(owner);
+        UpdateWlrEvents(owner);
         DebugScanTick(owner);
     }
 
@@ -249,6 +269,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_BuildingComposition.GetOnCompositionSpawned().Remove(OnCompositionFullyBuilt);
             m_bCompositionBuildGateBound = false;
         }
+        ClearContactEvents();
         ShutdownRadar();
         super.OnDelete(owner);
     }
@@ -467,6 +488,11 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
 
         m_bDestroyed = true;
+        ClearContactEvents();
+        ResetConflictBaseContact();
+
+        if (GBRS_RadarStationEvents.OnRadarDestroyed)
+            GBRS_RadarStationEvents.OnRadarDestroyed.Invoke(this);
 
         if (m_bDebugLog)
             Print("[GBRS-DEBUG] Station DESTROYED — forcing power off + fire", LogLevel.WARNING);
@@ -1176,6 +1202,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         SetAntennaSpinning(false);
         SetTraceIgnoreActive(false);
         StopSupplyDrain();
+        ClearContactEvents();
+        ResetConflictBaseContact();
         GBRS_RadarStationMenu.CloseIfBound(this);
     }
 
@@ -1533,6 +1561,12 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             lockMgr.SetAutoAcquire(false);
             lockMgr.Unlock();
+            if (m_bLockLayerEnabled != false)
+            {
+                m_bLockLayerEnabled = false;
+                if (GBRS_RadarStationEvents.OnLockChanged)
+                    GBRS_RadarStationEvents.OnLockChanged.Invoke(this, false);
+            }
             return;
         }
 
@@ -1548,6 +1582,13 @@ class GBRS_RadarStationComponent : ScriptComponent
         lockMgr.SetLockSector(0.0);
         lockMgr.SetAcquireHits(2);
         lockMgr.SetCoastMaxSec(3.0);
+
+        if (m_bLockLayerEnabled != enableAutoLock)
+        {
+            m_bLockLayerEnabled = enableAutoLock;
+            if (GBRS_RadarStationEvents.OnLockChanged)
+                GBRS_RadarStationEvents.OnLockChanged.Invoke(this, enableAutoLock);
+        }
     }
 
     protected void ApplyElevationToSettings(RDF_RadarSettings settings)
@@ -1998,6 +2039,226 @@ class GBRS_RadarStationComponent : ScriptComponent
         float nowS = System.GetTickCount() * 0.001;
         m_DetectVisual.Ingest(sensor.GetPlots(), cfg, origin, nowS);
         m_DetectVisual.Draw(origin, GetLiveScanRpm(), nowS);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Lightweight public-event contact tracker.
+    //! Fires OnRadarContact / OnRadarContactLost when detected plots appear or
+    //! time out. Keyed by RDF scatterer id so identity-stripped plots still work.
+    protected void UpdateContactEvents(IEntity owner)
+    {
+        if (!m_Radar || !m_Contacts || !m_ContactLastSeen)
+            return;
+
+        float nowS = System.GetTickCount() * 0.001;
+        if (nowS < m_fNextContactUpdateS)
+            return;
+
+        m_fNextContactUpdateS = nowS + CONTACT_UPDATE_INTERVAL_S;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        RDF_RadarSettings settings = sensor.GetSettings();
+        array<ref RDF_RadarTarget> plots = sensor.GetPlots();
+        array<int> seen = {};
+
+        if (plots)
+        {
+            int i = 0;
+            while (i < plots.Count())
+            {
+                RDF_RadarTarget t = plots.Get(i);
+                i = i + 1;
+                if (!t || !t.m_Detected)
+                    continue;
+
+                if (!GBRS_RadarStationConfig.ShouldDisplayPlot(t, settings))
+                    continue;
+
+                int id = t.m_ScattererId;
+                if (id <= 0)
+                    continue;
+
+                seen.Insert(id);
+
+                RDF_RadarTarget old = m_Contacts.Get(id);
+                m_Contacts.Set(id, t);
+                m_ContactLastSeen.Set(id, nowS);
+
+                if (!old)
+                {
+                    if (GBRS_RadarStationEvents.OnRadarContact)
+                        GBRS_RadarStationEvents.OnRadarContact.Invoke(this, t);
+
+                    HandleConflictContact(true);
+                }
+            }
+        }
+
+        // Emit lost events for contacts that have not been seen for a while.
+        array<int> staleKeys = {};
+        foreach (int id, RDF_RadarTarget old : m_Contacts)
+        {
+            if (seen.Contains(id))
+                continue;
+
+            float last = m_ContactLastSeen.Get(id);
+            if (nowS - last >= CONTACT_LOST_TIMEOUT_S)
+                staleKeys.Insert(id);
+        }
+
+        foreach (int id : staleKeys)
+        {
+            RDF_RadarTarget old = m_Contacts.Get(id);
+            m_Contacts.Remove(id);
+            m_ContactLastSeen.Remove(id);
+            if (old && GBRS_RadarStationEvents.OnRadarContactLost)
+                GBRS_RadarStationEvents.OnRadarContactLost.Invoke(this, old);
+
+            HandleConflictContact(false);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! WLR fire-solution event emitter. Fires once per confirmed WLR track
+    //! after the ballistic solver returns a usable launch/impact fix.
+    protected void UpdateWlrEvents(IEntity owner)
+    {
+        if (!m_Radar || !m_WlrFiredTrackIds)
+            return;
+
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_WLR)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+        if (!tracker)
+            return;
+
+        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
+        if (!tracks)
+            return;
+
+        foreach (RDF_RadarTrack tr : tracks)
+        {
+            if (!tr || !tr.m_Confirmed)
+                continue;
+
+            int id = tr.m_TrackId;
+            if (m_WlrFiredTrackIds.Contains(id))
+                continue;
+
+            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
+            if (!sol || !sol.m_Fix)
+                continue;
+
+            RDF_RadarWlrFix fix = sol.m_Fix;
+            if (!fix.m_LaunchValid && !fix.m_ImpactValid)
+                continue;
+
+            m_WlrFiredTrackIds.Set(id, true);
+            if (GBRS_RadarStationEvents.OnWlrSolution)
+                GBRS_RadarStationEvents.OnWlrSolution.Invoke(this, fix);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void ClearContactEvents()
+    {
+        if (m_Contacts)
+            m_Contacts.Clear();
+        if (m_ContactLastSeen)
+            m_ContactLastSeen.Clear();
+        if (m_WlrFiredTrackIds)
+            m_WlrFiredTrackIds.Clear();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Conflict base early-warning. Maintains a server-side contact count and
+    //! reports the aggregate state to the nearest friendly base.
+    protected void HandleConflictContact(bool hasContact)
+    {
+        if (!Replication.IsServer())
+            return;
+
+        if (hasContact)
+            m_iActiveConflictContacts = m_iActiveConflictContacts + 1;
+        else if (m_iActiveConflictContacts > 0)
+            m_iActiveConflictContacts = m_iActiveConflictContacts - 1;
+
+        if (m_iActiveConflictContacts > 0)
+            ReportConflictContactToBase(true);
+        else
+            ReportConflictContactToBase(false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Clears all radar-reported conflict presence (power off / destroy).
+    protected void ResetConflictBaseContact()
+    {
+        if (!Replication.IsServer())
+            return;
+
+        m_iActiveConflictContacts = 0;
+        ReportConflictContactToBase(false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Finds the nearest friendly Conflict base in range and feeds it the
+    //! radar contact state.
+    protected void ReportConflictContactToBase(bool hasContact)
+    {
+        if (!Replication.IsServer())
+            return;
+
+        SCR_MilitaryBaseSystem baseSystem = SCR_MilitaryBaseSystem.GetInstance();
+        if (!baseSystem)
+            return;
+
+        array<SCR_MilitaryBaseComponent> bases = {};
+        baseSystem.GetBases(bases);
+        if (bases.IsEmpty())
+            return;
+
+        IEntity owner = GetOwner();
+        if (!owner)
+            return;
+
+        Faction stationFaction = SCR_Faction.GetEntityFaction(owner);
+        vector origin = owner.GetOrigin();
+        SCR_CampaignMilitaryBaseComponent best = null;
+        float bestDistSq = -1.0;
+
+        foreach (SCR_MilitaryBaseComponent base : bases)
+        {
+            if (!base)
+                continue;
+
+            float radius = base.GetRadius();
+            float distSq = vector.DistanceSqXZ(origin, base.GetOwner().GetOrigin());
+            if (radius > 0.0 && distSq > (radius * radius))
+                continue;
+
+            if (bestDistSq < 0.0 || distSq < bestDistSq)
+            {
+                bestDistSq = distSq;
+                best = SCR_CampaignMilitaryBaseComponent.Cast(base);
+            }
+        }
+
+        if (!best)
+            return;
+
+        Faction baseFaction = best.GetFaction();
+        if (!baseFaction || !stationFaction || baseFaction != stationFaction)
+            return;
+
+        best.GBRS_ReportRadarContact(hasContact);
     }
 
     protected void DebugLogPowerOn()
@@ -2607,6 +2868,8 @@ class GBRS_RadarStationComponent : ScriptComponent
 
     protected void ShutdownRadar()
     {
+        ClearContactEvents();
+        m_bLockLayerEnabled = false;
         if (m_Radar)
             m_Radar.SetEnabled(false);
 

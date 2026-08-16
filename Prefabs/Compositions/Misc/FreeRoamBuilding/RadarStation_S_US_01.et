@@ -42,7 +42,7 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    }
    Static 1
   }
-  SCR_CampaignBuildingCompositionComponent "{69FCEDCE10011030}" {
+  SCR_CampaignBuildingCompositionComponent "{5E96A067C097D570}" {
    m_AudioSourceConfigurationSpawn SCR_AudioSourceConfiguration "{69FCEDCE10011031}" {
     m_sSoundEventName "SOUND_BUILD_VEHICLE_FUEL_STATION"
    }

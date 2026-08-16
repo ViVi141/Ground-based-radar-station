@@ -117,3 +117,25 @@ modded class SCR_CampaignBuildingCompositionOutlineManager
         return false;
     }
 }
+
+
+// Editor BUILDING / some GameMode configurations do not provide an outline
+// manager. Ensure GBRS radar compositions still get their FreeRoamBuilding pad.
+modded class SCR_CampaignBuildingCompositionComponent
+{
+    override ResourceName GetOutlineToSpawn(notnull SCR_EditableEntityComponent entity)
+    {
+        ResourceName outline = super.GetOutlineToSpawn(entity);
+        if (!outline.IsEmpty())
+            return outline;
+
+        ResourceName prefab = entity.GetPrefab();
+        if (prefab == "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et"
+            || prefab == "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et")
+        {
+            return "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et";
+        }
+
+        return outline;
+    }
+}
