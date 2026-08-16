@@ -5,8 +5,14 @@
 //
 // Deployment policy (forward OK): keep THEME_MILITARY on E_ radar so
 // construction trucks can place outside bases. Cost — not trait bans —
-// constrains that: CAMPAIGN 450 (~truck cargo), RANK_SERGEANT, build
-// value 250, and powered drain from nearby faction base storage.
+// constrains that: CAMPAIGN 450 (~truck cargo), RANK_SERGEANT, PROPS 100
+// (Conflict HQ composition cap, same band as VehicleMaintenance_M),
+// build value 250, and powered drain
+// from nearby faction base storage.
+//
+// Do not also add GBRS_RadarStations.conf to EditorModeBuilding: that
+// mode already pulls GameMode BuildingManager prefabs, so a second
+// registry duplicated every radar in the build list.
 modded class SCR_CampaignBuildingManagerComponent
 {
     //------------------------------------------------------------------------------------------------

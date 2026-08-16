@@ -24,13 +24,13 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
      }
     }
     m_EntityChildrenBudgetCost {
+     SCR_EntityBudgetValue "{69FCEDCE30021005}" {
+      m_BudgetType PROPS
+      m_Value 100
+     }
      SCR_EntityBudgetValue "{69FCEDCE30021004}" {
       m_BudgetType SYSTEMS
       m_Value 5
-     }
-     SCR_EntityBudgetValue "{69FCEDCE30021005}" {
-      m_BudgetType PROPS
-      m_Value 8
      }
     }
    }
