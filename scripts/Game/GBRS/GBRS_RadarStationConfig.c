@@ -167,18 +167,22 @@ class GBRS_RadarStationConfig
         settings.EnableClutterSharpen(true, settings.m_ClutterMapAlpha, 0.45, true);
     }
 
-    // WLR keeps a live clutter channel (DEM + clutter map + span occlusion).
-    // Shells are not protected by turning clutter off — elevation beams look
-    // above the ground ring, CFAR gates clutter edges, include-filters are
-    // projectile-only, and ShouldDisplayPlot drops non-shell plots.
     // WLR fidelity: projectile-only counter-battery search.
-    // DEM clutter is DISABLED for WLR: offline validation (simulate_wlr_projectile)
+    // DEM clutter is DISABLED: offline validation (simulate_wlr_projectile)
     // showed the full DEM clutter floor swamps 0.01 m2 projectiles (-35 dB,
     // clutter-limited) so nothing is ever detected. Real counter-battery radars
-    // look up at the ballistic mid-course with narrow elevation beams - the
-    // main-beam ground return is negligible there, so thermal-noise-limited CFAR
-    // is the correct model. Launch/impact solving still uses DEM ground
-    // (m_EnableDemGroundForWlr) for the surface intersection fit.
+    // look up at the ballistic mid-course with high elevation beams - the
+    // main-beam ground return is negligible there, so thermal-noise-limited
+    // detection is the correct model. Launch/impact solving still uses DEM
+    // ground (m_EnableDemGroundForWlr) for the surface intersection fit.
+    //
+    // RDF_RadarScanner drops a candidate when LOS is blocked and NLOS is off.
+    // Scatterer-table hits (GetStatsLine hit=) are signature lookups, not
+    // published plots — StartWlr() showed scat/hit climbing with GetPlots()
+    // empty after NLOS was disabled for perf. WLR must keep NLOS on.
+    // DEM LOS precheck stays off: high-look mortar beams plus Eden HEIGHT
+    // liveY=0 otherwise veto ballistic paths before PhysicalDetect runs.
+    // EW / RDF WLR HUD stay off — they do not create those plots.
     static void ApplyWlrFidelity(RDF_RadarSettings settings)
     {
         if (!settings)
@@ -191,6 +195,7 @@ class GBRS_RadarStationConfig
         settings.ClearMeasurementNoise();
         settings.m_EnableDemClutter = false;
         settings.m_EnableDemSpanOcclusion = false;
+        settings.m_EnableDemLosPrecheck = false;
         settings.m_EnableCoarseRd = true;
         settings.m_RdCellsPerScan = 24;
         settings.m_RdMapAlpha = 0.15;
@@ -200,7 +205,7 @@ class GBRS_RadarStationConfig
         settings.m_EnableNlosMultipath = true;
         settings.m_EnableKnifeEdgeDiffraction = true;
         settings.m_EnableEsmReceive = false;
-        settings.m_EnableRwrReporting = true;
+        settings.m_EnableRwrReporting = false;
         settings.m_EnableMeasurementSynthesis = true;
         // WLR projectile detection is intentionally thermal-noise-limited.
         // CFAR was enabled by ApplyRealisticChannelOptIn, but offline validation
@@ -213,18 +218,21 @@ class GBRS_RadarStationConfig
         settings.m_EnableBallisticPrediction = true;
         settings.m_EnableWeaponLocate = true;
         settings.m_EnableDemGroundForWlr = true;
-        settings.m_EnableWlrHudAlerts = true;
+        // GBRS PPI draws launch/impact; RDF's own WLR HUD overlay is extra work.
+        settings.m_EnableWlrHudAlerts = false;
         settings.m_FairScanCursor = true;
         settings.m_TrackCoastOnMiss = true;
         settings.m_TrackCoastOnDopplerNull = false;
         settings.m_TrackCoastMaxSec = 12.0;
-        // Greater-of CFAR for clutter-edge VHF EW scenes.
-        settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_GO;
         if (!settings.m_MeasurementModel)
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
-        ApplyEwStack(settings);
         ApplySystemLayers(settings);
+
+        if (settings.m_EwStack)
+            settings.m_EwStack.Clear();
+        settings.m_EnableEccmDecision = false;
+        settings.m_AdditionalNoisePowerW = 0.0;
     }
 
     // Receiver-side EW uses only live registered emitters. Static deception
@@ -336,6 +344,11 @@ class GBRS_RadarStationConfig
         ApplyFullFidelity(settings);
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_CA;
         ApplyWorkstationReadout(settings, true);
+        // Narrow 2.5° / 10 RPM otherwise splits one aircraft across beam revisits.
+        // Shared ApplyFullFidelity gates (8° / 600 m) are enough for USSR 6°.
+        settings.m_TrackGateAzimuthDeg = 14.0;
+        settings.m_TrackGateRangeM = 900.0;
+        settings.m_TrackCoastMaxSec = 16.0;
         settings.Validate();
         return settings;
     }
@@ -467,9 +480,9 @@ class GBRS_RadarStationConfig
         settings.m_FreshUpdateBudgetMax = 96;
         settings.m_ScattererDiscoveryIntervalS = 0.25;
         settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 128;
-        settings.m_ScattererRefreshPerTick = 256;
-        settings.m_ScattererMaxEntries = 1024;
+        settings.m_ScattererClassifyPerTick = 96;
+        settings.m_ScattererRefreshPerTick = 128;
+        settings.m_ScattererMaxEntries = 512;
         settings.m_DetectionSnrDb = 4.0;
         if (settings.m_Hardware)
         {
@@ -507,9 +520,9 @@ class GBRS_RadarStationConfig
         settings.m_FreshUpdateBudgetMax = 96;
         settings.m_ScattererDiscoveryIntervalS = 0.25;
         settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 128;
-        settings.m_ScattererRefreshPerTick = 256;
-        settings.m_ScattererMaxEntries = 1024;
+        settings.m_ScattererClassifyPerTick = 96;
+        settings.m_ScattererRefreshPerTick = 128;
+        settings.m_ScattererMaxEntries = 512;
         settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
         {

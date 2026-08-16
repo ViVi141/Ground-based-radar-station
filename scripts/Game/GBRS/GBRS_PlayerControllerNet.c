@@ -244,4 +244,27 @@ modded class SCR_PlayerController
 
         station.AuthoritySetAntennaStare(enabled, azDeg);
     }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_NotifyRadarWarning(string title, string subtitle)
+    {
+        if (RplSession.Mode() == RplMode.None)
+        {
+            RpcDo_GBRS_RadarWarning(title, subtitle);
+            return;
+        }
+
+        Rpc(RpcDo_GBRS_RadarWarning, title, subtitle);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+    protected void RpcDo_GBRS_RadarWarning(string title, string subtitle)
+    {
+        SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
+        if (!popup)
+            return;
+
+        popup.PopupMsg(title, 6, subtitle);
+    }
 }

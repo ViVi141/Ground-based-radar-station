@@ -14,12 +14,16 @@
 4. **根因修复**：原版 `EvaluateBuildingStatus` 在 `ToBuildValue==0` 时会立刻 `SpawnComposition()` 并删掉四角桩。雷达强制建造值 250。
 5. 施工期间推迟 RDF `Configure`，减轻 `Cannot set entity as ACTIVE, it's not registered!`。
 6. E_ stub Flags 与官方 FreeRoam 对齐：`0x100000 0x403`。
+7. Conflict 敌情消费者：`GBRS_CampaignRadarWarning` 订阅事件 API，向覆盖基地所属阵营弹 `RADAR CONTACT` / `INCOMING FIRE`（三位地图格）。不改 `m_bEnemiesPresent`。
+8. 伤害调试 Print/Shape 默认关闭（组件 Attribute `m_bDebugDraw`）。
+9. 美军 PD 关联门加宽到 14° / 900 m，PPI 显示聚类 8° / 700 m。
 
 ---
 
 ## 未做 / 已知限制
 
-- Conflict 基地敌情订阅（`EvaluateEnemyPresence`）未实现；事件 API 已有，尚无基地消费者。
 - 雷达施工垫仍跳过 `SpawnPreview`（E_ EditorLink 树会原生 AV）。
-- 未完成雷达垫禁止原版拆除动作。
+- 未完成雷达垫禁止原版拆除动作（同样为规避原生 AV）；残骸用 GBRS 铲具拆除。
+- `chimeraMenus.conf` 必须整份覆盖原版菜单表才能注册 `GBRS_RadarStationMenu`。
 - WLR / 切向悬停直升机仍建议局内实测。
+- `GBRS_RadarStationComponent` 枢纽仍偏大，接触/天线/建造门闩尚未拆文件。

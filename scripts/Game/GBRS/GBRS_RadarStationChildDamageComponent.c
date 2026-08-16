@@ -26,7 +26,7 @@ class GBRS_RadarStationChildDamageComponentClass : SCR_DamageManagerComponentCla
 	float m_fRelayMultiplier;
 
 	// Draw world-space damage debug shapes/text at the hit point (Workbench / dev builds).
-	[Attribute("1", UIWidgets.CheckBox, "Draw damage debug shapes at the hit point", category: "Debug")]
+	[Attribute("0", UIWidgets.CheckBox, "Draw damage debug shapes at the hit point", category: "Debug")]
 	bool m_bDebugDraw;
 }
 
@@ -37,7 +37,8 @@ class GBRS_RadarStationChildDamageComponent : SCR_DamageManagerComponent
 	{
 		super.OnDamage(damageContext);
 
-		DebugLogAndDraw(damageContext);
+		if (IsDebugDraw())
+			DebugLogAndDraw(damageContext);
 
 		RelayToStationRoot(damageContext);
 	}
@@ -45,7 +46,6 @@ class GBRS_RadarStationChildDamageComponent : SCR_DamageManagerComponent
 	//------------------------------------------------------------------------------------------------
 	//! Prints the raw hit and draws a marker at the hit point so we can see
 	//! what damage actually lands on this part and what gets forwarded.
-	//! Always on: hits are sparse events so this cannot spam the log.
 	protected void DebugLogAndDraw(notnull BaseDamageContext damageContext)
 	{
 		string partName = GetOwner().GetPrefabData().GetPrefabName().GetPath();
@@ -121,6 +121,17 @@ class GBRS_RadarStationChildDamageComponent : SCR_DamageManagerComponent
 			multiplier = 1.0;
 
 		station.RelayDamageToStation(damageContext, multiplier);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool IsDebugDraw()
+	{
+		GBRS_RadarStationChildDamageComponentClass data =
+			GBRS_RadarStationChildDamageComponentClass.Cast(GetComponentData(GetOwner()));
+		if (!data)
+			return false;
+
+		return data.m_bDebugDraw;
 	}
 
 	//------------------------------------------------------------------------------------------------

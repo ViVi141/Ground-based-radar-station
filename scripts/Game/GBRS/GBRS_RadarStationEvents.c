@@ -5,6 +5,9 @@
 //! automatic air-defence reactions, artillery counter-battery loops, or
 //! Conflict-base early-warning integration.
 //!
+//! GBRS ships `GBRS_CampaignRadarWarning` as the stock Conflict consumer:
+//! faction popups for new air contacts and WLR impacts inside a friendly base.
+//!
 //! Example:
 //!   GBRS_RadarStationEvents.OnRadarContact.Insert(MyContactHandler);
 class GBRS_RadarStationEvents

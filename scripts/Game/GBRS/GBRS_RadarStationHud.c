@@ -62,8 +62,8 @@ class GBRS_RadarStationHud
     static const int MAX_DRAW_BLIPS = 64;
     // Merge TWS symbols in polar (range/az), not 3D. Elevation noise and
     // coasting ghosts otherwise sit just outside a Cartesian 220 m ball.
-    static const float TRACK_CLUSTER_RANGE_M = 400.0;
-    static const float TRACK_CLUSTER_AZ_DEG = 5.0;
+    static const float TRACK_CLUSTER_RANGE_M = 700.0;
+    static const float TRACK_CLUSTER_AZ_DEG = 8.0;
     static const float HEADING_SPAN_S = 0.4;
 
     // Static face is drawn on the same Canvas as sweep/blips (RHS Garmin pattern).
@@ -126,6 +126,7 @@ class GBRS_RadarStationHud
     protected ref array<ref CanvasWidgetCommand> m_AzElAll;
     protected ref SharedItemRef m_PpiFaceTex;
     protected ref array<ref GBRS_WlrPersistDisplay> m_WlrPersist;
+    protected ref array<ref RDF_RadarTrack> m_CachedDisplayTracks;
 
     static GBRS_RadarStationHud GetInstance()
     {
@@ -738,6 +739,10 @@ class GBRS_RadarStationHud
             return;
         m_LastUpdateS = now;
 
+        // One clustered track pass per HUD tick. PPI, AZ/EL, list, and WLR
+        // persist used to each walk GetAllTracks independently.
+        m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
+
         // Keep the station panel centered: the layout root is authored in
         // 1920x1080 absolute coordinates and MenuManager may re-place it.
         // Re-assert centering every update tick (cheap FrameSlot writes).
@@ -915,7 +920,7 @@ class GBRS_RadarStationHud
 
         // Use the same confirmed-track clustering as PD/LOCK TWS so duplicate
         // tracker files for one physical shell do not flood the PPI.
-        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
         if (!tracks)
             return;
 
@@ -989,7 +994,7 @@ class GBRS_RadarStationHud
 
     protected void DrawTwsTracks(vector origin, RDF_RadarProjectileTracker tracker)
     {
-        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
         if (!tracks)
             return;
 
@@ -1044,6 +1049,17 @@ class GBRS_RadarStationHud
 
             drawn = drawn + 1;
         }
+    }
+
+    protected array<ref RDF_RadarTrack> GetCachedDisplayTracks(
+        RDF_RadarProjectileTracker tracker,
+        vector origin)
+    {
+        if (m_CachedDisplayTracks)
+            return m_CachedDisplayTracks;
+
+        m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
+        return m_CachedDisplayTracks;
     }
 
     protected array<ref RDF_RadarTrack> CollectDisplayTracks(
@@ -1349,7 +1365,7 @@ class GBRS_RadarStationHud
         {
             // Use the clustered/confirmed display set so duplicate tracker files
             // for the same physical shell do not create duplicate LCH/IMP chains.
-            array<ref RDF_RadarTrack> all = CollectDisplayTracks(tracker, origin);
+            array<ref RDF_RadarTrack> all = GetCachedDisplayTracks(tracker, origin);
             if (all)
             {
                 int i = 0;
@@ -1896,7 +1912,7 @@ class GBRS_RadarStationHud
 
     protected void DrawAzElTracks(vector origin, RDF_RadarProjectileTracker tracker)
     {
-        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
         if (!tracks)
             return;
 
@@ -2095,7 +2111,7 @@ class GBRS_RadarStationHud
         inout string colType,
         inout string colSnr)
     {
-        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
         int row = 0;
         if (!tracks)
             return row;
@@ -2215,23 +2231,22 @@ class GBRS_RadarStationHud
 
         int tracks = row;
         int wlrFixes = 0;
-        if (m_Mode == MODE_WLR && tracker)
+        if (m_Mode == MODE_WLR)
         {
             tracks = 0;
-            array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
-            if (all)
+            if (m_WlrPersist)
             {
-                foreach (RDF_RadarTrack tr : all)
+                int i = 0;
+                while (i < m_WlrPersist.Count())
                 {
-                    if (!tr)
+                    GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(i);
+                    i = i + 1;
+                    if (!entry)
                         continue;
-                    RDF_RadarWlrFix wfix = GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
-                    if (wfix && (wfix.m_LaunchValid || wfix.m_ImpactValid))
-                    {
-                        tracks = tracks + 1;
-                        if (wfix.m_LaunchValid)
-                            wlrFixes = wlrFixes + 1;
-                    }
+
+                    tracks = tracks + 1;
+                    if (entry.m_HasLaunch)
+                        wlrFixes = wlrFixes + 1;
                 }
             }
         }
@@ -2270,7 +2285,7 @@ class GBRS_RadarStationHud
         if (!tracker)
             return "(no fire solutions)\nwaiting for ballistic fit";
 
-        array<ref RDF_RadarTrack> all = CollectDisplayTracks(tracker, origin);
+        array<ref RDF_RadarTrack> all = GetCachedDisplayTracks(tracker, origin);
         if (!all)
             return "(no fire solutions)\nwaiting for ballistic fit";
 
@@ -2391,11 +2406,7 @@ class GBRS_RadarStationHud
 
     protected string FormatWorldGrid(vector pos)
     {
-        // Match the player map's default 3-digit grid display (e.g. "001 001").
-        string grid = SCR_MapEntity.GetGridLabel(pos, 0, 3, " ");
-        if (grid == "")
-            return "";
-        return grid;
+        return GBRS_MapGrid.Format(pos);
     }
 
     // Short map label for PPI callouts: prefer the map grid, fall back to

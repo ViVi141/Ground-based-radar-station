@@ -9,7 +9,7 @@ class GBRS_RadarStationDamageManagerComponentClass : SCR_DamageManagerComponentC
 	float m_fMaxHealth;
 
 	// Draw world-space damage debug for direct hits on the station root body.
-	[Attribute("1", UIWidgets.CheckBox, "Draw damage debug text/spheres for root hits", category: "Debug")]
+	[Attribute("0", UIWidgets.CheckBox, "Draw damage debug text/spheres for root hits", category: "Debug")]
 	bool m_bDebugDraw;
 }
 
@@ -22,13 +22,13 @@ class GBRS_RadarStationDamageManagerComponent : SCR_DamageManagerComponent
 	{
 		super.OnDamage(damageContext);
 
-		DebugLogAndDraw(damageContext);
+		if (IsDebugDraw())
+			DebugLogAndDraw(damageContext);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! Prints and draws direct damage to the station root body (hits that do
 	//! NOT come through the child relay: base/shack/mast shots).
-	//! Always on: hits are sparse events so this cannot spam the log.
 	protected void DebugLogAndDraw(notnull BaseDamageContext damageContext)
 	{
 		string typeName = typename.EnumToString(EDamageType, damageContext.damageType);
@@ -112,6 +112,17 @@ class GBRS_RadarStationDamageManagerComponent : SCR_DamageManagerComponent
 			return;
 
 		station.OnStationDestroyed();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool IsDebugDraw()
+	{
+		GBRS_RadarStationDamageManagerComponentClass data =
+			GBRS_RadarStationDamageManagerComponentClass.Cast(GetComponentData(GetOwner()));
+		if (!data)
+			return false;
+
+		return data.m_bDebugDraw;
 	}
 
 	//------------------------------------------------------------------------------------------------

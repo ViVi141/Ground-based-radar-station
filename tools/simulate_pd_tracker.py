@@ -497,6 +497,14 @@ def main() -> int:
     print("=" * 72)
 
     for faction in factions:
+        gate_range_m = 600.0
+        gate_az_deg = 8.0
+        coast_max_s = 12.0
+        if faction == "US":
+            gate_range_m = 900.0
+            gate_az_deg = 14.0
+            coast_max_s = 16.0
+
         # Current GBRS PD: mechanical scan with high miss allowance.
         current = simulate(
             faction,
@@ -504,10 +512,10 @@ def main() -> int:
             range_bias_m=0.0,
             az_bias_deg=0.0,
             el_bias_deg=0.0,
-            gate_range_m=600.0,
-            gate_az_deg=8.0,
+            gate_range_m=gate_range_m,
+            gate_az_deg=gate_az_deg,
             max_misses=600,
-            coast_max_s=12.0,
+            coast_max_s=coast_max_s,
         )
 
         # Legacy / naive PD: measurement noise + tight gates + low max misses.
@@ -534,8 +542,10 @@ def main() -> int:
             },
         }
 
-        for name, r in (("CURRENT (noise off, gates 8/600, maxMiss 600)", current),
-                        ("LEGACY (noise 3.5, gates 4/400, maxMiss 6)", legacy)):
+        for name, r in (
+            ("CURRENT (US 14/900 16s, USSR 8/600 12s, maxMiss 600)", current),
+            ("LEGACY (noise 3.5, gates 4/400, maxMiss 6)", legacy),
+        ):
             print(f"\n[{faction}] {name}")
             print(f"  aircraft={r['total_aircraft']} tracksEver={r['total_tracks_ever']}")
             print(f"  tracks_per_aircraft={r['tracks_per_aircraft']}")

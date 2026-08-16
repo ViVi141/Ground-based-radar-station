@@ -30,6 +30,8 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 从 **基地施工台** 放置时，补给和建造点数是两道关：物资够但点数不够（HQ 上限 1200）会拒绝，提示基地组合体已达上限。100 点与原版中型车辆维修站同一档，高于停机坪（约 70）和小型宿舍，一座雷达会明显占掉基地额度。施工卡车本身不检查 HQ 建造点数（原版工事也一样）。
 
+覆盖己方 Conflict 基地的雷达会把新空情和落在该基地半径内的 WLR 弹着点做成阵营弹窗（`RADAR CONTACT` / `INCOMING FIRE` + 三位地图格）。不会改原版 `EvaluateEnemyPresence`（那是营区内步兵，会锁建造按钮）。
+
 ## 外形与射频
 
 官方模型文件名曾把阵营写反。GBRS **按史实挂模型**：
@@ -105,7 +107,6 @@ GBRS_RadarStationDemo.Stop();
 ## 已知限制
 
 - 没有 IFF / 二次雷达询问；RDF 默认 IFF 解析器一律 `UNKNOWN`，PPI 也不读该字段
-- 没有 Conflict 基地敌情消费者（`EvaluateEnemyPresence`）
 - 射频不是 RPL-5 / AN/TPN-19 的进近手册数据
 - 对调模型后，编辑器缩略图可能仍是旧外观，需在 Workbench 重新生成预览
 - WLR 与切向悬停直升机建议局内实测

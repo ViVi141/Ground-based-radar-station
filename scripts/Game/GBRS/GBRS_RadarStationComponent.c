@@ -170,6 +170,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             ApplyConfiguration(owner);
         ApplyUnderConstructionLock();
         BindCoveringBaseFactionListener();
+        GBRS_CampaignRadarWarning.EnsureBound();
     }
 
     override void EOnFrame(IEntity owner, float timeSlice)
@@ -450,19 +451,17 @@ class GBRS_RadarStationComponent : ScriptComponent
             -1);
         m_DamageManager.HandleDamage(relayed);
 
-        // Damage debug is always on: hits are sparse events, so this cannot
-        // spam the log (unlike the scan heartbeat, which stays behind
-        // m_bDebugLog).
-        // Simulate the root HitZone math for the relayed value so the log
-        // shows effective damage vs raw (reduction/threshold/type multiplier).
-        float effective = defaultZone.ComputeEffectiveDamage(relayed, false);
-        Print("[GBRS-DAMAGE] relayed child damage " + relayedDamage.ToString()
-            + " (mult " + multiplier.ToString()
-            + ") -> effective " + effective.ToString()
-            + " (hp now " + m_DamageManager.GetStationHealth().ToString() + ")",
-            LogLevel.WARNING);
+        if (m_DamageManager.IsDebugDraw())
+        {
+            float effective = defaultZone.ComputeEffectiveDamage(relayed, false);
+            Print("[GBRS-DAMAGE] relayed child damage " + relayedDamage.ToString()
+                + " (mult " + multiplier.ToString()
+                + ") -> effective " + effective.ToString()
+                + " (hp now " + m_DamageManager.GetStationHealth().ToString() + ")",
+                LogLevel.WARNING);
 
-        DrawRelayDebug(damageContext, relayedDamage, effective);
+            DrawRelayDebug(damageContext, relayedDamage, effective);
+        }
     }
 
     //------------------------------------------------------------------------------------------------
@@ -753,6 +752,16 @@ class GBRS_RadarStationComponent : ScriptComponent
     RplId GetStationRplId()
     {
         return Replication.FindItemId(this);
+    }
+
+    bool IsStationAuthority()
+    {
+        return IsAuthority();
+    }
+
+    SCR_CampaignMilitaryBaseComponent GetCoveringCampaignBase(bool sameFactionOnly)
+    {
+        return FindCoveringCampaignBase(sameFactionOnly);
     }
 
     // Server entry from GBRS_PlayerControllerNet (menu on a proxy).

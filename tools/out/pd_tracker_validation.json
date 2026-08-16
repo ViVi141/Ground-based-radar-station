@@ -10,10 +10,10 @@
         "scan_rpm": 10.0,
         "beamwidth_deg": 2.5,
         "noise_scale": 0.0,
-        "gate_az_deg": 8.0,
-        "gate_range_m": 600.0,
+        "gate_az_deg": 14.0,
+        "gate_range_m": 900.0,
         "max_misses": 600,
-        "coast_max_s": 12.0,
+        "coast_max_s": 16.0,
         "total_aircraft": 3,
         "total_tracks_ever": 12,
         "tracks_per_aircraft": {
