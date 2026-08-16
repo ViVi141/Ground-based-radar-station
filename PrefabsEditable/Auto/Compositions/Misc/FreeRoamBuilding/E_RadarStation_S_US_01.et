@@ -51,11 +51,11 @@ GenericEntity : "{69FCEDCEA0010001}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
  {
   GenericEntity {
    ID "69FCEDCEA0010101"
-   Flags 0x100000 0x3
+   Flags 0x100000 0x403
   }
   GenericEntity {
    ID "69FCEDCEA0010102"
-   Flags 0x100000 0x3
+   Flags 0x100000 0x403
   }
  }
 }

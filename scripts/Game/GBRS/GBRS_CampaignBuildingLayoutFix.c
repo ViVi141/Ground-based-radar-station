@@ -28,6 +28,36 @@ modded class SCR_CampaignBuildingLayoutComponent
     }
 
     //------------------------------------------------------------------------------------------------
+    // Vanilla EvaluateBuildingStatus treats ToBuildValue==0 as "already done"
+    // and calls SpawnComposition() on the same frame the pad is placed. Radar
+    // often hits 0 when OutlineManager is missing or the lookup uses the Root
+    // prefab name instead of the E_ placeable.
+    override int GetBuildingValue(int prefabID)
+    {
+        int value = super.GetBuildingValue(prefabID);
+        if (value > 0)
+            return value;
+
+        if (GBRS_IsRadarLayout())
+            return GBRS_RadarStationConstants.BUILDING_VALUE;
+
+        ResourceName resName = GetCompositionResourceName(prefabID);
+        if (GBRS_RadarStationConstants.IsRadarPrefab(resName))
+            return GBRS_RadarStationConstants.BUILDING_VALUE;
+
+        return value;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    override void EvaluateBuildingStatus(int currentBuildValue)
+    {
+        if (GBRS_IsRadarLayout() && m_iToBuildValue <= 0)
+            m_iToBuildValue = GBRS_RadarStationConstants.BUILDING_VALUE;
+
+        super.EvaluateBuildingStatus(currentBuildValue);
+    }
+
+    //------------------------------------------------------------------------------------------------
     // Shovel gadget repeatedly calls SpawnPreview when entering range. Loading
     // the full E_ radar prefab as SCR_PrefabPreviewEntity still crashes natively.
     override void SpawnPreview()

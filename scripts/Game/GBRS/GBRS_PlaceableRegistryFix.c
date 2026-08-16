@@ -10,11 +10,6 @@
 // into Generator_Store, then may leave).
 modded class SCR_CampaignBuildingManagerComponent
 {
-    protected static const ResourceName GBRS_PLACEABLE_US =
-        "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et";
-    protected static const ResourceName GBRS_PLACEABLE_USSR =
-        "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et";
-
     //------------------------------------------------------------------------------------------------
     override void EOnInit(IEntity owner)
     {
@@ -28,8 +23,8 @@ modded class SCR_CampaignBuildingManagerComponent
         if (!m_aPlaceablePrefabs)
             m_aPlaceablePrefabs = {};
 
-        GBRS_InsertPlaceableIfMissing(GBRS_PLACEABLE_US);
-        GBRS_InsertPlaceableIfMissing(GBRS_PLACEABLE_USSR);
+        GBRS_InsertPlaceableIfMissing(GBRS_RadarStationConstants.PREFAB_E_US);
+        GBRS_InsertPlaceableIfMissing(GBRS_RadarStationConstants.PREFAB_E_USSR);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -49,14 +44,6 @@ modded class SCR_CampaignBuildingManagerComponent
 // without also extending m_aCompositionLayouts. Fall back to the GBRS FRB pad.
 modded class SCR_CampaignBuildingCompositionOutlineManager
 {
-    protected static const ResourceName GBRS_PLACEABLE_US =
-        "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et";
-    protected static const ResourceName GBRS_PLACEABLE_USSR =
-        "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et";
-    protected static const ResourceName GBRS_FRB_LAYOUT =
-        "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et";
-    protected static const int GBRS_BUILDING_VALUE = 160;
-
     //------------------------------------------------------------------------------------------------
     override ResourceName GetCompositionOutline(notnull SCR_EditableEntityComponent entity)
     {
@@ -70,8 +57,8 @@ modded class SCR_CampaignBuildingCompositionOutlineManager
     //------------------------------------------------------------------------------------------------
     override int GetCompositionBuildingValue(ResourceName originalComposition)
     {
-        if (GBRS_IsRadarEditable(originalComposition))
-            return GBRS_BUILDING_VALUE;
+        if (GBRS_RadarStationConstants.IsRadarPrefab(originalComposition))
+            return GBRS_RadarStationConstants.BUILDING_VALUE;
 
         return super.GetCompositionBuildingValue(originalComposition);
     }
@@ -79,12 +66,15 @@ modded class SCR_CampaignBuildingCompositionOutlineManager
     //------------------------------------------------------------------------------------------------
     protected ResourceName GBRS_FindRadarLayout(notnull SCR_EditableEntityComponent entity)
     {
-        IEntity composition = entity.GetOwner();
-        if (!composition)
-            return ResourceName.Empty;
+        ResourceName compositionResourceName = entity.GetPrefab();
+        if (!GBRS_RadarStationConstants.IsRadarPrefab(compositionResourceName))
+        {
+            IEntity composition = entity.GetOwner();
+            if (composition && composition.GetPrefabData())
+                compositionResourceName = composition.GetPrefabData().GetPrefabName();
+        }
 
-        ResourceName compositionResourceName = composition.GetPrefabData().GetPrefabName();
-        if (!GBRS_IsRadarEditable(compositionResourceName))
+        if (!GBRS_RadarStationConstants.IsRadarPrefab(compositionResourceName))
             return ResourceName.Empty;
 
         if (m_aCompositionLayouts)
@@ -99,43 +89,30 @@ modded class SCR_CampaignBuildingCompositionOutlineManager
             }
         }
 
-        return GBRS_FRB_LAYOUT;
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected bool GBRS_IsRadarEditable(ResourceName prefab)
-    {
-        if (prefab.IsEmpty())
-            return false;
-
-        if (prefab == GBRS_PLACEABLE_US)
-            return true;
-
-        if (prefab == GBRS_PLACEABLE_USSR)
-            return true;
-
-        return false;
+        return GBRS_RadarStationConstants.PREFAB_FRB_LAYOUT;
     }
 }
 
 
 // Editor BUILDING / some GameMode configurations do not provide an outline
-// manager. Ensure GBRS radar compositions still get their FreeRoamBuilding pad.
+// manager. Ensure GBRS radar compositions still get their FreeRoamBuilding pad
+// instead of the SlotFlatSmall failsafe (or an empty outline).
 modded class SCR_CampaignBuildingCompositionComponent
 {
     override ResourceName GetOutlineToSpawn(notnull SCR_EditableEntityComponent entity)
     {
-        ResourceName outline = super.GetOutlineToSpawn(entity);
-        if (!outline.IsEmpty())
-            return outline;
-
         ResourceName prefab = entity.GetPrefab();
-        if (prefab == "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et"
-            || prefab == "{69FCEDCEA0010004}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.et")
+        if (GBRS_RadarStationConstants.IsRadarPrefab(prefab))
+            return GBRS_RadarStationConstants.PREFAB_FRB_LAYOUT;
+
+        IEntity owner = entity.GetOwner();
+        if (owner && owner.GetPrefabData())
         {
-            return "{69FCEDCEA0030002}Prefabs/Compositions/Misc/FreeRoamBuilding/Layouts/FRB_RadarStation_S_01.et";
+            ResourceName spawnedPrefab = owner.GetPrefabData().GetPrefabName();
+            if (GBRS_RadarStationConstants.IsRadarPrefab(spawnedPrefab))
+                return GBRS_RadarStationConstants.PREFAB_FRB_LAYOUT;
         }
 
-        return outline;
+        return super.GetOutlineToSpawn(entity);
     }
 }

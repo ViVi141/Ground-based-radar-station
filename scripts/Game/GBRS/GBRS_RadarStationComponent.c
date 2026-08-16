@@ -139,11 +139,16 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ref map<int, bool> m_WlrFiredTrackIds;
     protected float m_fNextContactUpdateS;
     protected bool m_bLockLayerEnabled;
-    protected int m_iActiveConflictContacts;
 
     override void OnPostInit(IEntity owner)
     {
         SetEventMask(owner, EntityEvent.INIT | EntityEvent.FRAME);
+
+        // RDF EOnInit can race GBRS and try to set ACTIVE before the entity is
+        // registered. Keep the sensor off until composition/build gate says so.
+        RDF_RadarComponent radar = RDF_RadarComponent.Cast(owner.FindComponent(RDF_RadarComponent));
+        if (radar)
+            radar.SetEnabled(false);
     }
 
     override void EOnInit(IEntity owner)
@@ -161,7 +166,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_WlrFiredTrackIds = new map<int, bool>();
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
-        ApplyConfiguration(owner);
+        if (IsCompositionReady())
+            ApplyConfiguration(owner);
         ApplyUnderConstructionLock();
     }
 
@@ -169,6 +175,9 @@ class GBRS_RadarStationComponent : ScriptComponent
     {
         if (!m_bConfigured)
         {
+            if (!IsCompositionReady())
+                return;
+
             ApplyConfiguration(owner);
             return;
         }
@@ -489,7 +498,6 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         m_bDestroyed = true;
         ClearContactEvents();
-        ResetConflictBaseContact();
 
         if (GBRS_RadarStationEvents.OnRadarDestroyed)
             GBRS_RadarStationEvents.OnRadarDestroyed.Invoke(this);
@@ -630,6 +638,9 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         if (m_DamageManager)
             m_DamageManager.EnableDamageHandling(true);
+
+        if (!m_bConfigured)
+            ApplyConfiguration(GetOwner());
 
         if (m_bCompositionBuildGateBound && m_BuildingComposition)
         {
@@ -1203,7 +1214,6 @@ class GBRS_RadarStationComponent : ScriptComponent
         SetTraceIgnoreActive(false);
         StopSupplyDrain();
         ClearContactEvents();
-        ResetConflictBaseContact();
         GBRS_RadarStationMenu.CloseIfBound(this);
     }
 
@@ -2092,7 +2102,6 @@ class GBRS_RadarStationComponent : ScriptComponent
                     if (GBRS_RadarStationEvents.OnRadarContact)
                         GBRS_RadarStationEvents.OnRadarContact.Invoke(this, t);
 
-                    HandleConflictContact(true);
                 }
             }
         }
@@ -2117,7 +2126,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             if (old && GBRS_RadarStationEvents.OnRadarContactLost)
                 GBRS_RadarStationEvents.OnRadarContactLost.Invoke(this, old);
 
-            HandleConflictContact(false);
         }
     }
 
@@ -2176,89 +2184,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_ContactLastSeen.Clear();
         if (m_WlrFiredTrackIds)
             m_WlrFiredTrackIds.Clear();
-    }
-
-    //------------------------------------------------------------------------------------------------
-    //! Conflict base early-warning. Maintains a server-side contact count and
-    //! reports the aggregate state to the nearest friendly base.
-    protected void HandleConflictContact(bool hasContact)
-    {
-        if (!Replication.IsServer())
-            return;
-
-        if (hasContact)
-            m_iActiveConflictContacts = m_iActiveConflictContacts + 1;
-        else if (m_iActiveConflictContacts > 0)
-            m_iActiveConflictContacts = m_iActiveConflictContacts - 1;
-
-        if (m_iActiveConflictContacts > 0)
-            ReportConflictContactToBase(true);
-        else
-            ReportConflictContactToBase(false);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    //! Clears all radar-reported conflict presence (power off / destroy).
-    protected void ResetConflictBaseContact()
-    {
-        if (!Replication.IsServer())
-            return;
-
-        m_iActiveConflictContacts = 0;
-        ReportConflictContactToBase(false);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    //! Finds the nearest friendly Conflict base in range and feeds it the
-    //! radar contact state.
-    protected void ReportConflictContactToBase(bool hasContact)
-    {
-        if (!Replication.IsServer())
-            return;
-
-        SCR_MilitaryBaseSystem baseSystem = SCR_MilitaryBaseSystem.GetInstance();
-        if (!baseSystem)
-            return;
-
-        array<SCR_MilitaryBaseComponent> bases = {};
-        baseSystem.GetBases(bases);
-        if (bases.IsEmpty())
-            return;
-
-        IEntity owner = GetOwner();
-        if (!owner)
-            return;
-
-        Faction stationFaction = SCR_Faction.GetEntityFaction(owner);
-        vector origin = owner.GetOrigin();
-        SCR_CampaignMilitaryBaseComponent best = null;
-        float bestDistSq = -1.0;
-
-        foreach (SCR_MilitaryBaseComponent base : bases)
-        {
-            if (!base)
-                continue;
-
-            float radius = base.GetRadius();
-            float distSq = vector.DistanceSqXZ(origin, base.GetOwner().GetOrigin());
-            if (radius > 0.0 && distSq > (radius * radius))
-                continue;
-
-            if (bestDistSq < 0.0 || distSq < bestDistSq)
-            {
-                bestDistSq = distSq;
-                best = SCR_CampaignMilitaryBaseComponent.Cast(base);
-            }
-        }
-
-        if (!best)
-            return;
-
-        Faction baseFaction = best.GetFaction();
-        if (!baseFaction || !stationFaction || baseFaction != stationFaction)
-            return;
-
-        best.GBRS_ReportRadarContact(hasContact);
     }
 
     protected void DebugLogPowerOn()

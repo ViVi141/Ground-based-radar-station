@@ -1,0 +1,19 @@
+# Normalize all text files to LF. Workbench/Enfusion parsers are line-ending
+# sensitive; CRLF in .conf/.et/.layout/.c can break resource/prefab loading.
+* text=auto eol=lf
+
+# Binary assets must not be normalized.
+*.edds binary
+*.png binary
+*.dds binary
+*.rdb binary
+*.exe binary
+*.npz binary
+*.pyc binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.wav binary
+*.ogg binary
+*.fbx binary
+*.p3d binary
