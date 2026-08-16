@@ -41,6 +41,11 @@ class GBRS_RadarStationHud
     static const int MAX_LIST_ROWS = 24;
     // Must match GBRS_RadarStationMenu.DISPLAY_MAX_BLIPS.
     static const int MAX_DRAW_BLIPS = 64;
+    // Merge TWS symbols in polar (range/az), not 3D. Elevation noise and
+    // coasting ghosts otherwise sit just outside a Cartesian 220 m ball.
+    static const float TRACK_CLUSTER_RANGE_M = 400.0;
+    static const float TRACK_CLUSTER_AZ_DEG = 5.0;
+    static const float HEADING_SPAN_S = 0.4;
 
     // Static face is drawn on the same Canvas as sweep/blips (RHS Garmin pattern).
     static const int COL_PPI_SWEEP = ARGB(250, 90, 255, 170);
@@ -59,6 +64,10 @@ class GBRS_RadarStationHud
     static const int COL_WLR_TEXT = ARGB(255, 255, 235, 180);
     static const int COL_WLR_SHELL = ARGB(255, 255, 220, 70);
     static const int COL_LOCK = ARGB(255, 255, 70, 70);
+    static const int COL_PLOT_GLOW = ARGB(110, 90, 180, 130);
+    static const int COL_TRACK = ARGB(255, 90, 255, 150);
+    static const int COL_TRACK_TENT = ARGB(200, 210, 220, 100);
+    static const int COL_TRACK_COAST = ARGB(230, 140, 210, 255);
     static const int COL_AZEL_GRID = ARGB(120, 80, 160, 200);
     static const float WLR_ALERT_RADIUS_M = 120.0;
     static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
@@ -707,7 +716,7 @@ class GBRS_RadarStationHud
 
         UpdateOpticsCamera(origin, forward);
         UpdatePpi(targets, origin, forward, tracker);
-        UpdateAzEl(targets, origin);
+        UpdateAzEl(targets, origin, tracker);
         UpdateList(targets, origin, tracker);
 
         if (m_Widgets && m_Widgets.m_wPpiRange)
@@ -830,6 +839,73 @@ class GBRS_RadarStationHud
             m_PpiAll.Insert(edge);
         }
 
+        if (m_Mode == MODE_WLR)
+        {
+            if (targets && m_DisplayRange > 0.0)
+            {
+                int index = 0;
+                foreach (RDF_RadarTarget t : targets)
+                {
+                    if (!t)
+                        continue;
+                    if (!IsInDisplayRange(t, origin))
+                        continue;
+                    if (index >= MAX_DRAW_BLIPS)
+                        break;
+
+                    float bx;
+                    float by;
+                    if (!WorldToPpi(origin, t.m_Position, bx, by))
+                        continue;
+
+                    DrawPlotAfterglow(bx, by, t);
+                    index = index + 1;
+                }
+            }
+
+            DrawWlrAlerts(origin, tracker);
+        }
+        else
+        {
+            DrawTwsTracks(origin, tracker);
+        }
+
+        m_Widgets.m_wPpiCanvas.SetDrawCommands(m_PpiAll);
+    }
+
+    protected void DrawPlotAfterglow(float bx, float by, RDF_RadarTarget t)
+    {
+        int color = COL_PLOT_GLOW;
+        if (t)
+        {
+            if (t.m_IsFalsePlot)
+                color = ARGB(90, 255, 95, 95);
+            else
+            {
+                if (t.m_LosBlocked)
+                    color = ARGB(90, 110, 235, 255);
+            }
+        }
+
+        vector centerPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(bx, by, 0.0));
+        float rPx = UnitSizeToPixels(2.4);
+        if (rPx < 1.0)
+            rPx = 1.0;
+
+        array<float> bv = new array<float>();
+        m_Widgets.m_wPpiCanvas.TessellateCircle(centerPx, rPx, 8, bv);
+        PolygonDrawCommand blip = new PolygonDrawCommand();
+        blip.m_iColor = color;
+        blip.m_Vertices = bv;
+        m_PpiAll.Insert(blip);
+    }
+
+    protected void DrawTwsTracks(vector origin, RDF_RadarProjectileTracker tracker)
+    {
+        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        if (!tracks)
+            return;
+
         vector lockPos;
         bool hasLock = false;
         if (m_Mode == MODE_LOCK && m_LockManager)
@@ -838,45 +914,268 @@ class GBRS_RadarStationHud
             hasLock = m_LockManager.GetLockedTarget(lockEnt, lockPos);
         }
 
-        if (targets && m_DisplayRange > 0.0)
+        int drawn = 0;
+        int i = 0;
+        while (i < tracks.Count())
         {
-            int index = 0;
-            foreach (RDF_RadarTarget t : targets)
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (drawn >= MAX_DRAW_BLIPS)
+                break;
+
+            float bx;
+            float by;
+            if (!WorldToPpi(origin, tr.m_FilteredPosition, bx, by))
+                continue;
+
+            int color = TrackColor(tr);
+            float half = 6.0;
+
+            bool locked = false;
+            if (hasLock)
+                locked = IsLockMatchedTrack(tr, lockPos);
+            if (locked)
             {
-                if (!t)
-                    continue;
-                if (!IsInDisplayRange(t, origin))
-                    continue;
-                if (index >= MAX_DRAW_BLIPS)
-                    break;
+                color = COL_LOCK;
+                half = 7.5;
+                DrawLockRing(bx, by, half + 5.0);
+            }
 
-                float bx;
-                float by;
-                if (!WorldToPpi(origin, t.m_Position, bx, by))
-                    continue;
+            DrawPpiSquare(bx, by, half, color);
 
-                int color = BlipColor(t);
-                float radius = BlipRadius(t);
-                if (hasLock)
+            float dirX;
+            float dirZ;
+            float speed;
+            TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
+            if (speed >= 3.0)
+                DrawPpiChevron(bx, by, dirX, dirZ, color);
+
+            drawn = drawn + 1;
+        }
+    }
+
+    protected array<ref RDF_RadarTrack> CollectDisplayTracks(
+        RDF_RadarProjectileTracker tracker,
+        vector origin)
+    {
+        array<ref RDF_RadarTrack> result = new array<ref RDF_RadarTrack>();
+        if (!tracker)
+            return result;
+
+        array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
+        if (!all)
+            return result;
+
+        float gateSq = TRACK_CLUSTER_RANGE_M * TRACK_CLUSTER_RANGE_M;
+        int i = 0;
+        while (i < all.Count())
+        {
+            RDF_RadarTrack tr = all.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (!tr.m_Confirmed)
+                continue;
+            if (!IsTrackInDisplayRange(tr, origin))
+                continue;
+
+            int match = -1;
+            int j = 0;
+            while (j < result.Count())
+            {
+                RDF_RadarTrack kept = result.Get(j);
+                if (kept)
                 {
-                    if (IsLockMatchedBlip(t, lockPos))
+                    if (TracksAreSameContact(tr, kept, gateSq))
                     {
-                        color = COL_LOCK;
-                        radius = radius + 3.0;
-                        DrawLockRing(bx, by, radius + 4.0);
+                        match = j;
+                        break;
                     }
                 }
+                j = j + 1;
+            }
 
-                DrawBlip(bx, by, radius, color);
-                DrawVelocity(t, bx, by);
-                index = index + 1;
+            if (match < 0)
+            {
+                result.Insert(tr);
+                continue;
+            }
+
+            RDF_RadarTrack winner = result.Get(match);
+            if (TrackIsBetter(tr, winner))
+                result.Set(match, tr);
+        }
+
+        return result;
+    }
+
+    protected bool TracksAreSameContact(RDF_RadarTrack a, RDF_RadarTrack b, float horizGateSq)
+    {
+        if (!a || !b)
+            return false;
+
+        if (a.m_ScattererId > 0 && a.m_ScattererId == b.m_ScattererId)
+            return true;
+
+        float dRange = a.m_FilteredRangeM - b.m_FilteredRangeM;
+        if (dRange < 0.0)
+            dRange = -dRange;
+        float dAz = a.m_FilteredAzimuthDeg - b.m_FilteredAzimuthDeg;
+        while (dAz > 180.0)
+            dAz = dAz - 360.0;
+        while (dAz < -180.0)
+            dAz = dAz + 360.0;
+        if (dAz < 0.0)
+            dAz = -dAz;
+        if (dRange <= TRACK_CLUSTER_RANGE_M)
+        {
+            if (dAz <= TRACK_CLUSTER_AZ_DEG)
+                return true;
+        }
+
+        float dx = a.m_FilteredPosition[0] - b.m_FilteredPosition[0];
+        float dz = a.m_FilteredPosition[2] - b.m_FilteredPosition[2];
+        if ((dx * dx + dz * dz) <= horizGateSq)
+            return true;
+
+        return false;
+    }
+
+    protected bool TrackIsBetter(RDF_RadarTrack a, RDF_RadarTrack b)
+    {
+        if (!a)
+            return false;
+        if (!b)
+            return true;
+        if (a.m_Coasting != b.m_Coasting)
+        {
+            if (!a.m_Coasting)
+                return true;
+            return false;
+        }
+        if (a.m_HitCount != b.m_HitCount)
+        {
+            if (a.m_HitCount > b.m_HitCount)
+                return true;
+            return false;
+        }
+        if (a.m_LastSnrDb > b.m_LastSnrDb)
+            return true;
+        return false;
+    }
+
+    // PPI heading from a 0.4 s position span (scan-to-scan TWS), not the
+    // 20 ms Cartesian filter which measurement noise yanks around. Fallback
+    // is LOS * (-radial): RDF radial > 0 is approaching.
+    protected void TrackDisplayMotion(
+        RDF_RadarTrack tr,
+        vector origin,
+        out float dirX,
+        out float dirZ,
+        out float speed)
+    {
+        dirX = 0.0;
+        dirZ = 1.0;
+        speed = 0.0;
+        if (!tr)
+            return;
+
+        bool haveHistory = false;
+        if (tr.m_Positions && tr.m_Times)
+        {
+            int n = tr.m_Positions.Count();
+            if (n >= 2)
+            {
+                int last = n - 1;
+                vector newest = tr.m_Positions.Get(last);
+                float tNew = tr.m_Times.Get(last);
+                int chosen = 0;
+                int j = 0;
+                while (j < last)
+                {
+                    float age = tNew - tr.m_Times.Get(j);
+                    if (age >= HEADING_SPAN_S)
+                        chosen = j;
+                    j = j + 1;
+                }
+
+                vector older = tr.m_Positions.Get(chosen);
+                float dt = tNew - tr.m_Times.Get(chosen);
+                if (dt >= 0.08)
+                {
+                    dirX = newest[0] - older[0];
+                    dirZ = newest[2] - older[2];
+                    float dist = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+                    speed = dist / dt;
+                    haveHistory = true;
+                }
             }
         }
 
-        if (m_Mode == MODE_WLR)
-            DrawWlrAlerts(origin, tracker);
+        if (haveHistory)
+        {
+            if (speed >= 3.0)
+                return;
+        }
 
-        m_Widgets.m_wPpiCanvas.SetDrawCommands(m_PpiAll);
+        float azRad = tr.m_FilteredAzimuthDeg * 0.017453292519943295;
+        float rr = tr.m_FilteredRangeRateMs;
+        dirX = Math.Cos(azRad) * (-rr);
+        dirZ = Math.Sin(azRad) * (-rr);
+        if (rr < 0.0)
+            speed = -rr;
+        else
+            speed = rr;
+    }
+
+    protected bool IsTrackInDisplayRange(RDF_RadarTrack tr, vector origin)
+    {
+        if (!tr)
+            return false;
+
+        float rng = tr.m_FilteredRangeM;
+        if (rng <= 0.0)
+        {
+            vector d = tr.m_FilteredPosition - origin;
+            rng = d.Length();
+        }
+
+        if (m_DisplayRange <= 0.0)
+            return true;
+
+        if (rng > m_DisplayRange)
+            return false;
+
+        return true;
+    }
+
+    protected int TrackColor(RDF_RadarTrack tr)
+    {
+        if (!tr)
+            return COL_TRACK_TENT;
+        if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
+            return COL_EMITTER;
+        if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            return COL_PROJ;
+        if (tr.m_Coasting)
+            return COL_TRACK_COAST;
+        if (!tr.m_Confirmed)
+            return COL_TRACK_TENT;
+        return COL_TRACK;
+    }
+
+    protected bool IsLockMatchedTrack(RDF_RadarTrack tr, vector lockPos)
+    {
+        if (!tr)
+            return false;
+
+        float dist = vector.Distance(tr.m_FilteredPosition, lockPos);
+        if (dist <= 80.0)
+            return true;
+
+        return false;
     }
 
     protected void AddSweepWedge(float bearingRad)
@@ -1353,7 +1652,10 @@ class GBRS_RadarStationHud
         m_PpiAll.Insert(tick);
     }
 
-    protected void UpdateAzEl(array<ref RDF_RadarTarget> targets, vector origin)
+    protected void UpdateAzEl(
+        array<ref RDF_RadarTarget> targets,
+        vector origin,
+        RDF_RadarProjectileTracker tracker)
     {
         if (!m_Widgets || !m_Widgets.m_wAzElCanvas)
             return;
@@ -1364,45 +1666,87 @@ class GBRS_RadarStationHud
 
         DrawAzElGrid();
 
-        if (targets)
-        {
-            int index = 0;
-            foreach (RDF_RadarTarget t : targets)
-            {
-                if (!t)
-                    continue;
-                if (!IsInDisplayRange(t, origin))
-                    continue;
-                if (index >= MAX_DRAW_BLIPS)
-                    break;
-
-                float az = NorthUpAzimuthDeg(t, origin);
-                float el = NorthUpElevationDeg(t, origin);
-                if (el < AZEL_EL_MIN)
-                    el = AZEL_EL_MIN;
-                if (el > AZEL_EL_MAX)
-                    el = AZEL_EL_MAX;
-
-                float x = (az / 360.0) * m_AzElW;
-                float y = m_AzElH - ((el - AZEL_EL_MIN) / (AZEL_EL_MAX - AZEL_EL_MIN)) * m_AzElH;
-
-                vector centerPx = m_Widgets.m_wAzElCanvas.PosToPixels(Vector(x, y, 0.0));
-                vector sizePx = m_Widgets.m_wAzElCanvas.SizeToPixels(Vector(4.5, 4.5, 0.0));
-                float rPx = sizePx[0];
-                if (rPx < 1.0)
-                    rPx = 1.0;
-
-                array<float> verts = new array<float>();
-                m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, rPx, 8, verts);
-                PolygonDrawCommand blip = new PolygonDrawCommand();
-                blip.m_iColor = BlipColor(t);
-                blip.m_Vertices = verts;
-                m_AzElAll.Insert(blip);
-                index = index + 1;
-            }
-        }
+        if (m_Mode == MODE_WLR)
+            DrawAzElPlots(targets, origin);
+        else
+            DrawAzElTracks(origin, tracker);
 
         m_Widgets.m_wAzElCanvas.SetDrawCommands(m_AzElAll);
+    }
+
+    protected void DrawAzElPlots(array<ref RDF_RadarTarget> targets, vector origin)
+    {
+        if (!targets)
+            return;
+
+        int index = 0;
+        foreach (RDF_RadarTarget t : targets)
+        {
+            if (!t)
+                continue;
+            if (!IsInDisplayRange(t, origin))
+                continue;
+            if (index >= MAX_DRAW_BLIPS)
+                break;
+
+            float az = NorthUpAzimuthDeg(t, origin);
+            float el = NorthUpElevationDeg(t, origin);
+            DrawAzElMark(az, el, BlipColor(t), 4.5);
+            index = index + 1;
+        }
+    }
+
+    protected void DrawAzElTracks(vector origin, RDF_RadarProjectileTracker tracker)
+    {
+        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        if (!tracks)
+            return;
+
+        int index = 0;
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (index >= MAX_DRAW_BLIPS)
+                break;
+
+            vector d = tr.m_FilteredPosition - origin;
+            float az = Math.Atan2(d[0], d[2]) * Math.RAD2DEG;
+            if (az < 0.0)
+                az = az + 360.0;
+            float horiz = Math.Sqrt(d[0] * d[0] + d[2] * d[2]);
+            float el = Math.Atan2(d[1], Math.Max(0.001, horiz)) * Math.RAD2DEG;
+            DrawAzElMark(az, el, TrackColor(tr), 5.0);
+            index = index + 1;
+        }
+    }
+
+    protected void DrawAzElMark(float azDeg, float elDeg, int color, float sizeUnit)
+    {
+        float el = elDeg;
+        if (el < AZEL_EL_MIN)
+            el = AZEL_EL_MIN;
+        if (el > AZEL_EL_MAX)
+            el = AZEL_EL_MAX;
+
+        float x = (azDeg / 360.0) * m_AzElW;
+        float y = m_AzElH - ((el - AZEL_EL_MIN) / (AZEL_EL_MAX - AZEL_EL_MIN)) * m_AzElH;
+
+        vector centerPx = m_Widgets.m_wAzElCanvas.PosToPixels(Vector(x, y, 0.0));
+        vector sizePx = m_Widgets.m_wAzElCanvas.SizeToPixels(Vector(sizeUnit, sizeUnit, 0.0));
+        float rPx = sizePx[0];
+        if (rPx < 1.0)
+            rPx = 1.0;
+
+        array<float> verts = new array<float>();
+        m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, rPx, 8, verts);
+        PolygonDrawCommand blip = new PolygonDrawCommand();
+        blip.m_iColor = color;
+        blip.m_Vertices = verts;
+        m_AzElAll.Insert(blip);
     }
 
     // Draw AZ/EL grid in canvas units so every line survives UI scale.
@@ -1490,35 +1834,33 @@ class GBRS_RadarStationHud
         string colType = "";
         string colSnr = "";
         int row = 0;
-        if (targets)
+        if (tracker)
         {
-            foreach (RDF_RadarTarget t : targets)
+            row = AppendTrackListRows(
+                tracker,
+                origin,
+                colNr,
+                colAz,
+                colRng,
+                colAlt,
+                colSpd,
+                colType,
+                colSnr);
+        }
+        else
+        {
+            if (targets)
             {
-                if (!t)
-                    continue;
-                if (!IsInDisplayRange(t, origin))
-                    continue;
-                if (row >= MAX_LIST_ROWS)
-                    break;
-
-                float az = NorthUpAzimuthDeg(t, origin);
-                float rngKm = t.m_Distance / 1000.0;
-                if (rngKm <= 0.0)
-                {
-                    vector d = t.m_Position - origin;
-                    rngKm = d.Length() / 1000.0;
-                }
-                float altKm = t.m_Position[1] / 1000.0;
-                float spd = t.m_Velocity.Length();
-
-                colNr = AppendColLine(colNr, PadNum(row, 2));
-                colAz = AppendColLine(colAz, PadNum(az, 3));
-                colRng = AppendColLine(colRng, Fmt1(rngKm));
-                colAlt = AppendColLine(colAlt, Fmt1(altKm));
-                colSpd = AppendColLine(colSpd, PadNum(spd, 3));
-                colType = AppendColLine(colType, TypeTag(t));
-                colSnr = AppendColLine(colSnr, F0(t.m_SnrDb));
-                row = row + 1;
+                row = AppendPlotListRows(
+                    targets,
+                    origin,
+                    colNr,
+                    colAz,
+                    colRng,
+                    colAlt,
+                    colSpd,
+                    colType,
+                    colSnr);
             }
         }
 
@@ -1544,6 +1886,117 @@ class GBRS_RadarStationHud
         UpdateListFooter(row, tracker);
     }
 
+    protected int AppendTrackListRows(
+        RDF_RadarProjectileTracker tracker,
+        vector origin,
+        inout string colNr,
+        inout string colAz,
+        inout string colRng,
+        inout string colAlt,
+        inout string colSpd,
+        inout string colType,
+        inout string colSnr)
+    {
+        array<ref RDF_RadarTrack> tracks = CollectDisplayTracks(tracker, origin);
+        int row = 0;
+        if (!tracks)
+            return row;
+
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (row >= MAX_LIST_ROWS)
+                break;
+
+            vector d = tr.m_FilteredPosition - origin;
+            float az = Math.Atan2(d[0], d[2]) * Math.RAD2DEG;
+            if (az < 0.0)
+                az = az + 360.0;
+            float rngKm = tr.m_FilteredRangeM / 1000.0;
+            if (rngKm <= 0.0)
+                rngKm = d.Length() / 1000.0;
+            float altKm = tr.m_FilteredPosition[1] / 1000.0;
+            float dirX;
+            float dirZ;
+            float spd;
+            TrackDisplayMotion(tr, origin, dirX, dirZ, spd);
+
+            colNr = AppendColLine(colNr, PadNum(tr.m_TrackId, 2));
+            colAz = AppendColLine(colAz, PadNum(az, 3));
+            colRng = AppendColLine(colRng, Fmt1(rngKm));
+            colAlt = AppendColLine(colAlt, Fmt1(altKm));
+            colSpd = AppendColLine(colSpd, PadNum(spd, 3));
+            colType = AppendColLine(colType, TrackTypeTag(tr));
+            colSnr = AppendColLine(colSnr, F0(tr.m_LastSnrDb));
+            row = row + 1;
+        }
+
+        return row;
+    }
+
+    protected int AppendPlotListRows(
+        array<ref RDF_RadarTarget> targets,
+        vector origin,
+        inout string colNr,
+        inout string colAz,
+        inout string colRng,
+        inout string colAlt,
+        inout string colSpd,
+        inout string colType,
+        inout string colSnr)
+    {
+        int row = 0;
+        foreach (RDF_RadarTarget t : targets)
+        {
+            if (!t)
+                continue;
+            if (!IsInDisplayRange(t, origin))
+                continue;
+            if (row >= MAX_LIST_ROWS)
+                break;
+
+            float az = NorthUpAzimuthDeg(t, origin);
+            float rngKm = t.m_Distance / 1000.0;
+            if (rngKm <= 0.0)
+            {
+                vector d = t.m_Position - origin;
+                rngKm = d.Length() / 1000.0;
+            }
+            float altKm = t.m_Position[1] / 1000.0;
+            float spd = t.m_Velocity.Length();
+
+            colNr = AppendColLine(colNr, PadNum(row, 2));
+            colAz = AppendColLine(colAz, PadNum(az, 3));
+            colRng = AppendColLine(colRng, Fmt1(rngKm));
+            colAlt = AppendColLine(colAlt, Fmt1(altKm));
+            colSpd = AppendColLine(colSpd, PadNum(spd, 3));
+            colType = AppendColLine(colType, TypeTag(t));
+            colSnr = AppendColLine(colSnr, F0(t.m_SnrDb));
+            row = row + 1;
+        }
+
+        return row;
+    }
+
+    protected string TrackTypeTag(RDF_RadarTrack tr)
+    {
+        if (!tr)
+            return "----";
+        if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            return "SHELL";
+        if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
+            return "EMIT";
+        if (!tr.m_Confirmed)
+            return "TENT";
+        if (tr.m_Coasting)
+            return "COAST";
+        return "TRK ";
+    }
+
     protected void SetListCol(TextWidget w, string text)
     {
         if (w)
@@ -1562,10 +2015,11 @@ class GBRS_RadarStationHud
         if (!m_Widgets || !m_Widgets.m_wListFooter)
             return;
 
-        int tracks = 0;
+        int tracks = row;
         int wlrFixes = 0;
-        if (tracker)
+        if (m_Mode == MODE_WLR && tracker)
         {
+            tracks = 0;
             array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
             if (all)
             {

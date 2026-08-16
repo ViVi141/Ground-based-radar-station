@@ -30,10 +30,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected static const int CLUSTER_INTERVAL_MS = 100;
 	protected static const int PERSIST_MAX_BLIPS = 512;
 	protected static const int DISPLAY_MAX_BLIPS = 64;
-	// Hold contacts for ~1.25 scan revolutions so the list/PPI outlive the beam.
-	protected static const float PERSIST_SEC_MIN = 6.0;
-	protected static const float PERSIST_SEC_MAX = 15.0;
+	// Digital TWS afterglow: last few dwells only. Contacts live on the
+	// RDF track file (coast), not as a phosphor trail of raw plots.
+	protected static const float PLOT_AFTERGLOW_S = 0.45;
 	protected static const float DISPLAY_CLUSTER_M = 90.0;
+	protected static const float PERSIST_SPATIAL_M = 80.0;
 	protected static const string MODE_PD_SEARCH = GBRS_RadarStationConstants.MODE_PD_SEARCH;
 	protected static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
 	protected static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
@@ -1387,20 +1388,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected float GetPersistLifeS()
 	{
-		float rpm = 15.0;
-		if (m_Station)
-			rpm = m_Station.GetScanRpm();
-
-		float life = 3.0;
-		if (rpm > 0.0)
-			life = 60.0 / rpm;
-
-		life = life * 1.25;
-		if (life < PERSIST_SEC_MIN)
-			life = PERSIST_SEC_MIN;
-		if (life > PERSIST_SEC_MAX)
-			life = PERSIST_SEC_MAX;
-		return life;
+		return PLOT_AFTERGLOW_S;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1475,8 +1463,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			if (row.m_Target.m_ScattererId > 0)
 				continue;
 
+			float gate = PERSIST_SPATIAL_M;
 			vector d = row.m_Target.m_Position - src.m_Position;
-			if (d.LengthSq() < 4.0)
+			if (d.LengthSq() < (gate * gate))
 				return row;
 		}
 
@@ -1686,6 +1675,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				RDF_RadarTarget kept = m_DisplayPlots.Get(j);
 				if (kept)
 				{
+					if (src.m_ScattererId > 0 && kept.m_ScattererId == src.m_ScattererId)
+					{
+						match = j;
+						break;
+					}
+
 					IEntity keptRoot = null;
 					if (j < displayRoots.Count())
 						keptRoot = displayRoots.Get(j);
