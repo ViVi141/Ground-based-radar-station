@@ -114,6 +114,26 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
+	// Demo / operator override for the PPI range ring. 0 keeps following RF max.
+	static void SetOpenMenuPpiViewRange(float rangeM)
+	{
+		if (rangeM <= 0.0)
+			return;
+
+		MenuManager menuManager = GetGame().GetMenuManager();
+		if (!menuManager)
+			return;
+
+		MenuBase existing = menuManager.FindMenuByPreset(ChimeraMenuPreset.GBRS_RadarStationMenu);
+		GBRS_RadarStationMenu openMenu = GBRS_RadarStationMenu.Cast(existing);
+		if (!openMenu)
+			return;
+
+		openMenu.m_PpiViewRangeM = rangeM;
+		GBRS_RadarStationHud.SetDisplayRange(rangeM);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	static void CloseIfBound(GBRS_RadarStationComponent station)
 	{
 		if (!station)
@@ -1388,6 +1408,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected float GetPersistLifeS()
 	{
+		if (m_ActiveMode == MODE_WLR)
+			return 5.0;
 		return PLOT_AFTERGLOW_S;
 	}
 

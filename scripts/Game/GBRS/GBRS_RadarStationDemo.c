@@ -36,10 +36,13 @@ class GBRS_RadarStationDemo
     protected static const float USSR_AIR_FAR_M = 7000.0;
     protected static const float SHELL_SPEED_COEF = 1.736;
     protected static const float SHELL_ELEVATION_DEG = 55.0;
-    protected static const float SHELL_LAUNCH_RANGE_M = 350.0;
+    // Close enough to see from the dish; charge-2 / 55 deg still flies ~1.7 km.
+    protected static const float SHELL_LAUNCH_RANGE_M = 80.0;
     protected static const float SHELL_LAUNCH_HEIGHT_M = 8.0;
-    protected static const float SHELL_FIRE_INTERVAL_S = 8.0;
+    protected static const float SHELL_FIRE_INTERVAL_S = 6.0;
     protected static const int SHELL_KEEP_MAX = 4;
+    // 8 km WLR PPI hides a 2 km mortar track against the core. Demo zooms in.
+    protected static const float SHELL_PPI_VIEW_M = 2500.0;
     protected static const float STATUS_PRINT_S = 5.0;
 
     protected bool m_Running;
@@ -281,6 +284,17 @@ class GBRS_RadarStationDemo
                 Print("[GBRS Demo] stare failed; mechanical scan will only paint for a few tens of ms per revolution.", LogLevel.WARNING);
             }
         }
+        else if (m_WantShells)
+        {
+            float fireAz = FireAzimuthDeg();
+            if (m_Station.SetAntennaStare(true, fireAz))
+            {
+                m_DemoOwnsStare = true;
+                Print("[GBRS Demo] WLR stared RDF az="
+                    + fireAz.ToString()
+                    + " deg (0=east, 90=north) on the mortar line.");
+            }
+        }
 
         m_Running = true;
         if (!s_TickRegistered)
@@ -304,6 +318,16 @@ class GBRS_RadarStationDemo
         Print("[GBRS Demo] PPI opens on the station HUD. Up/Dn zooms display range. Probe() / Stop() from the debugger.");
         if (m_WantAirTarget)
             Print("[GBRS Demo] Mi-8 flies radial in/out so PD MTI can paint |vr|>=3 m/s.");
+        if (m_WantShells)
+        {
+            Print("[GBRS Demo] 82 mm O832DU every "
+                + SHELL_FIRE_INTERVAL_S.ToString()
+                + " s, "
+                + SHELL_LAUNCH_RANGE_M.ToString()
+                + " m out. Ammo mesh is tiny; orange debug spheres mark each round.");
+            if (TryFireShell())
+                m_LastFireWallS = System.GetTickCount() * 0.001;
+        }
     }
 
     protected void StopInternal()
@@ -360,6 +384,8 @@ class GBRS_RadarStationDemo
         }
 
         GBRS_RadarStationMenu.OpenFor(m_Station);
+        if (m_WantShells)
+            GBRS_RadarStationMenu.SetOpenMenuPpiViewRange(SHELL_PPI_VIEW_M);
         Print("[GBRS Demo] opened GBRS PPI.");
     }
 
@@ -387,6 +413,7 @@ class GBRS_RadarStationDemo
                     m_LastFireWallS = nowS;
             }
             PruneLiveShells();
+            DrawLiveShellMarkers();
         }
 
         AccumulateLatestScan();
@@ -651,6 +678,16 @@ class GBRS_RadarStationDemo
             return;
 
         m_FireAzimuthFlat = delta * (1.0 / len);
+    }
+
+    protected float FireAzimuthDeg()
+    {
+        float az = Math.Atan2(m_FireAzimuthFlat[2], m_FireAzimuthFlat[0]) * Math.RAD2DEG;
+        if (az < 0.0)
+            az = az + 360.0;
+        while (az >= 360.0)
+            az = az - 360.0;
+        return az;
     }
 
     protected bool ResolveOrSpawnStation()
@@ -972,7 +1009,7 @@ class GBRS_RadarStationDemo
             return false;
 
         Resource prefabRes = Resource.Load(SHELL_PREFAB);
-        if (!prefabRes)
+        if (!prefabRes || !prefabRes.IsValid())
         {
             Print("[GBRS Demo] failed to load shell prefab.", LogLevel.ERROR);
             return false;
@@ -993,7 +1030,10 @@ class GBRS_RadarStationDemo
 
         IEntity shell = GetGame().SpawnEntityPrefab(prefabRes, world, spawnParams);
         if (!shell)
+        {
+            Print("[GBRS Demo] SpawnEntityPrefab failed for 82 mm shell.", LogLevel.ERROR);
             return false;
+        }
 
         vector basis[4];
         Math3D.DirectionAndUpMatrix(dir, vector.Up, basis);
@@ -1009,17 +1049,38 @@ class GBRS_RadarStationDemo
             return false;
         }
 
+        // Cartridge shells stay inert until simulation is enabled. Pass the
+        // local subject as gunner so the shot has an authority owner.
         move.EnableSimulation(shell);
         move.SetBulletCoef(SHELL_SPEED_COEF);
-        move.Launch(dir, vector.Zero, 1.0, shell, null, null, null, null);
+        move.Launch(dir, vector.Zero, 1.0, shell, m_Subject, null, null, null);
+        RDF_RadarScattererRegistry.Unignore(shell);
 
         if (!m_LiveShells)
             m_LiveShells = new array<IEntity>();
         m_LiveShells.Insert(shell);
         m_ShellsFired = m_ShellsFired + 1;
         Print("[GBRS Demo] fired 82 mm shell #" + m_ShellsFired.ToString()
+            + " rdfAz=" + FireAzimuthDeg().ToString()
             + " from " + launchPos.ToString());
         return true;
+    }
+
+    protected void DrawLiveShellMarkers()
+    {
+        if (!m_LiveShells)
+            return;
+
+        int flags = ShapeFlags.NOOUTLINE | ShapeFlags.NOZBUFFER | ShapeFlags.TRANSP | ShapeFlags.ONCE;
+        int i = 0;
+        while (i < m_LiveShells.Count())
+        {
+            IEntity shell = m_LiveShells.Get(i);
+            i = i + 1;
+            if (!shell)
+                continue;
+            Shape.CreateSphere(ARGBF(1, 1, 0.35, 0.08), flags, shell.GetOrigin(), 3.0);
+        }
     }
 
     protected void PruneLiveShells()

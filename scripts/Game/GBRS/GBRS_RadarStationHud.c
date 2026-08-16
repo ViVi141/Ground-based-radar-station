@@ -863,6 +863,7 @@ class GBRS_RadarStationHud
                 }
             }
 
+            DrawWlrShellTracks(origin, tracker);
             DrawWlrAlerts(origin, tracker);
         }
         else
@@ -873,9 +874,59 @@ class GBRS_RadarStationHud
         m_Widgets.m_wPpiCanvas.SetDrawCommands(m_PpiAll);
     }
 
+    // WLR live shells: draw the track file itself. Launch/impact overlays
+    // need a ballistic fit; without this the PPI only shows 0.45 s pin-pricks.
+    protected void DrawWlrShellTracks(vector origin, RDF_RadarProjectileTracker tracker)
+    {
+        if (!tracker)
+            return;
+
+        array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
+        if (!all)
+            return;
+
+        int drawn = 0;
+        int i = 0;
+        while (i < all.Count())
+        {
+            RDF_RadarTrack tr = all.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (drawn >= MAX_DRAW_BLIPS)
+                break;
+
+            float bx;
+            float by;
+            if (!WorldToPpi(origin, tr.m_FilteredPosition, bx, by))
+                continue;
+
+            int color = COL_TRACK_TENT;
+            float half = 5.0;
+            if (tr.m_Confirmed)
+            {
+                color = COL_WLR_SHELL;
+                half = 7.0;
+            }
+
+            DrawPpiSquare(bx, by, half, color);
+
+            float dirX;
+            float dirZ;
+            float speed;
+            TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
+            if (speed >= 3.0)
+                DrawPpiChevron(bx, by, dirX, dirZ, color);
+
+            drawn = drawn + 1;
+        }
+    }
+
     protected void DrawPlotAfterglow(float bx, float by, RDF_RadarTarget t)
     {
         int color = COL_PLOT_GLOW;
+        if (m_Mode == MODE_WLR)
+            color = ARGB(150, 255, 220, 70);
         if (t)
         {
             if (t.m_IsFalsePlot)
@@ -889,6 +940,8 @@ class GBRS_RadarStationHud
 
         vector centerPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(bx, by, 0.0));
         float rPx = UnitSizeToPixels(2.4);
+        if (m_Mode == MODE_WLR)
+            rPx = UnitSizeToPixels(4.5);
         if (rPx < 1.0)
             rPx = 1.0;
 
@@ -1667,9 +1720,14 @@ class GBRS_RadarStationHud
         DrawAzElGrid();
 
         if (m_Mode == MODE_WLR)
+        {
             DrawAzElPlots(targets, origin);
-        else
             DrawAzElTracks(origin, tracker);
+        }
+        else
+        {
+            DrawAzElTracks(origin, tracker);
+        }
 
         m_Widgets.m_wAzElCanvas.SetDrawCommands(m_AzElAll);
     }
