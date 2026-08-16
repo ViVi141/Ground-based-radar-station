@@ -58,6 +58,9 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation.IsPowered())
             return false;
 
+        if (!m_RadarStation.IsFriendlyUser(user))
+            return false;
+
         if (GBRS_RadarStationMenu.IsOpenFor(m_RadarStation))
             return false;
 
@@ -73,6 +76,9 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
             return false;
 
         if (!m_RadarStation.IsCompositionReady())
+            return false;
+
+        if (!m_RadarStation.IsFriendlyUser(user))
             return false;
 
         return m_RadarStation.IsPowered();
@@ -95,6 +101,9 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
             return;
 
         if (!m_RadarStation.IsPowered())
+            return;
+
+        if (!m_RadarStation.IsFriendlyUser(pUserEntity))
             return;
 
         GBRS_RadarStationMenu.OpenFor(m_RadarStation);

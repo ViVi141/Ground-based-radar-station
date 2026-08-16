@@ -42,10 +42,10 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    m_aConsumers {
     SCR_ResourceConsumer "{69FCEDCE10011042}" {
      m_sDebugName "GBRS Radar Power Consumer"
-     m_eResourceRights SELF
+     m_eResourceRights FACTION
      m_eGeneratorIdentifier DEFAULT
-     m_fResourceRange 0
-     m_ContainerQueue SCR_ResourceConsumerContainerQueue "{69FCEDCE10011043}" : "{CADA9408804B64C3}Configs/Resources/Supplies/ContainerQueues/Consumer/Queue_Consumer_Store.conf" {
+     m_fResourceRange 135
+     m_ContainerQueue SCR_ResourceConsumerContainerQueue "{69FCEDCE10011043}" : "{AB9CF9DD3C448F82}Configs/Resources/Supplies/ContainerQueues/Consumer/Queue_Consumer_Service.conf" {
      }
     }
     SCR_ResourceConsumer "{69FCEDCE10011044}" : "{56226D15690083FD}Configs/Resources/Supplies/Consumers/Consumer_Store.conf" {
@@ -59,13 +59,13 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
   }
   GBRS_RadarStationComponent "{69FCEDCE10011006}" {
    m_eFactionPreset US
-   m_fSupplyCostPerTick 8
+   m_fSupplyCostPerTick 15
    m_fSupplyTickIntervalS 25
    m_bRequireSuppliesToPowerOn 1
    m_fElevationBoresightDeg 4
    m_fElevationBeamwidthDeg 8
    m_bDebugLog 0
-   m_vDestroyedFireOffset -4 2.5 -2
+   m_vDestroyedFireOffset -3.5 2.5 -1.5
   }
   GBRS_RadarStationDamageManagerComponent "{69FCEDCE10011020}" {
    "Additional hit zones" {
@@ -86,7 +86,7 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
  }
  coords 0 0 0
  {
-  GenericEntity : "{A528F04F41F2A2D0}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_on.et" {
+  StaticModelEntity : "{A0190D51FD62FF68}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01.et" {
    ID "69FCEDCEA0010101"
    components {
     Hierarchy "{69FCEDCEA0010111}" {
@@ -95,14 +95,14 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    }
    coords 0 0 1.5
   }
-  GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRadar_RPL5_01/ApproachRadar_RPL5_01_generator.et" {
+  GenericEntity : "{451BE00A37C69679}Prefabs/Structures/Military/Radar/ApproachRadar_TPN19_01/ApproachRadar_TPN19_01_generator.et" {
    ID "69FCEDCEA0010102"
    components {
     Hierarchy "{69FCEDCEA0010112}" {
      Enabled 1
     }
    }
-   coords -4 0 -2
+   coords -3.5 0 -1.5
   }
  }
 }

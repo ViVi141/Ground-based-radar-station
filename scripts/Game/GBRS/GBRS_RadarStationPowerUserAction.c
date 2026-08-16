@@ -60,6 +60,9 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
         if (!m_RadarStation.IsCompositionReady())
             return false;
 
+        if (!m_RadarStation.IsFriendlyUser(user))
+            return false;
+
         return true;
     }
 
@@ -72,6 +75,9 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
             return false;
 
         if (!m_RadarStation.IsCompositionReady())
+            return false;
+
+        if (!m_RadarStation.IsFriendlyUser(user))
             return false;
 
         if (m_RadarStation.IsPowered())
@@ -97,6 +103,9 @@ class GBRS_RadarStationPowerUserAction : ScriptedUserAction
             m_RadarStation = FindRadarStation(pOwnerEntity);
 
         if (!m_RadarStation)
+            return;
+
+        if (!m_RadarStation.IsFriendlyUser(pUserEntity))
             return;
 
         m_RadarStation.RequestTogglePower();

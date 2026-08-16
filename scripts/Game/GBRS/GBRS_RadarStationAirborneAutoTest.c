@@ -1,5 +1,5 @@
 // GBRS airborne auto-test (Script Debugger):
-// 1) find nearby GBRS station or spawn US RPL-5 composition,
+// 1) find nearby GBRS station or spawn US AN/TPN-19 composition,
 // 2) force-power the station (supply gate bypassed),
 // 3) spawn Mi-8 on a circular orbit (no Register() seed),
 // 4) verify station RDF sensor sees / detects the airframe.

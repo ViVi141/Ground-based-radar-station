@@ -5,9 +5,8 @@
 //
 // Deployment policy (forward OK): keep THEME_MILITARY on E_ radar so
 // construction trucks can place outside bases. Cost — not trait bans —
-// constrains that: CAMPAIGN 450 (~truck cargo), build value 160, and
-// powered drain from the station's local supply bunker (truck unloads
-// into Generator_Store, then may leave).
+// constrains that: CAMPAIGN 450 (~truck cargo), RANK_SERGEANT, build
+// value 250, and powered drain from nearby faction base storage.
 modded class SCR_CampaignBuildingManagerComponent
 {
     //------------------------------------------------------------------------------------------------

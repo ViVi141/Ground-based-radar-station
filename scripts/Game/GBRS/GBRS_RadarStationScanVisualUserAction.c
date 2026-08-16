@@ -59,6 +59,9 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
         if (!m_RadarStation.IsCompositionReady())
             return false;
 
+        if (!m_RadarStation.IsFriendlyUser(user))
+            return false;
+
         return m_RadarStation.IsPowered();
     }
 
@@ -71,6 +74,9 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
             return false;
 
         if (!m_RadarStation.IsCompositionReady())
+            return false;
+
+        if (!m_RadarStation.IsFriendlyUser(user))
             return false;
 
         return m_RadarStation.IsPowered();
@@ -93,6 +99,9 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
             return;
 
         if (!m_RadarStation.IsPowered())
+            return;
+
+        if (!m_RadarStation.IsFriendlyUser(pUserEntity))
             return;
 
         m_RadarStation.ToggleScanVisual(!m_RadarStation.IsScanVisualEnabled());

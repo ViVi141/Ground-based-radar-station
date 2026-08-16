@@ -16,7 +16,7 @@
 //! in RplSave/RplLoad so JIP clients see the same tuning as everyone else.
 class GBRS_RadarManualConfig
 {
-    // Defaults mirror the US RPL-5 SHORAD search preset so MANUAL starts
+    // Defaults mirror the US SHORAD search preset so MANUAL starts
     // from a known-good operating point.
     float m_DetectionSnrDb = 8.0;
     float m_DemClutterScale = 1.0;

@@ -262,7 +262,7 @@ class GBRS_RadarStationConfig
 
         if (precisionShored)
         {
-            // US RPL-5: manned SHORAD — better than stock 3.5x, not truth.
+            // US AN/TPN-19 mesh: manned SHORAD readout — better than stock 3.5x, not truth.
             settings.m_MeasNoiseScale = 2.5;
             settings.m_MeasRangeBiasM = 3.0;
             settings.m_MeasAzimuthBiasDeg = 0.12;
@@ -270,7 +270,7 @@ class GBRS_RadarStationConfig
         }
         else
         {
-            // USSR TPN-19 / P-18-like: VHF EW — stock realistic or slightly worse.
+            // USSR Tesla RPL-5 mesh / P-18-like VHF EW — stock realistic or slightly worse.
             settings.m_MeasNoiseScale = 3.5;
             settings.m_MeasRangeBiasM = 6.0;
             settings.m_MeasAzimuthBiasDeg = 0.3;
@@ -278,7 +278,7 @@ class GBRS_RadarStationConfig
         }
     }
 
-    // US RPL-5: SHORAD pulse-Doppler search (~7 km).
+    // US AN/TPN-19 visual, SHORAD pulse-Doppler search (~7 km). Not GCA handbook RF.
     static RDF_RadarSettings CreateUsSearch()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(64);
@@ -324,7 +324,7 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // USSR TPN-19 / P-18-like: VHF early-warning pulse-Doppler (~10 km).
+    // USSR Tesla RPL-5 visual, P-18-like VHF early-warning pulse-Doppler (~10 km).
     static RDF_RadarSettings CreateUssrSearch()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(96);
@@ -432,9 +432,9 @@ class GBRS_RadarStationConfig
 
     // US counter-battery WLR (~8 km rotating search).
     // Offline-tuned (tools/simulate_wlr_projectile.py + WLR_VALIDATION.md):
-    // 120 kW + 6 dB gate cannot detect 0.01 m2 projectiles at 8 km
-    // (center SNR 2.4 dB). 500 kW + 2 dB gate clears the beam center
-    // (8.6 dB) and most of the 25 deg beam (12 deg offset still 3.0 dB).
+    // 500 kW gives ~8.6 dB at beam center and ~3.0 dB at 12 deg offset.
+    // Gate 4 dB keeps center detections and drops the cheap offset lobe,
+    // closer to USSR WLR 5 dB instead of the previous 2 dB US advantage.
     // NOTE: the offline chain models clutter-limited SNR but its CFAR gates
     // on thermal noise only (RDF uses adaptive clutter CFAR), so projectile
     // detection inside clutter needs in-game verification.
@@ -450,7 +450,7 @@ class GBRS_RadarStationConfig
         settings.m_ScattererClassifyPerTick = 128;
         settings.m_ScattererRefreshPerTick = 256;
         settings.m_ScattererMaxEntries = 1024;
-        settings.m_DetectionSnrDb = 2.0;
+        settings.m_DetectionSnrDb = 4.0;
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 25.0;

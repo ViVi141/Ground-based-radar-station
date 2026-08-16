@@ -25,7 +25,7 @@ class GBRS_RadarStationConstants
     // Must stay > 0. Layout SetPrefabId calls EvaluateBuildingStatus with
     // current=0; a zero ToBuildValue instantly SpawnComposition() and deletes
     // the FRB pad on the same placement.
-    static const int BUILDING_VALUE = 160;
+    static const int BUILDING_VALUE = 250;
 
     //------------------------------------------------------------------------------------------------
     static bool IsRadarPrefab(ResourceName prefab)

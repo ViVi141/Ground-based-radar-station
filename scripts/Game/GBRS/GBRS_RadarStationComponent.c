@@ -14,8 +14,8 @@ class GBRS_GeomLayerBackup
 }
 
 // Configures RDF radar.
-// US RPL-5: stock ProcAnim on antenna_rotation bone.
-// USSR TPN-19: no spin bone; yaw the radar mesh entity to match ScanRpm.
+// US AN/TPN-19: no spin bone; yaw the radar mesh entity to match ScanRpm.
+// USSR Tesla RPL-5: stock ProcAnim on antenna_rotation bone.
 [ComponentEditorProps(category: "GameScripted/GBRS", description: "Faction radar preset, antenna spin, and powered supply drain")]
 class GBRS_RadarStationComponentClass : ScriptComponentClass
 {
@@ -33,16 +33,14 @@ class GBRS_RadarStationComponent : ScriptComponent
     [Attribute("0", UIWidgets.ComboBox, desc: "Faction radar hardware/search preset", enums: ParamEnumArray.FromEnum(EGBRS_RadarFactionPreset))]
     protected EGBRS_RadarFactionPreset m_eFactionPreset;
 
-    // Forward-deploy cost lever: drain the station's local supply bunker first
-    // (truck unloads into Generator_Store, then can leave). Interval keeps
-    // forward sites needing periodic resupply runs.
-    [Attribute("8", UIWidgets.EditBox, desc: "Supplies consumed from the local bunker (or build provider fallback) each drain tick while powered")]
+    // Power drain: pull from nearby faction base storage, then the local bunker.
+    [Attribute("15", UIWidgets.EditBox, desc: "Supplies consumed each drain tick while powered (base stockpile, then local bunker)")]
     protected float m_fSupplyCostPerTick;
 
     [Attribute("25", UIWidgets.EditBox, desc: "Seconds between supply drain ticks while powered")]
     protected float m_fSupplyTickIntervalS;
 
-    [Attribute("1", UIWidgets.CheckBox, desc: "If true, power-on requires enough supplies for one drain tick in the local bunker / linked provider")]
+    [Attribute("1", UIWidgets.CheckBox, desc: "If true, power-on requires enough supplies for one drain tick in range (base or local bunker)")]
     protected bool m_bRequireSuppliesToPowerOn;
 
     [Attribute("5", UIWidgets.Slider, desc: "Antenna visual pitch (deg). Detection elevation beams come from the faction preset.", params: "-5 85 0.5")]
@@ -116,6 +114,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ParticleEffectEntity m_DestroyedSmokeParticle;
     protected SCR_CampaignBuildingCompositionComponent m_BuildingComposition;
     protected bool m_bCompositionBuildGateBound;
+    protected bool m_bBaseFactionListenerBound;
     // RDF 1.0.0 fire-control bridge: exposes LOCK-mode lock as a fire solution
     // for external weapons (SAM vehicles, AAA) that poll this station.
     protected ref RDF_RadarWeaponBridge m_WeaponBridge;
@@ -169,6 +168,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (IsCompositionReady())
             ApplyConfiguration(owner);
         ApplyUnderConstructionLock();
+        BindCoveringBaseFactionListener();
     }
 
     override void EOnFrame(IEntity owner, float timeSlice)
@@ -273,6 +273,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         SetAntennaSpinning(false);
         SetTraceIgnoreActive(false);
         StopDestroyedFireEffects();
+        UnbindCoveringBaseFactionListener();
         if (m_bCompositionBuildGateBound && m_BuildingComposition)
         {
             m_BuildingComposition.GetOnCompositionSpawned().Remove(OnCompositionFullyBuilt);
@@ -298,6 +299,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_ManualConfig.WriteRpl(writer);
         writer.WriteBool(m_bAntennaStare);
         writer.WriteFloat(m_fAntennaStareAzDeg);
+        writer.WriteString(GetAffiliatedFactionKey());
         return true;
     }
 
@@ -325,6 +327,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         reader.ReadFloat(stareAz);
         m_bAntennaStare = stare;
         m_fAntennaStareAzDeg = stareAz;
+
+        string occupyingFactionKey;
+        reader.ReadString(occupyingFactionKey);
+        ApplyAffiliatedFactionKey(occupyingFactionKey);
 
         if (!m_bConfigured)
             ApplyConfiguration(GetOwner());
@@ -361,6 +367,31 @@ class GBRS_RadarStationComponent : ScriptComponent
             return true;
 
         return false;
+    }
+
+    // Same-faction operators only. After a covering Conflict base is captured,
+    // affiliation follows the occupying faction so captors can take the station.
+    bool IsFriendlyUser(IEntity user)
+    {
+        if (!user)
+            return false;
+
+        IEntity owner = GetOwner();
+        if (!owner)
+            return false;
+
+        Faction stationFaction = SCR_Faction.GetEntityFaction(owner);
+        if (!stationFaction)
+            return false;
+
+        Faction userFaction = SCR_Faction.GetEntityFaction(user);
+        if (!userFaction)
+            return false;
+
+        if (stationFaction != userFaction)
+            return false;
+
+        return true;
     }
 
     float GetHealth()
@@ -1088,6 +1119,10 @@ class GBRS_RadarStationComponent : ScriptComponent
     // Client UserAction / menu entry: ask authority. Listen servers apply locally.
     void RequestTogglePower()
     {
+        IEntity localUser = GetLocalControlledEntity();
+        if (localUser && !IsFriendlyUser(localUser))
+            return;
+
         if (IsAuthority())
         {
             SetPowered(!m_bPowered);
@@ -1095,6 +1130,15 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
 
         GBRS_PlayerControllerNet.RequestTogglePower(this);
+    }
+
+    protected IEntity GetLocalControlledEntity()
+    {
+        PlayerController controller = GetGame().GetPlayerController();
+        if (!controller)
+            return null;
+
+        return controller.GetControlledEntity();
     }
 
     // Authority-driven power change. Supply affordability and stockpile drain are
@@ -1123,6 +1167,12 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected void RpcDo_TogglePower(bool powered)
     {
         TogglePower(powered, true);
+    }
+
+    [RplRpc(RplChannel.Reliable, RplRcver.Broadcast, RplCondition.NoOwner)]
+    protected void RpcDo_AdoptOccupyingFaction(string factionKey)
+    {
+        ApplyAffiliatedFactionKey(factionKey);
     }
 
     // Like SCR_BaseInteractiveLightComponent.ToggleLight.
@@ -1720,8 +1770,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_iAntennaResolveAttempts = ANTENNA_RESOLVE_MAX_ATTEMPTS;
     }
 
-    // US: RPL-5 antenna entity — spin antenna_rotation bone via Animation.SetBone.
-    // USSR: first mesh child that is not the generator (TPN-19 has no spin bone).
+    // USSR Tesla RPL-5: spin antenna_rotation bone via Animation.SetBone.
+    // US AN/TPN-19: first mesh child that is not the generator (no spin bone).
     protected void ResolveAntennaEntity(IEntity owner)
     {
         m_AntennaEntity = null;
@@ -1734,11 +1784,12 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!owner)
             return;
 
-        if (FindUsAntenna(owner))
+        if (FindBoneSpinAntenna(owner))
             return;
 
-        // US must stay on bone spin only — never yaw the whole pedestal mesh.
-        if (m_eFactionPreset == EGBRS_RadarFactionPreset.US)
+        // RPL-5 must stay on bone spin only — never yaw the whole pedestal mesh.
+        // The bone may stream in a few ticks after EditorLink spawn.
+        if (m_eFactionPreset == EGBRS_RadarFactionPreset.USSR)
             return;
 
         IEntity child = owner.GetChildren();
@@ -1759,7 +1810,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     }
 
     // Depth-first: composition root, EditorLink children, and nested parts.
-    protected bool FindUsAntenna(IEntity root)
+    protected bool FindBoneSpinAntenna(IEntity root)
     {
         if (!root)
             return false;
@@ -1767,10 +1818,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         IEntity child = root.GetChildren();
         while (child)
         {
-            if (TryBindUsAntenna(child))
+            if (TryBindBoneSpinAntenna(child))
                 return true;
 
-            if (FindUsAntenna(child))
+            if (FindBoneSpinAntenna(child))
                 return true;
 
             child = child.GetSibling();
@@ -1779,7 +1830,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         return false;
     }
 
-    protected bool TryBindUsAntenna(IEntity ent)
+    protected bool TryBindBoneSpinAntenna(IEntity ent)
     {
         if (!ent)
             return false;
@@ -1842,7 +1893,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         // (Re-power resumes from the world-time scan angle, matching RDF scan.)
     }
 
-    // RPL-5: drive antenna_rotation bone (pedestal stays fixed).
+    // Tesla RPL-5: drive antenna_rotation bone (pedestal stays fixed).
     // Use SetBoneMatrix + AnglesToMatrix (degrees) so rate matches RDF ScanRpm.
     // ProcAnim is forced off every frame — stock pap would otherwise spin faster.
     protected void SyncAntennaBoneSpin(IEntity owner)
@@ -1903,7 +1954,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         return m_fScanRpm;
     }
 
-    // RPL-5: never yaw/pitch the whole ProcAnim entity — that rotates the pedestal.
+    // Tesla RPL-5: never yaw/pitch the whole ProcAnim entity — that rotates the pedestal.
     protected void ApplyAntennaElevationVisual()
     {
     }
@@ -2635,7 +2686,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
     }
 
-    // Matches RDF_RadarScanner.GetScanForward for TPN-19 entity yaw.
+    // Matches RDF_RadarScanner.GetScanForward for AN/TPN-19 entity yaw.
     protected void SyncEntityYawAntenna(IEntity owner)
     {
         if (!m_bUseEntityYawSpin || !m_AntennaEntity)
@@ -2707,6 +2758,14 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
         }
 
+        BindCoveringBaseFactionListener();
+        SyncWithCoveringCampaignBase();
+        if (!m_bPowered)
+        {
+            StopSupplyDrain();
+            return;
+        }
+
         if (!SCR_ResourceSystemHelper.IsGlobalResourceTypeEnabled(EResourceType.SUPPLIES))
             return;
 
@@ -2726,25 +2785,214 @@ class GBRS_RadarStationComponent : ScriptComponent
         SetPowered(false);
     }
 
-    protected SCR_ResourceComponent ResolveSupplyResourceComponent()
+    protected bool ResourceHasSupplyTick(notnull SCR_ResourceComponent resourceComponent)
+    {
+        float available;
+        if (!SCR_ResourceSystemHelper.GetAvailableResources(resourceComponent, available))
+            return false;
+
+        if (available >= m_fSupplyCostPerTick)
+            return true;
+
+        return false;
+    }
+
+    // Nearby Campaign base whose radius covers this station.
+    // sameFactionOnly: only the occupying faction that currently matches the
+    // station, used when draining HQ supplies.
+    protected SCR_CampaignMilitaryBaseComponent FindCoveringCampaignBase(bool sameFactionOnly)
     {
         IEntity owner = GetOwner();
         if (!owner)
             return null;
 
-        // Prefer the station's own supply bunker so the placing truck can leave
-        // after unloading. Power drain uses the DEFAULT consumer on this root.
-        SCR_ResourceComponent localResource =
-            SCR_ResourceComponent.FindResourceComponent(owner);
-        if (localResource)
+        SCR_MilitaryBaseSystem baseSystem = SCR_MilitaryBaseSystem.GetInstance();
+        if (!baseSystem)
+            return null;
+
+        array<SCR_MilitaryBaseComponent> bases = {};
+        baseSystem.GetBases(bases);
+        if (bases.IsEmpty())
+            return null;
+
+        Faction stationFaction;
+        if (sameFactionOnly)
+            stationFaction = SCR_Faction.GetEntityFaction(owner);
+
+        vector origin = owner.GetOrigin();
+        SCR_CampaignMilitaryBaseComponent best = null;
+        float bestDistSq = -1.0;
+
+        foreach (SCR_MilitaryBaseComponent base : bases)
         {
-            SCR_ResourceConsumer localConsumer;
-            if (localResource.GetConsumer(
-                EResourceGeneratorID.DEFAULT, EResourceType.SUPPLIES, localConsumer))
+            if (!base)
+                continue;
+
+            SCR_CampaignMilitaryBaseComponent campaignBase =
+                SCR_CampaignMilitaryBaseComponent.Cast(base);
+            if (!campaignBase)
+                continue;
+
+            if (sameFactionOnly)
             {
-                return localResource;
+                Faction baseFaction = campaignBase.GetFaction();
+                if (!baseFaction || !stationFaction)
+                    continue;
+
+                if (baseFaction != stationFaction)
+                    continue;
+            }
+
+            IEntity baseOwner = campaignBase.GetOwner();
+            if (!baseOwner)
+                continue;
+
+            float radius = campaignBase.GetRadius();
+            if (radius <= 0.0)
+                continue;
+
+            float distSq = vector.DistanceSqXZ(origin, baseOwner.GetOrigin());
+            if (distSq > (radius * radius))
+                continue;
+
+            if (bestDistSq < 0.0 || distSq < bestDistSq)
+            {
+                bestDistSq = distSq;
+                best = campaignBase;
             }
         }
+
+        return best;
+    }
+
+    protected SCR_ResourceComponent ResolveFriendlyBaseResourceComponent()
+    {
+        SCR_CampaignMilitaryBaseComponent covering = FindCoveringCampaignBase(true);
+        if (!covering)
+            return null;
+
+        return covering.GetResourceComponent();
+    }
+
+    protected void BindCoveringBaseFactionListener()
+    {
+        if (m_bBaseFactionListenerBound)
+            return;
+
+        if (!GetGame().InPlayMode())
+            return;
+
+        if (!IsAuthority())
+            return;
+
+        SCR_MilitaryBaseSystem baseSystem = SCR_MilitaryBaseSystem.GetInstance();
+        if (!baseSystem)
+            return;
+
+        baseSystem.GetOnBaseFactionChanged().Insert(OnCoveringBaseFactionChanged);
+        m_bBaseFactionListenerBound = true;
+        SyncWithCoveringCampaignBase();
+    }
+
+    protected void UnbindCoveringBaseFactionListener()
+    {
+        if (!m_bBaseFactionListenerBound)
+            return;
+
+        SCR_MilitaryBaseSystem baseSystem = SCR_MilitaryBaseSystem.GetInstance();
+        if (baseSystem)
+            baseSystem.GetOnBaseFactionChanged().Remove(OnCoveringBaseFactionChanged);
+
+        m_bBaseFactionListenerBound = false;
+    }
+
+    protected void OnCoveringBaseFactionChanged(SCR_MilitaryBaseComponent base, Faction faction)
+    {
+        if (!base)
+            return;
+
+        SyncWithCoveringCampaignBase();
+    }
+
+    // Covering Conflict base captured or recaptured: drop power immediately and
+    // hand the station to the occupying faction. Hardware preset stays as built.
+    protected void SyncWithCoveringCampaignBase()
+    {
+        if (!IsAuthority())
+            return;
+
+        if (IsDestroyed())
+            return;
+
+        SCR_CampaignMilitaryBaseComponent covering = FindCoveringCampaignBase(false);
+        if (!covering)
+            return;
+
+        Faction occupying = covering.GetFaction();
+        IEntity owner = GetOwner();
+        if (!owner)
+            return;
+
+        Faction stationFaction = SCR_Faction.GetEntityFaction(owner);
+        if (occupying && occupying == stationFaction)
+            return;
+
+        if (m_bPowered)
+            SetPowered(false);
+
+        if (!occupying)
+            return;
+
+        AdoptOccupyingFaction(occupying);
+    }
+
+    protected void AdoptOccupyingFaction(notnull Faction occupying)
+    {
+        string factionKey = occupying.GetFactionKey();
+        ApplyAffiliatedFactionKey(factionKey);
+
+        if (!IsAuthority())
+            return;
+
+        Rpc(RpcDo_AdoptOccupyingFaction, factionKey);
+    }
+
+    protected string GetAffiliatedFactionKey()
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return "";
+
+        FactionAffiliationComponent affiliation =
+            FactionAffiliationComponent.Cast(owner.FindComponent(FactionAffiliationComponent));
+        if (!affiliation)
+            return "";
+
+        return affiliation.GetAffiliatedFactionKey();
+    }
+
+    protected void ApplyAffiliatedFactionKey(string factionKey)
+    {
+        if (factionKey == "")
+            return;
+
+        IEntity owner = GetOwner();
+        if (!owner)
+            return;
+
+        FactionAffiliationComponent affiliation =
+            FactionAffiliationComponent.Cast(owner.FindComponent(FactionAffiliationComponent));
+        if (!affiliation)
+            return;
+
+        affiliation.SetAffiliatedFactionByKey(factionKey);
+    }
+
+    protected SCR_ResourceComponent ResolveLinkedProviderResourceComponent()
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return null;
 
         SCR_CampaignBuildingCompositionComponent composition =
             SCR_CampaignBuildingCompositionComponent.Cast(
@@ -2780,6 +3028,34 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
 
         return provider.GetResourceComponent();
+    }
+
+    protected SCR_ResourceComponent ResolveSupplyResourceComponent()
+    {
+        IEntity owner = GetOwner();
+        if (!owner)
+            return null;
+
+        SCR_ResourceComponent baseResource = ResolveFriendlyBaseResourceComponent();
+        if (baseResource && ResourceHasSupplyTick(baseResource))
+            return baseResource;
+
+        SCR_ResourceComponent localResource =
+            SCR_ResourceComponent.FindResourceComponent(owner);
+        if (localResource && ResourceHasSupplyTick(localResource))
+            return localResource;
+
+        SCR_ResourceComponent providerResource = ResolveLinkedProviderResourceComponent();
+        if (providerResource && ResourceHasSupplyTick(providerResource))
+            return providerResource;
+
+        if (baseResource)
+            return baseResource;
+
+        if (localResource)
+            return localResource;
+
+        return providerResource;
     }
 
     protected bool IsAuthority()

@@ -3,7 +3,7 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
  components {
   SCR_EditableEntityComponent "{69FCEDCE30021001}" : "{8B8F72167C615EAA}Prefabs/Editor/Components/Compositions_SCR_EditableEntityComponent.ct" {
    m_UIInfo SCR_EditableEntityUIInfo "{69FCEDCE30021002}" {
-    Name "USSR Ground Radar Station (TPN-19)"
+    Name "USSR Ground Radar Station (RPL-5)"
     Icon "{90075F5E63E57688}UI/Textures/Editor/ContentBrowser/ContentBrowser_Type_Composition.edds"
     m_Image "{69FCEDCEA0040002}UI/Textures/EditorPreviews/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_USSR_01.edds"
     m_sFaction "USSR"
@@ -17,6 +17,10 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
      SCR_EntityBudgetValue "{69FCEDCE30021003}" {
       m_BudgetType CAMPAIGN
       m_Value 450
+     }
+     SCR_EntityBudgetValue "{69FCEDCE30021009}" {
+      m_BudgetType RANK_SERGEANT
+      m_Value 3
      }
     }
     m_EntityChildrenBudgetCost {
@@ -34,14 +38,14 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
   SCR_EditorLinkComponent "{69FCEDCE30021006}" {
    m_aEntries {
     SCR_EditorLinkEntry "{69FCEDCE30021007}" {
-     m_Prefab "{69FCEDCEA0010007}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_TPN19_01/E_ApproachRadar_TPN19_01.et"
+     m_Prefab "{69FCEDCEA0010005}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_RPL5_01/E_ApproachRadar_RPL5_01_on.et"
      m_vPosition 0 0 1.5
      m_vAngles 0 0 0
      m_fScale 1
     }
     SCR_EditorLinkEntry "{69FCEDCE30021008}" {
-     m_Prefab "{69FCEDCEA0010008}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_TPN19_01/E_ApproachRadar_TPN19_01_generator.et"
-     m_vPosition -3.5 0 -1.5
+     m_Prefab "{69FCEDCEA0010006}PrefabsEditable/Auto/Structures/Military/Radar/ApproachRadar_RPL5_01/E_ApproachRadar_RPL5_01_generator.et"
+     m_vPosition -4 0 -2
      m_vAngles 0 0 0
      m_fScale 1
     }
@@ -49,7 +53,7 @@ GenericEntity : "{69FCEDCEA0010002}Prefabs/Compositions/Misc/FreeRoamBuilding/Ra
   }
  }
  {
-  StaticModelEntity {
+  GenericEntity {
    ID "69FCEDCEA0010201"
    Flags 0x100000 0x403
   }

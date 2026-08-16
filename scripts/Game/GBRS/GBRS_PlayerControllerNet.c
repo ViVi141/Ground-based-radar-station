@@ -107,6 +107,18 @@ class GBRS_PlayerControllerNet
         float maxDist = MAX_REQUEST_DISTANCE_M;
         return distSq <= (maxDist * maxDist);
     }
+
+    //------------------------------------------------------------------------------------------------
+    static bool IsRequesterFriendlyToStation(
+        notnull PlayerController controller,
+        notnull GBRS_RadarStationComponent station)
+    {
+        IEntity controlled = controller.GetControlledEntity();
+        if (!controlled)
+            return false;
+
+        return station.IsFriendlyUser(controlled);
+    }
 }
 
 //------------------------------------------------------------------------------------------------
@@ -151,6 +163,9 @@ modded class SCR_PlayerController
         if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
             return;
 
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
+            return;
+
         station.AuthoritySetWorkstationMode(mode);
     }
 
@@ -167,6 +182,9 @@ modded class SCR_PlayerController
             return;
 
         if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
             return;
 
         if (!station.IsConfigured())
@@ -200,6 +218,9 @@ modded class SCR_PlayerController
         if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
             return;
 
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
+            return;
+
         station.AuthoritySetManualParam(paramIndex, value);
     }
 
@@ -216,6 +237,9 @@ modded class SCR_PlayerController
             return;
 
         if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
             return;
 
         station.AuthoritySetAntennaStare(enabled, azDeg);
