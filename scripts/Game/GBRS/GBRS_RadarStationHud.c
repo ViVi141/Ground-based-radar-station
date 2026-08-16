@@ -153,9 +153,13 @@ class GBRS_RadarStationHud
         if (inst.m_Widgets && inst.m_Widgets.m_wPpiHint)
         {
             if (mode == GBRS_RadarStationConstants.MODE_WLR)
-                inst.m_Widgets.m_wPpiHint.SetText("LCH orange  IMP cyan  ETA at impact");
+                inst.m_Widgets.m_wPpiHint.SetText("LCH orange  IMP cyan   Up/Dn PPI range");
+            else if (mode == GBRS_RadarStationConstants.MODE_LOCK)
+                inst.m_Widgets.m_wPpiHint.SetText("auto-lock vehicles   Up/Dn PPI range");
+            else if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+                inst.m_Widgets.m_wPpiHint.SetText("Up/Dn parameter   Left/Right value   wheel PPI range");
             else
-                inst.m_Widgets.m_wPpiHint.SetText("north-up AZ/EL");
+                inst.m_Widgets.m_wPpiHint.SetText("north-up AZ/EL   Up/Dn PPI range");
         }
 
         bool showTable = true;
@@ -839,7 +843,7 @@ class GBRS_RadarStationHud
             int index = 0;
             foreach (RDF_RadarTarget t : targets)
             {
-                if (!t || !t.m_Detected)
+                if (!t)
                     continue;
                 if (!IsInDisplayRange(t, origin))
                     continue;
@@ -1365,7 +1369,7 @@ class GBRS_RadarStationHud
             int index = 0;
             foreach (RDF_RadarTarget t : targets)
             {
-                if (!t || !t.m_Detected)
+                if (!t)
                     continue;
                 if (!IsInDisplayRange(t, origin))
                     continue;
@@ -1490,7 +1494,7 @@ class GBRS_RadarStationHud
         {
             foreach (RDF_RadarTarget t : targets)
             {
-                if (!t || !t.m_Detected)
+                if (!t)
                     continue;
                 if (!IsInDisplayRange(t, origin))
                     continue;

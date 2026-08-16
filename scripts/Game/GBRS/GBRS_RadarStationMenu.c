@@ -1,31 +1,58 @@
 //------------------------------------------------------------------------------------------------
 //! Formal GBRS radar workstation menu (PD SEARCH / WLR / LOCK).
+class GBRS_PersistPlot
+{
+	ref RDF_RadarTarget m_Target;
+	float m_LastFreshS;
+}
+
+class GBRS_PpiZoomWheelHandler : ScriptedWidgetEventHandler
+{
+	GBRS_RadarStationMenu m_Menu;
+
+	override bool OnMouseWheel(Widget w, int x, int y, int wheel)
+	{
+		if (!m_Menu)
+			return false;
+
+		if (wheel > 0)
+			m_Menu.AdjustPpiZoom(-1);
+		else if (wheel < 0)
+			m_Menu.AdjustPpiZoom(1);
+
+		return true;
+	}
+}
+
 class GBRS_RadarStationMenu : ChimeraMenuBase
 {
 	protected static const int FEED_INTERVAL_MS = 33;
 	protected static const int CLUSTER_INTERVAL_MS = 100;
 	protected static const int PERSIST_MAX_BLIPS = 512;
 	protected static const int DISPLAY_MAX_BLIPS = 64;
-	// ~1 scan period fade: long afterglow was painting over intermittent MTI misses.
-	protected static const float PERSIST_SEC_MIN = 1.2;
-	protected static const float PERSIST_SEC_MAX = 8.0;
+	// Hold contacts for ~1.25 scan revolutions so the list/PPI outlive the beam.
+	protected static const float PERSIST_SEC_MIN = 6.0;
+	protected static const float PERSIST_SEC_MAX = 15.0;
 	protected static const float DISPLAY_CLUSTER_M = 90.0;
 	protected static const string MODE_PD_SEARCH = GBRS_RadarStationConstants.MODE_PD_SEARCH;
 	protected static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
 	protected static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
 	protected static const string MODE_MANUAL = GBRS_RadarStationConstants.MODE_MANUAL;
 	protected static const string HINT_NOT_AVAILABLE = "Not available";
-	protected static const string HINT_CONTEXT = "north-up AZ/EL";
-	protected static const string HINT_WLR = "WLR launch/impact";
-	protected static const string HINT_LOCK = "auto-lock vehicles";
+	protected static const string HINT_CONTEXT = "north-up AZ/EL   Up/Dn PPI range";
+	protected static const string HINT_WLR = "WLR launch/impact   Up/Dn PPI range";
+	protected static const string HINT_LOCK = "auto-lock vehicles   Up/Dn PPI range";
+	protected static const float PPI_RANGE_MIN_M = 1000.0;
+	protected static const int PPI_RANGE_STEP_COUNT = 11;
 
 	protected GBRS_RadarStationComponent m_Station;
 	protected bool m_bBound;
 	protected bool m_bFeedScheduled;
 	protected float m_LastClusterS;
 	protected int m_DetectedInRange;
-	protected ref array<ref RDF_RadarTarget> m_PersistPlots;
+	protected ref array<ref GBRS_PersistPlot> m_PersistPlots;
 	protected ref array<ref RDF_RadarTarget> m_DisplayPlots;
+	protected float m_LastPersistCoastS;
 	protected string m_ActiveMode;
 	protected bool m_bDeviceListenerBound;
 	protected bool m_bNavBound;
@@ -46,6 +73,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected int m_iFocusedManualParam;
 
 	protected float m_fLastModeNavS;
+	// 0 = follow RF max until the operator zooms the PPI.
+	protected float m_PpiViewRangeM;
+	protected ref GBRS_PpiZoomWheelHandler m_PpiWheelHandler;
+	protected Widget m_wPpiWheelHost;
 
 	//------------------------------------------------------------------------------------------------
 	static void OpenFor(GBRS_RadarStationComponent station)
@@ -152,6 +183,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_ActiveMode = MODE_PD_SEARCH;
 		EnsurePersistBuffer();
 		ClearPersist();
+		m_PpiViewRangeM = 0.0;
 
 		Widget root = GetRootWidget();
 		IEntity opticsParent = station.GetOwner();
@@ -189,6 +221,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_iFocusedModeTab = 0;
 		EnsurePersistBuffer();
 		ClearPersist();
+		m_PpiViewRangeM = 0.0;
 
 		Widget root = GetRootWidget();
 		if (root)
@@ -206,6 +239,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	override void OnMenuClose()
 	{
 		UnbindNavigation();
+		UnbindPpiZoomWheel();
 		StopDeviceListener();
 		StopFeed();
 		ClearPersist();
@@ -213,6 +247,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_Station = null;
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
+		m_PpiViewRangeM = 0.0;
 		GBRS_RadarStationHud.Detach();
 		super.OnMenuClose();
 	}
@@ -357,8 +392,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		m_bNavBound = true;
 		BindManualActions();
+		BindPpiZoomWheel();
 		RefreshNavHintGlyphs();
-		SetManualNavHintsVisible(m_ActiveMode == MODE_MANUAL);
+		UpdateNavParamHints();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -394,6 +430,35 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		}
 
 		m_bManualActionsBound = false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void BindPpiZoomWheel()
+	{
+		if (m_PpiWheelHandler)
+			return;
+
+		Widget host = GetRootWidget();
+		if (!host)
+			return;
+
+		m_PpiWheelHandler = new GBRS_PpiZoomWheelHandler();
+		m_PpiWheelHandler.m_Menu = this;
+		host.AddHandler(m_PpiWheelHandler);
+		m_wPpiWheelHost = host;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void UnbindPpiZoomWheel()
+	{
+		if (m_PpiWheelHandler && m_wPpiWheelHost)
+			m_wPpiWheelHost.RemoveHandler(m_PpiWheelHandler);
+
+		if (m_PpiWheelHandler)
+			m_PpiWheelHandler.m_Menu = null;
+
+		m_PpiWheelHandler = null;
+		m_wPpiWheelHost = null;
 	}
 
 	// Mode bar / nav hints inherit WLib hover+click sounds; mute to avoid
@@ -509,13 +574,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavParamPrev(SCR_InputButtonComponent button, string actionName)
 	{
-		CycleManualParam(-1);
+		OnParamOrZoomPrev();
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnNavParamNext(SCR_InputButtonComponent button, string actionName)
 	{
-		CycleManualParam(1);
+		OnParamOrZoomNext();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -533,13 +598,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnManualActionPrev()
 	{
-		CycleManualParam(-1);
+		OnParamOrZoomPrev();
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnManualActionNext()
 	{
-		CycleManualParam(1);
+		OnParamOrZoomNext();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -552,6 +617,160 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected void OnManualActionInc()
 	{
 		AdjustManualParam(1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnParamOrZoomPrev()
+	{
+		if (m_ActiveMode == MODE_MANUAL)
+			CycleManualParam(-1);
+		else
+			AdjustPpiZoom(-1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnParamOrZoomNext()
+	{
+		if (m_ActiveMode == MODE_MANUAL)
+			CycleManualParam(1);
+		else
+			AdjustPpiZoom(1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	void AdjustPpiZoom(int direction)
+	{
+		if (direction == 0)
+			return;
+
+		if (!CanAcceptModeNav())
+			return;
+
+		float rfMax = GetRfRangeM();
+		if (rfMax <= 0.0)
+			rfMax = 7000.0;
+
+		float minView = PPI_RANGE_MIN_M;
+		if (minView > rfMax)
+			minView = rfMax;
+
+		float current = m_PpiViewRangeM;
+		if (current <= 0.0)
+			current = rfMax;
+
+		int idx = NearestPpiRangeIndex(current);
+		idx = idx + direction;
+		if (idx < 0)
+			idx = 0;
+		if (idx >= PPI_RANGE_STEP_COUNT)
+			idx = PPI_RANGE_STEP_COUNT - 1;
+
+		float next = PpiRangeStepAt(idx);
+		if (next > rfMax)
+			next = rfMax;
+		if (next < minView)
+			next = minView;
+
+		if (Math.AbsFloat(next - current) < 1.0)
+			return;
+
+		m_PpiViewRangeM = next;
+		m_LastClusterS = 0.0;
+		GBRS_RadarStationHud.SetDisplayRange(m_PpiViewRangeM);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected int NearestPpiRangeIndex(float rangeM)
+	{
+		int best = 0;
+		float bestDiff = Math.AbsFloat(PpiRangeStepAt(0) - rangeM);
+		int i = 1;
+		while (i < PPI_RANGE_STEP_COUNT)
+		{
+			float diff = Math.AbsFloat(PpiRangeStepAt(i) - rangeM);
+			if (diff < bestDiff)
+			{
+				best = i;
+				bestDiff = diff;
+			}
+			i = i + 1;
+		}
+		return best;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected float PpiRangeStepAt(int index)
+	{
+		if (index <= 0)
+			return 1000.0;
+		if (index == 1)
+			return 1500.0;
+		if (index == 2)
+			return 2000.0;
+		if (index == 3)
+			return 2500.0;
+		if (index == 4)
+			return 3000.0;
+		if (index == 5)
+			return 4000.0;
+		if (index == 6)
+			return 5000.0;
+		if (index == 7)
+			return 6000.0;
+		if (index == 8)
+			return 7000.0;
+		if (index == 9)
+			return 8000.0;
+		return 10000.0;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected float GetRfRangeM()
+	{
+		if (!m_Station)
+			return 0.0;
+
+		RDF_RadarComponent radar = m_Station.GetRadarComponent();
+		if (!radar)
+			return 0.0;
+
+		RDF_RadarSensor sensor = radar.GetSensor();
+		if (!sensor)
+			return 0.0;
+
+		float rangeM = 0.0;
+		RDF_RadarSettings settings = sensor.GetSettings();
+		if (settings)
+			rangeM = settings.m_Range;
+
+		RDF_RadarScanContext ctx = sensor.GetScanContext();
+		if (ctx)
+		{
+			if (ctx.m_RangeM > 0.0)
+				rangeM = ctx.m_RangeM;
+		}
+
+		return rangeM;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected float ResolvePpiViewRange(float rfRange)
+	{
+		if (rfRange <= 0.0)
+			rfRange = 2000.0;
+
+		float minView = PPI_RANGE_MIN_M;
+		if (minView > rfRange)
+			minView = rfRange;
+
+		if (m_PpiViewRangeM <= 0.0)
+			m_PpiViewRangeM = rfRange;
+		else if (m_PpiViewRangeM > rfRange)
+			m_PpiViewRangeM = rfRange;
+		else if (m_PpiViewRangeM < minView)
+			m_PpiViewRangeM = minView;
+
+		return m_PpiViewRangeM;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -626,7 +845,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		float next = current + step * direction;
 
 		// STARE AZ: from OFF, any nudge parks at the live scan bearing.
-		if (index == 9 && current < 0.0)
+		if (index == GBRS_RadarManualConfig.PARAM_STARE && current < 0.0)
 			next = m_Station.GetLiveScanAngleDeg();
 
 		if (!m_Station.ApplyManualParam(index, next))
@@ -802,16 +1021,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	{
 		switch (index)
 		{
-			case 0: return "SNR dB";
-			case 1: return "CLUTTER";
-			case 2: return "RPM";
-			case 3: return "RANGE";
-			case 4: return "EL BORE";
-			case 5: return "EL BW";
-			case 6: return "AZ BW";
-			case 7: return "UPDATE";
-			case 8: return "POWER";
-			case 9: return "STARE AZ";
+			case 0: return "RANGE";
+			case 1: return "RPM";
+			case 2: return "EL BORE";
+			case 3: return "STARE AZ";
 		}
 		return "???";
 	}
@@ -821,26 +1034,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	{
 		switch (index)
 		{
-			case 0: return value.ToString(-1, 1) + " dB";
-			case 1: return value.ToString(-1, 2);
-			case 2: return value.ToString(-1, 0) + " rpm";
-			case 3:
+			case 0:
 			{
 				if (value >= 1000.0)
 					return (value / 1000.0).ToString(-1, 1) + " km";
 				return value.ToString(-1, 0) + " m";
 			}
-			case 4: return value.ToString(-1, 1) + " deg";
-			case 5: return value.ToString(-1, 1) + " deg";
-			case 6: return value.ToString(-1, 1) + " deg";
-			case 7: return value.ToString(-1, 2) + " s";
-			case 8:
-			{
-				if (value >= 1000000.0)
-					return (value / 1000000.0).ToString(-1, 1) + " MW";
-				return (value / 1000.0).ToString(-1, 0) + " kW";
-			}
-			case 9:
+			case 1: return value.ToString(-1, 0) + " rpm";
+			case 2: return value.ToString(-1, 1) + " deg";
+			case 3:
 			{
 				if (value < 0.0)
 					return "OFF";
@@ -874,27 +1076,55 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		else if (m_ActiveMode == MODE_LOCK)
 			hint = HINT_LOCK;
 		else if (m_ActiveMode == MODE_MANUAL)
-			hint = "Up/Dn parameter   Left/Right value   Tab change mode";
+			hint = "Up/Dn parameter   Left/Right value   wheel PPI range";
 
 		widgets.m_wPpiHint.SetText(hint);
-		SetManualNavHintsVisible(m_ActiveMode == MODE_MANUAL);
+		UpdateNavParamHints();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected void SetManualNavHintsVisible(bool visible)
+	protected void UpdateNavParamHints()
 	{
 		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
 		if (!widgets)
 			return;
 
+		bool manual = false;
+		if (m_ActiveMode == MODE_MANUAL)
+			manual = true;
+
+		string prevNextLabel = "PPI";
+		if (manual)
+			prevNextLabel = "Param";
+
 		if (widgets.m_wHintParamPrev)
-			widgets.m_wHintParamPrev.SetVisible(visible);
+		{
+			widgets.m_wHintParamPrev.SetVisible(true);
+			SetInputButtonLabel(widgets.m_wHintParamPrev, prevNextLabel);
+		}
 		if (widgets.m_wHintParamNext)
-			widgets.m_wHintParamNext.SetVisible(visible);
+		{
+			widgets.m_wHintParamNext.SetVisible(true);
+			SetInputButtonLabel(widgets.m_wHintParamNext, prevNextLabel);
+		}
 		if (widgets.m_wHintParamDec)
-			widgets.m_wHintParamDec.SetVisible(visible);
+			widgets.m_wHintParamDec.SetVisible(manual);
 		if (widgets.m_wHintParamInc)
-			widgets.m_wHintParamInc.SetVisible(visible);
+			widgets.m_wHintParamInc.SetVisible(manual);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void SetInputButtonLabel(Widget w, string label)
+	{
+		if (!w)
+			return;
+
+		SCR_InputButtonComponent button =
+			SCR_InputButtonComponent.Cast(w.FindHandler(SCR_InputButtonComponent));
+		if (!button)
+			return;
+
+		button.SetLabel(label);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1140,7 +1370,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected void EnsurePersistBuffer()
 	{
 		if (!m_PersistPlots)
-			m_PersistPlots = new array<ref RDF_RadarTarget>();
+			m_PersistPlots = new array<ref GBRS_PersistPlot>();
 		if (!m_DisplayPlots)
 			m_DisplayPlots = new array<ref RDF_RadarTarget>();
 	}
@@ -1165,7 +1395,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (rpm > 0.0)
 			life = 60.0 / rpm;
 
-		life = life * 1.05;
+		life = life * 1.25;
 		if (life < PERSIST_SEC_MIN)
 			life = PERSIST_SEC_MIN;
 		if (life > PERSIST_SEC_MAX)
@@ -1191,10 +1421,14 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			if (!GBRS_RadarStationConfig.ShouldDisplayPlot(src, settings))
 				continue;
 
-			RDF_RadarTarget existing = FindPersistMatch(src);
+			RDF_RadarTarget existing = null;
+			GBRS_PersistPlot held = FindPersistMatch(src);
+			if (held)
+				existing = held.m_Target;
 			if (existing)
 			{
 				CopyPlot(src, existing, nowS);
+				held.m_LastFreshS = nowS;
 				continue;
 			}
 
@@ -1203,12 +1437,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 			RDF_RadarTarget created = new RDF_RadarTarget();
 			CopyPlot(src, created, nowS);
-			m_PersistPlots.Insert(created);
+			GBRS_PersistPlot row = new GBRS_PersistPlot();
+			row.m_Target = created;
+			row.m_LastFreshS = nowS;
+			m_PersistPlots.Insert(row);
 		}
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected RDF_RadarTarget FindPersistMatch(RDF_RadarTarget src)
+	protected GBRS_PersistPlot FindPersistMatch(RDF_RadarTarget src)
 	{
 		if (!src || !m_PersistPlots)
 			return null;
@@ -1218,12 +1455,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		{
 			while (i < m_PersistPlots.Count())
 			{
-				RDF_RadarTarget t = m_PersistPlots.Get(i);
+				GBRS_PersistPlot row = m_PersistPlots.Get(i);
 				i = i + 1;
-				if (!t)
+				if (!row || !row.m_Target)
 					continue;
-				if (t.m_ScattererId == src.m_ScattererId)
-					return t;
+				if (row.m_Target.m_ScattererId == src.m_ScattererId)
+					return row;
 			}
 			return null;
 		}
@@ -1231,16 +1468,16 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		i = 0;
 		while (i < m_PersistPlots.Count())
 		{
-			RDF_RadarTarget t = m_PersistPlots.Get(i);
+			GBRS_PersistPlot row = m_PersistPlots.Get(i);
 			i = i + 1;
-			if (!t)
+			if (!row || !row.m_Target)
 				continue;
-			if (t.m_ScattererId > 0)
+			if (row.m_Target.m_ScattererId > 0)
 				continue;
 
-			vector d = t.m_Position - src.m_Position;
+			vector d = row.m_Target.m_Position - src.m_Position;
 			if (d.LengthSq() < 4.0)
-				return t;
+				return row;
 		}
 
 		return null;
@@ -1257,10 +1494,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		int i = 0;
 		while (i < m_PersistPlots.Count())
 		{
-			RDF_RadarTarget t = m_PersistPlots.Get(i);
-			if (t && t.m_Time < oldestTime)
+			GBRS_PersistPlot row = m_PersistPlots.Get(i);
+			if (row && row.m_LastFreshS < oldestTime)
 			{
-				oldestTime = t.m_Time;
+				oldestTime = row.m_LastFreshS;
 				oldest = i;
 			}
 			i = i + 1;
@@ -1322,6 +1559,36 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
+	protected void CoastPersist(float nowS)
+	{
+		if (!m_PersistPlots)
+			return;
+
+		float dt = nowS - m_LastPersistCoastS;
+		m_LastPersistCoastS = nowS;
+		if (dt <= 0.0)
+			return;
+		if (dt > 0.5)
+			return;
+
+		int i = 0;
+		while (i < m_PersistPlots.Count())
+		{
+			GBRS_PersistPlot row = m_PersistPlots.Get(i);
+			i = i + 1;
+			if (!row || !row.m_Target)
+				continue;
+			if ((nowS - row.m_LastFreshS) < 0.05)
+				continue;
+
+			RDF_RadarTarget t = row.m_Target;
+			t.m_Position = t.m_Position + (t.m_Velocity * dt);
+			if (t.m_Distance > 1.0)
+				t.m_Distance = t.m_Distance + (t.m_RadialSpeedMs * dt);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
 	protected void PrunePersist(float nowS, float lifeS)
 	{
 		if (!m_PersistPlots)
@@ -1330,8 +1597,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		int i = m_PersistPlots.Count() - 1;
 		while (i >= 0)
 		{
-			RDF_RadarTarget t = m_PersistPlots.Get(i);
-			if (!t || (nowS - t.m_Time) > lifeS)
+			GBRS_PersistPlot row = m_PersistPlots.Get(i);
+			if (!row || !row.m_Target || (nowS - row.m_LastFreshS) > lifeS)
 				m_PersistPlots.Remove(i);
 			i = i - 1;
 		}
@@ -1399,10 +1666,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		int i = 0;
 		while (i < m_PersistPlots.Count())
 		{
-			RDF_RadarTarget src = m_PersistPlots.Get(i);
+			GBRS_PersistPlot row = m_PersistPlots.Get(i);
 			i = i + 1;
-			if (!src)
+			if (!row || !row.m_Target)
 				continue;
+
+			RDF_RadarTarget src = row.m_Target;
 
 			float rng = PlotRangeM(src, origin);
 			if (rng > rangeLimit)
@@ -1521,19 +1790,22 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		RDF_RadarScanContext ctx = sensor.GetScanContext();
 		RDF_RadarSettings settings = sensor.GetSettings();
 
-		float hudRange = 2000.0;
+		float rfRange = 2000.0;
 		if (settings)
-			hudRange = settings.m_Range;
+			rfRange = settings.m_Range;
 
 		if (ctx)
 		{
 			if (ctx.m_Origin.LengthSq() > 0.0001)
 				hudOrigin = ctx.m_Origin;
 			if (ctx.m_RangeM > 0.0)
-				hudRange = ctx.m_RangeM;
+				rfRange = ctx.m_RangeM;
 		}
 
+		float viewRange = ResolvePpiViewRange(rfRange);
+
 		IngestLivePlots(sensor.GetPlots(), settings, nowS);
+		CoastPersist(nowS);
 		PrunePersist(nowS, lifeS);
 
 		float clusterIntervalS = CLUSTER_INTERVAL_MS * 0.001;
@@ -1545,11 +1817,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		if (needCluster)
 		{
-			BuildClusteredDisplayPlots(hudOrigin, hudRange);
+			BuildClusteredDisplayPlots(hudOrigin, viewRange);
 			m_LastClusterS = nowS;
 		}
 
-		GBRS_RadarStationHud.SetDisplayRange(hudRange);
+		GBRS_RadarStationHud.SetDisplayRange(viewRange);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
 		// RDF 1.0.0 ECCM decision status → PPI jam ring + list footer.
 		GBRS_RadarStationHud.SetEccmStatus(sensor.GetEccmStatusShort());
@@ -1557,7 +1829,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_DisplayPlots,
 			hudOrigin,
 			hudForward,
-			hudRange,
+			viewRange,
 			sensor.GetTracker(),
 			m_DetectedInRange,
 			sensor.GetLockManager());

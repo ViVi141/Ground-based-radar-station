@@ -206,7 +206,7 @@ FrameWidgetClass {
        components {
         SCR_InputButtonComponent "{69FCEDCEB0020210}" {
          m_sActionName "MenuUp"
-         m_sLabel "Param"
+         m_sLabel "PPI"
          m_iHeightInPixel 28
         }
        }
@@ -223,7 +223,7 @@ FrameWidgetClass {
        components {
         SCR_InputButtonComponent "{69FCEDCEB0020211}" {
          m_sActionName "MenuDown"
-         m_sLabel "Param"
+         m_sLabel "PPI"
          m_iHeightInPixel 28
         }
        }
