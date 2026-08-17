@@ -48,7 +48,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 靠近成品雷达，己方交互：
 
 - 开关机（物资不够会拒绝开机；运行中扣不起则断电）
-- 打开 PPI：`PD SEARCH` / `WLR` / `LOCK` / `MANUAL`
+- 打开 PPI：当前 `PD SEARCH` / `WLR`（`LOCK` / `MANUAL` 入口已注释预留，等有火控或训练模组再开）
 - 扫描体可视化（本地）
 
 ### Script Debugger 演示
@@ -59,7 +59,7 @@ Workbench **Play** 后在 Script Debugger 执行（一次只开一个；走成�
 GBRS_RadarStationDemo.Start();      // 美军站 + PD SEARCH + 径向来回 Mi-8 + 打开 PPI
 GBRS_RadarStationDemo.StartUssr();  // 苏军站
 GBRS_RadarStationDemo.StartWlr();   // WLR + 周期性 82 mm 迫击炮弹
-GBRS_RadarStationDemo.StartLock();  // LOCK + 径向来回 Mi-8
+// GBRS_RadarStationDemo.StartLock();  // 预留：等火控模组
 GBRS_RadarStationDemo.Probe();      // 强制一拍并打印点迹
 GBRS_RadarStationDemo.Stop();
 ```

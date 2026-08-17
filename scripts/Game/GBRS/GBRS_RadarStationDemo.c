@@ -9,7 +9,7 @@
 //   GBRS_RadarStationDemo.Start();      // US AN/TPN-19, PD SEARCH, radial Mi-8
 //   GBRS_RadarStationDemo.StartUssr();  // USSR RPL-5, PD SEARCH
 //   GBRS_RadarStationDemo.StartWlr();   // US station, WLR, periodic 82 mm shells
-//   GBRS_RadarStationDemo.StartLock();  // US station, LOCK, radial Mi-8
+//   GBRS_RadarStationDemo.StartLock();  // reserved (LOCK / fire-control)
 //   GBRS_RadarStationDemo.Probe();      // dump station sensor plots
 //   GBRS_RadarStationDemo.Stop();
 class GBRS_RadarStationDemo
@@ -129,11 +129,13 @@ class GBRS_RadarStationDemo
 
     static void StartLock()
     {
-        GetInstance().StartInternal(
-            EGBRS_RadarFactionPreset.US,
-            GBRS_RadarStationConstants.MODE_LOCK,
-            true,
-            false);
+        // Reserved: no matching fire-control addon yet.
+        // GetInstance().StartInternal(
+        //     EGBRS_RadarFactionPreset.US,
+        //     GBRS_RadarStationConstants.MODE_LOCK,
+        //     true,
+        //     false);
+        Print("[GBRS Demo] StartLock() reserved.", LogLevel.WARNING);
     }
 
     static void Stop()

@@ -1,5 +1,7 @@
 //------------------------------------------------------------------------------------------------
-//! Formal GBRS radar workstation menu (PD SEARCH / WLR / LOCK).
+//! Formal GBRS radar workstation menu (PD SEARCH / WLR).
+//! LOCK / MANUAL handlers stay compiled but are commented out until a
+//! fire-control / training addon exists.
 class GBRS_PersistPlot
 {
 	ref RDF_RadarTarget m_Target;
@@ -296,21 +298,26 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				invWlr.Insert(OnModeTabWlr);
 		}
 
+		// LOCK / MANUAL reserved — uncomment when a fire-control / training
+		// addon exists. Tabs stay in the layout.
+		// if (widgets.m_wModeTabLock)
+		// {
+		// 	MuteWLibSounds(widgets.m_wModeTabLock);
+		// 	ScriptInvoker invLock = ButtonActionComponent.GetOnAction(widgets.m_wModeTabLock, true);
+		// 	if (invLock)
+		// 		invLock.Insert(OnModeTabLock);
+		// }
+		// if (widgets.m_wModeTabManual)
+		// {
+		// 	MuteWLibSounds(widgets.m_wModeTabManual);
+		// 	ScriptInvoker invManual = ButtonActionComponent.GetOnAction(widgets.m_wModeTabManual, true);
+		// 	if (invManual)
+		// 		invManual.Insert(OnModeTabManual);
+		// }
 		if (widgets.m_wModeTabLock)
-		{
 			MuteWLibSounds(widgets.m_wModeTabLock);
-			ScriptInvoker invLock = ButtonActionComponent.GetOnAction(widgets.m_wModeTabLock, true);
-			if (invLock)
-				invLock.Insert(OnModeTabLock);
-		}
-
 		if (widgets.m_wModeTabManual)
-		{
 			MuteWLibSounds(widgets.m_wModeTabManual);
-			ScriptInvoker invManual = ButtonActionComponent.GetOnAction(widgets.m_wModeTabManual, true);
-			if (invManual)
-				invManual.Insert(OnModeTabManual);
-		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -541,15 +548,17 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnModeTabLock(Widget w, float value, EActionTrigger reason)
 	{
-		m_iFocusedModeTab = 2;
-		ActivateFocusedModeTab();
+		// Reserved: no fire-control consumer yet.
+		// m_iFocusedModeTab = 2;
+		// ActivateFocusedModeTab();
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void OnModeTabManual(Widget w, float value, EActionTrigger reason)
 	{
-		m_iFocusedModeTab = 3;
-		ActivateFocusedModeTab();
+		// Reserved: no operator-training addon yet.
+		// m_iFocusedModeTab = 3;
+		// ActivateFocusedModeTab();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -806,11 +815,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!CanAcceptModeNav())
 			return;
 
+		// LOCK / MANUAL reserved: wrap PD SEARCH / WLR only.
+		// Restore MODE_TAB_COUNT when those tabs are wired back up.
+		int tabCount = 2;
+		// int tabCount = MODE_TAB_COUNT;
 		m_iFocusedModeTab = m_iFocusedModeTab + delta;
 		while (m_iFocusedModeTab < 0)
-			m_iFocusedModeTab = m_iFocusedModeTab + MODE_TAB_COUNT;
-		while (m_iFocusedModeTab >= MODE_TAB_COUNT)
-			m_iFocusedModeTab = m_iFocusedModeTab - MODE_TAB_COUNT;
+			m_iFocusedModeTab = m_iFocusedModeTab + tabCount;
+		while (m_iFocusedModeTab >= tabCount)
+			m_iFocusedModeTab = m_iFocusedModeTab - tabCount;
 
 		UpdateModeTabVisuals();
 		FocusModeTabIndex(m_iFocusedModeTab);
@@ -881,10 +894,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		string nextMode = MODE_PD_SEARCH;
 		if (m_iFocusedModeTab == 1)
 			nextMode = MODE_WLR;
-		else if (m_iFocusedModeTab == 2)
-			nextMode = MODE_LOCK;
-		else if (m_iFocusedModeTab == 3)
-			nextMode = MODE_MANUAL;
+		// Reserved: no matching fire-control / training addon yet.
+		// else if (m_iFocusedModeTab == 2)
+		// 	nextMode = MODE_LOCK;
+		// else if (m_iFocusedModeTab == 3)
+		// 	nextMode = MODE_MANUAL;
 
 		if (nextMode == m_ActiveMode)
 		{

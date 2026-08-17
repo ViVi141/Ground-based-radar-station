@@ -8,7 +8,9 @@ class GBRS_RadarStationConstants
 {
     static const string MODE_PD_SEARCH = "PD SEARCH";
     static const string MODE_WLR = "WLR";
+    // Reserved: fire-control consumer (SAM / AAA) does not exist yet.
     static const string MODE_LOCK = "LOCK";
+    // Reserved: operator-training / manual RF console, no matching mod yet.
     static const string MODE_MANUAL = "MANUAL";
 
     static const ResourceName PREFAB_E_US =
