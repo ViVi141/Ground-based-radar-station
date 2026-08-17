@@ -5,13 +5,28 @@
 // RDF 1.0.0 ECCM decision layer can observe this jammer:
 //   - GetMainlobeFraction() drives SLB vs frequency-agility selection.
 //   - EnableSlb() / m_EnableSlb implements sidelobe blanking on the stack.
-// The bridge still aggregates ALL live emitters from the scatterer registry
+// The bridge still aggregates live emitters in range via CollectInSphere
 // (multi-source), unlike the single-position stock RDF jammer.
 class GBRS_RadarEmitterNoiseBridge : RDF_RadarNoiseJammerEffect
 {
 	float m_MaxRangeM = 15000.0;
 	// When true, use rotating-search average coupling (soft); else mainlobe+sidelobe beam.
 	bool m_UseSearchAvg = true;
+	// Reused CollectInSphere buffer — 20–50 ms dwells must not new the table.
+	protected ref array<ref RDF_RadarScatterer> m_ScratchEntries;
+
+	protected array<ref RDF_RadarScatterer> CollectNearby(vector radarOrigin)
+	{
+		if (!m_ScratchEntries)
+			m_ScratchEntries = new array<ref RDF_RadarScatterer>();
+
+		float maxRange = m_MaxRangeM;
+		if (maxRange < 1.0)
+			maxRange = 1.0;
+
+		RDF_RadarScattererRegistry.CollectInSphere(radarOrigin, maxRange, m_ScratchEntries);
+		return m_ScratchEntries;
+	}
 
 	override float GetAdditionalNoisePowerW(
 		vector radarOrigin,
@@ -21,7 +36,7 @@ class GBRS_RadarEmitterNoiseBridge : RDF_RadarNoiseJammerEffect
 		if (!hardware)
 			return 0.0;
 
-		array<ref RDF_RadarScatterer> entries = RDF_RadarScattererRegistry.GetEntries();
+		array<ref RDF_RadarScatterer> entries = CollectNearby(radarOrigin);
 		if (!entries)
 			return 0.0;
 
@@ -114,7 +129,7 @@ class GBRS_RadarEmitterNoiseBridge : RDF_RadarNoiseJammerEffect
 			return duty;
 		}
 
-		array<ref RDF_RadarScatterer> entries = RDF_RadarScattererRegistry.GetEntries();
+		array<ref RDF_RadarScatterer> entries = CollectNearby(radarOrigin);
 		if (!entries)
 			return 0.0;
 

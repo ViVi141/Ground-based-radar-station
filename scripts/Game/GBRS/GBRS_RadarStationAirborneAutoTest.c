@@ -334,7 +334,12 @@ class GBRS_RadarStationAirborneAutoTest
         // RDF 1.0.0 removed ApplyIdealChannel; StabilizeForRegression clears the
         // same optional fidelity extras (noise / thermal fill / atmosphere /
         // two-ray / refraction / PRF folds). CFAR gate is handled explicitly below.
+        // RDF 1.0.2 budget layer is NOT cleared by StabilizeForRegression —
+        // Perf / DEM-LOS Bench disable it so the test measures the beam, not
+        // the frame smoother.
         cfg.StabilizeForRegression();
+        cfg.m_EnableAdaptiveBudget = false;
+        cfg.m_EnableLosFrameQueue = false;
         cfg.m_KeepEntityTruth = true;
         cfg.m_EnableCfarGate = false;
         cfg.Validate();

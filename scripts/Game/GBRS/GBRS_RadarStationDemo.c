@@ -28,8 +28,8 @@ class GBRS_RadarStationDemo
     protected static const ResourceName SHELL_PREFAB =
         "{98EC9C526AFBA282}Prefabs/Weapons/Ammo/Ammo_Shell_82mm_HE_O832DU.et";
 
-    protected static const float TICK_MS = 200.0;
-    protected static const float OPEN_PPI_DELAY_MS = 350.0;
+    protected static const int TICK_MS = 200;
+    protected static const int OPEN_PPI_DELAY_MS = 350;
     // Radial in/out, not a circle around the dish: PD MTI needs |vr| >= 3 m/s
     // to paint, and a centered orbit is essentially CPA the whole time.
     protected static const float AIR_ALTITUDE_M = 180.0;
@@ -248,6 +248,8 @@ class GBRS_RadarStationDemo
         m_PrevStareAzDeg = m_Station.GetAntennaStareAzDeg();
         m_DemoOwnsStare = false;
         m_Station.SetScanVisualEnabled(DEBUG_VISUALS);
+        if (!m_Station.SetDesiredWorkstationMode(m_WantMode))
+            Print("[GBRS Demo] SetDesiredWorkstationMode failed.", LogLevel.WARNING);
         m_Station.SetPoweredForAutoTest(true);
         if (!m_Station.IsPowered())
         {
@@ -309,9 +311,12 @@ class GBRS_RadarStationDemo
 
         GetGame().GetCallqueue().CallLater(StaticOpenPpi, OPEN_PPI_DELAY_MS, false);
 
-        RDF_RadarAutoTestMapOverlay.Start();
-        if (m_AirTarget)
-            RDF_RadarAutoTestMapOverlay.SetAircraft(m_AirTarget, "GBRS Demo");
+        if (DEBUG_VISUALS)
+        {
+            RDF_RadarAutoTestMapOverlay.Start();
+            if (m_AirTarget)
+                RDF_RadarAutoTestMapOverlay.SetAircraft(m_AirTarget, "GBRS Demo");
+        }
 
         Print(string.Format(
             "[GBRS Demo] started faction=%1 mode=%2 origin=%3 stationSpawned=%4",
@@ -329,8 +334,9 @@ class GBRS_RadarStationDemo
                 + " s, "
                 + SHELL_LAUNCH_RANGE_M.ToString()
                 + " m out. Ammo mesh is tiny; orange debug spheres mark each round.");
-            if (TryFireShell())
-                m_LastFireWallS = System.GetTickCount() * 0.001;
+            // Do not Launch from the debugger Start() frame. The first
+            // StaticTick (~TICK_MS) fires because m_LastFireWallS is already
+            // armed to SHELL_FIRE_INTERVAL_S in the past.
         }
     }
 
@@ -1057,11 +1063,12 @@ class GBRS_RadarStationDemo
             return false;
         }
 
-        // Cartridge shells stay inert until simulation is enabled. Pass the
-        // local subject as gunner so the shot has an authority owner.
+        // Cartridge shells stay inert until simulation is enabled. Match
+        // RDF_RadarShellFireAutoTest: Launch gunner must be null. Passing the
+        // GM / editor subject as instigator native-crashes on the next Frame.
         move.EnableSimulation(shell);
         move.SetBulletCoef(SHELL_SPEED_COEF);
-        move.Launch(dir, vector.Zero, 1.0, shell, m_Subject, null, null, null);
+        move.Launch(dir, vector.Zero, 1.0, shell, null, null, null, null);
         RDF_RadarScattererRegistry.Unignore(shell);
 
         if (!m_LiveShells)

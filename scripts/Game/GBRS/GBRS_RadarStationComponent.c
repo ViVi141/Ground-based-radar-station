@@ -124,6 +124,9 @@ class GBRS_RadarStationComponent : ScriptComponent
     // 90 = north) and lock RDF GetScanForward to that absolute angle.
     protected bool m_bAntennaStare;
     protected float m_fAntennaStareAzDeg;
+    // Product dwell while the dish is rotating. Stare overwrites UpdateInterval
+    // on the live settings object; this value restores it when stare ends.
+    protected float m_fProductUpdateIntervalS = 0.04;
     // One-frame guard so ClearStarePhase runs exactly once after stare off.
     protected bool m_bStarePhaseCleared = true;
     protected bool m_bStarePoseCached;
@@ -200,6 +203,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         SyncRadarBindToAntenna(owner);
         SyncAntennaBoneSpin(owner);
         SyncEntityYawAntenna(owner);
+        TickScattererRegistry(owner);
         RenderScanVisuals(owner);
         UpdateContactEvents(owner);
         UpdateWlrEvents(owner);
@@ -241,6 +245,10 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         settings.m_ScanPhaseOffsetRad = m_fScanPhaseOffsetRad;
         settings.m_bScanAngleLocked = m_bAntennaStare;
+        if (m_bAntennaStare)
+            settings.m_UpdateInterval = GBRS_RadarStationConstants.STARE_UPDATE_INTERVAL_S;
+        else if (m_fProductUpdateIntervalS > 0.0)
+            settings.m_UpdateInterval = m_fProductUpdateIntervalS;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -254,9 +262,59 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             settings.m_ScanPhaseOffsetRad = 0.0;
             settings.m_bScanAngleLocked = false;
+            if (m_fProductUpdateIntervalS > 0.0)
+                settings.m_UpdateInterval = m_fProductUpdateIntervalS;
         }
         m_bStarePhaseCleared = true;
         m_bStarePoseCached = false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    // RDF only Ticks the scatterer registry from ScanOnce. Stare / 40 ms
+    // dwells then classify Eden's ~15k DYNAMIC dump at scan rate, and LIFO
+    // ProcessPending keeps the in-beam helicopter behind infantry rejects.
+    // Drive Configure+Tick every powered frame so classification stays at
+    // frame rate. Same-frame ScanOnce Tick coalesces into one flush.
+    protected void TickScattererRegistry(IEntity owner)
+    {
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        if (!sensor.IsEnabled())
+            return;
+
+        RDF_RadarSettings settings = sensor.GetSettings();
+        if (!settings)
+            return;
+
+        BaseWorld world = GetGame().GetWorld();
+        if (!world)
+            return;
+
+        vector origin = GetAntennaBindOrigin(owner);
+        float rangeM = settings.m_Range;
+        if (rangeM <= 0.0)
+            rangeM = 2000.0;
+
+        float scale = settings.m_ScattererDiscoveryRangeScale;
+        if (scale <= 0.0)
+            scale = GBRS_RadarStationConstants.SCATTERER_DISCOVERY_RANGE_SCALE;
+
+        RDF_RadarScattererRegistry.Configure(
+            settings.m_ScattererDiscoveryIntervalS,
+            settings.m_ScattererClassifyPerTick,
+            settings.m_ScattererRefreshPerTick,
+            settings.m_ScattererMaxEntries,
+            true);
+        RDF_RadarScattererRegistry.Tick(
+            world,
+            world.GetWorldTime() * 0.001,
+            origin,
+            rangeM * scale);
     }
 
     override void OnDelete(IEntity owner)
@@ -720,6 +778,21 @@ class GBRS_RadarStationComponent : ScriptComponent
     string GetWorkstationMode()
     {
         return m_WorkstationMode;
+    }
+
+    // Unpowered path for auto-tests: TogglePower applies this mode instead of
+    // always booting PD SEARCH then immediately reconfiguring. If the station
+    // is already powered, this is a real mode switch.
+    bool SetDesiredWorkstationMode(string mode)
+    {
+        if (!IsValidWorkstationMode(mode))
+            return false;
+
+        if (m_bPowered)
+            return ApplyWorkstationMode(mode);
+
+        m_WorkstationMode = mode;
+        return true;
     }
 
     // Menu / API entry. Clients only submit a request; authority applies and
@@ -1252,7 +1325,11 @@ class GBRS_RadarStationComponent : ScriptComponent
                 m_bAntennaFrozen = false;
             }
 
-            m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
+            // Resume the last / requested workstation mode. Forcing PD SEARCH
+            // here made StartWlr() Configure PD then WLR in the same debugger
+            // frame; the next UpdateEntities then native-crashed.
+            if (!IsValidWorkstationMode(m_WorkstationMode))
+                m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
             m_bPowered = true;
             ApplyWorkstationModeLocal(m_WorkstationMode);
 
@@ -1432,8 +1509,8 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         // Stamp product mode, then overlay station geometry/range preset.
         // Configure replaces the stock ConfigureMode settings object.
-        settings.m_ScanPhaseOffsetRad = m_fScanPhaseOffsetRad;
-        settings.m_bScanAngleLocked = m_bAntennaStare;
+        m_fProductUpdateIntervalS = settings.m_UpdateInterval;
+        StampScanPhaseOnSettings(settings);
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(settings);
@@ -1546,11 +1623,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         settings.m_MaxLosTracesPerScan = 128;
         settings.m_FreshUpdateBudgetMin = 64;
         settings.m_FreshUpdateBudgetMax = 128;
-        settings.m_ScattererDiscoveryIntervalS = 0.25;
-        settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 96;
-        settings.m_ScattererRefreshPerTick = 128;
-        settings.m_ScattererMaxEntries = 512;
+        GBRS_RadarStationConfig.ApplyScattererDiscoveryBudget(settings);
         settings.m_IncludeVehicles = true;
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
@@ -1609,8 +1682,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!sensor)
             return;
 
-        settings.m_ScanPhaseOffsetRad = m_fScanPhaseOffsetRad;
-        settings.m_bScanAngleLocked = m_bAntennaStare;
+        m_fProductUpdateIntervalS = settings.m_UpdateInterval;
+        StampScanPhaseOnSettings(settings);
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(mode);
         sensor.Configure(settings);

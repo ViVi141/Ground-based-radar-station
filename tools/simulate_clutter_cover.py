@@ -185,6 +185,18 @@ class Settings:
     enable_knife_edge: bool = True
     knife_edge_clearance_slack_m: float = 2.0
     min_distance_m: float = 40.0
+    # RDF opt-in channel extras (ApplyRealisticChannelOptIn). Default off so
+    # existing PD validation scripts keep their published numbers.
+    enable_los_two_ray: bool = False
+    los_two_ray_reflection_coeff: float = -0.5
+    los_two_ray_max_target_agl_m: float = 600.0
+    los_two_ray_min_factor: float = 0.08
+    los_two_ray_max_factor: float = 4.0
+    enable_atmospheric_refraction: bool = False
+    earth_radius_factor: float = 1.3333333
+    enable_weather_rain: bool = False
+    enable_range_ambiguity_fold: bool = False
+    enable_doppler_ambiguity_fold: bool = False
 
 
 @dataclass
@@ -487,6 +499,92 @@ def atmospheric_one_way_db_per_km(frequency_hz: float) -> float:
     if f_ghz < 12.0:
         return 0.02
     return 0.04
+
+
+def two_ray_multipath_factor(
+    wavelength_m: float,
+    range_m: float,
+    radar_agl_m: float,
+    target_agl_m: float,
+    reflection_coeff: float,
+    max_height_m: float,
+    min_factor: float,
+    max_factor: float,
+) -> float:
+    """RDF_RadarClutterModel.TwoRayMultipathFactor (clear LOS)."""
+    if wavelength_m <= 0.0:
+        return 1.0
+    if range_m < 1.0:
+        return 1.0
+    if radar_agl_m < 1.0:
+        return 1.0
+    if target_agl_m < 1.0:
+        return 1.0
+    if max_height_m > 0.0:
+        if target_agl_m > max_height_m:
+            return 1.0
+
+    delta = 2.0 * radar_agl_m * target_agl_m / range_m
+    phase = 2.0 * math.pi * delta / wavelength_m
+    real = 1.0 + reflection_coeff * math.cos(phase)
+    imag = reflection_coeff * math.sin(phase)
+    factor = real * real + imag * imag
+
+    lo = min_factor
+    if lo < 0.01:
+        lo = 0.01
+    hi = max_factor
+    if hi < lo:
+        hi = lo
+    if factor < lo:
+        factor = lo
+    if factor > hi:
+        factor = hi
+    return factor
+
+
+def radio_horizon_range_m(
+    radar_agl_m: float, target_agl_m: float, earth_radius_factor: float
+) -> float:
+    """RDF_RadarClutterModel.RadioHorizonRangeM (k-Earth)."""
+    re = 6371000.0 * earth_radius_factor
+    hr = radar_agl_m
+    if hr < 0.0:
+        hr = 0.0
+    ht = target_agl_m
+    if ht < 0.0:
+        ht = 0.0
+    return math.sqrt(2.0 * re * hr) + math.sqrt(2.0 * re * ht)
+
+
+def horizon_soft_factor(range_m: float, horizon_m: float) -> float:
+    """RDF_RadarClutterModel.HorizonSoftFactor."""
+    if horizon_m <= 1.0:
+        return 1.0
+    if range_m <= horizon_m:
+        return 1.0
+    over = (range_m - horizon_m) / horizon_m
+    if over < 0.0:
+        over = 0.0
+    denom = 1.0 + 4.0 * over * over
+    factor = 1.0 / denom
+    if factor < 0.02:
+        factor = 0.02
+    return factor
+
+
+def unambiguous_range_m(prf_hz: float) -> float:
+    if prf_hz <= 0.0:
+        return 1.0e12
+    return C_LIGHT / (2.0 * prf_hz)
+
+
+def unambiguous_velocity_ms(wavelength_m: float, prf_hz: float) -> float:
+    if prf_hz <= 0.0:
+        return 1.0e12
+    if wavelength_m <= 0.0:
+        return 1.0e12
+    return wavelength_m * prf_hz * 0.25
 
 
 def atmospheric_loss_linear(
@@ -877,6 +975,22 @@ def physical_detect(
                 0.0,
                 0.0,
             )
+    elif settings.enable_los_two_ray:
+        multipath = two_ray_multipath_factor(
+            hw.wavelength_m(),
+            range_m,
+            radar_agl_m,
+            target_agl_m,
+            settings.los_two_ray_reflection_coeff,
+            settings.los_two_ray_max_target_agl_m,
+            settings.los_two_ray_min_factor,
+            settings.los_two_ray_max_factor,
+        )
+    if settings.enable_atmospheric_refraction:
+        horizon_m = radio_horizon_range_m(
+            radar_agl_m, target_agl_m, settings.earth_radius_factor
+        )
+        multipath = multipath * horizon_soft_factor(range_m, horizon_m)
 
     pattern_gain, beam_name = strongest_beam_gain(hw, azimuth_offset_deg, elevation_deg)
     if los_blocked:
@@ -891,9 +1005,10 @@ def physical_detect(
         atm_db = settings.atm_loss_db_per_km_one_way
         if atm_db < 0.0:
             atm_db = atmospheric_one_way_db_per_km(hw.frequency_hz)
-        latm = atmospheric_loss_linear(
-            range_m, atm_db, settings.rain_loss_db_per_km_one_way
-        )
+        rain_db = 0.0
+        if settings.enable_weather_rain:
+            rain_db = settings.rain_loss_db_per_km_one_way
+        latm = atmospheric_loss_linear(range_m, atm_db, rain_db)
         if latm > 1.0:
             pr = pr / latm
 

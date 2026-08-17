@@ -34,7 +34,7 @@ class GBRS_RadarStationHud
     // Fixed upward look bias for PIP clearance — not antenna elevation.
     static const float OPTICS_LOOK_UP_Y = 0.08;
     // Match workstation feed (~30 Hz); optics RT can run faster.
-    static const float UPDATE_INTERVAL = 0.033;
+    static const float UPDATE_INTERVAL = 0.05;
     static const int OPTICS_MAX_FPS = 45;
     // PIP cameras often start underexposed; sync main HDR then lift slightly.
     static const float OPTICS_HDR_BOOST = 1.35;
@@ -64,7 +64,7 @@ class GBRS_RadarStationHud
     // coasting ghosts otherwise sit just outside a Cartesian 220 m ball.
     static const float TRACK_CLUSTER_RANGE_M = 700.0;
     static const float TRACK_CLUSTER_AZ_DEG = 8.0;
-    static const float HEADING_SPAN_S = 0.4;
+    static const float HEADING_SPAN_S = 1.0;
 
     // Static face is drawn on the same Canvas as sweep/blips (RHS Garmin pattern).
     static const int COL_PPI_SWEEP = ARGB(250, 90, 255, 170);
@@ -950,7 +950,10 @@ class GBRS_RadarStationHud
             float speed;
             TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
             if (speed >= 3.0)
+            {
                 DrawPpiChevron(bx, by, dirX, dirZ, color);
+                DrawPpiHeadingStick(bx, by, dirX, dirZ, color);
+            }
 
             // Confirmed shell tracks get a map-grid coordinate label so the
             // operator can read launch-side positions directly from the PPI.
@@ -1042,7 +1045,10 @@ class GBRS_RadarStationHud
             float speed;
             TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
             if (speed >= 3.0)
+            {
                 DrawPpiChevron(bx, by, dirX, dirZ, color);
+                DrawPpiHeadingStick(bx, by, dirX, dirZ, color);
+            }
 
             // TWS tracks show map-grid coordinates directly on the PPI.
             DrawPpiLabel(bx, by, GetPpiMapLabel(tr.m_FilteredPosition), COL_TRACK_LABEL);
@@ -1172,9 +1178,10 @@ class GBRS_RadarStationHud
         return false;
     }
 
-    // PPI heading from a 0.4 s position span (scan-to-scan TWS), not the
-    // 20 ms Cartesian filter which measurement noise yanks around. Fallback
-    // is LOS * (-radial): RDF radial > 0 is approaching.
+    // PPI heading is ground track (course), not LOS bearing.
+    // Prefer a 1 s position chord so 25 Hz measurement noise does not yank
+    // the chevron. Use FilteredVelocity only when it agrees with that chord.
+    // Radial fallback is LOS * (-radial): RDF radial > 0 is approaching.
     protected void TrackDisplayMotion(
         RDF_RadarTrack tr,
         vector origin,
@@ -1188,7 +1195,10 @@ class GBRS_RadarStationHud
         if (!tr)
             return;
 
-        bool haveHistory = false;
+        bool haveChord = false;
+        float chordX = 0.0;
+        float chordZ = 1.0;
+        float chordSpeed = 0.0;
         if (tr.m_Positions && tr.m_Times)
         {
             int n = tr.m_Positions.Count();
@@ -1209,21 +1219,46 @@ class GBRS_RadarStationHud
 
                 vector older = tr.m_Positions.Get(chosen);
                 float dt = tNew - tr.m_Times.Get(chosen);
-                if (dt >= 0.08)
+                if (dt >= 0.25)
                 {
-                    dirX = newest[0] - older[0];
-                    dirZ = newest[2] - older[2];
-                    float dist = Math.Sqrt(dirX * dirX + dirZ * dirZ);
-                    speed = dist / dt;
-                    haveHistory = true;
+                    chordX = newest[0] - older[0];
+                    chordZ = newest[2] - older[2];
+                    float dist = Math.Sqrt(chordX * chordX + chordZ * chordZ);
+                    chordSpeed = dist / dt;
+                    if (chordSpeed >= 3.0)
+                        haveChord = true;
                 }
             }
         }
 
-        if (haveHistory)
+        float vx = tr.m_FilteredVelocity[0];
+        float vz = tr.m_FilteredVelocity[2];
+        float vH = Math.Sqrt(vx * vx + vz * vz);
+        if (vH >= 3.0)
         {
-            if (speed >= 3.0)
+            bool agree = true;
+            if (haveChord)
+            {
+                float dot = vx * chordX + vz * chordZ;
+                if (dot <= 0.0)
+                    agree = false;
+            }
+
+            if (agree)
+            {
+                dirX = vx;
+                dirZ = vz;
+                speed = vH;
                 return;
+            }
+        }
+
+        if (haveChord)
+        {
+            dirX = chordX;
+            dirZ = chordZ;
+            speed = chordSpeed;
+            return;
         }
 
         float azRad = tr.m_FilteredAzimuthDeg * 0.017453292519943295;
@@ -1619,7 +1654,7 @@ class GBRS_RadarStationHud
             py = -dirZ / len;
         }
 
-        float size = 8.0;
+        float size = 11.0;
         float tx = -py;
         float ty = px;
         float noseX = bx + px * size;
@@ -1637,6 +1672,17 @@ class GBRS_RadarStationHud
         chev.m_iColor = color;
         chev.m_Vertices = verts;
         m_PpiAll.Insert(chev);
+    }
+
+    protected void DrawPpiHeadingStick(float bx, float by, float dirX, float dirZ, int color)
+    {
+        float len = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+        if (len < 0.001)
+            return;
+
+        float px = dirX / len;
+        float py = -dirZ / len;
+        DrawSolidPpiLine(bx, by, bx + px * 18.0, by + py * 18.0, color, 2.0);
     }
 
     protected void DrawPpiLabel(float unitX, float unitY, string text, int color)

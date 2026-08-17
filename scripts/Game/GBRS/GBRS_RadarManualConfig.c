@@ -22,7 +22,7 @@ class GBRS_RadarManualConfig
     float m_DemClutterScale = 1.0;
     float m_ElevationBeamwidthDeg = 16.0;
     float m_AzimuthBeamwidthDeg = 2.5;
-    float m_UpdateIntervalS = 0.02;
+    float m_UpdateIntervalS = 0.04;
     float m_PeakPowerW = 120000.0;
     float m_RangeMaxM = 7000.0;
 
@@ -52,7 +52,7 @@ class GBRS_RadarManualConfig
         m_DemClutterScale = 1.0;
         m_ElevationBeamwidthDeg = 16.0;
         m_AzimuthBeamwidthDeg = 2.5;
-        m_UpdateIntervalS = 0.02;
+        m_UpdateIntervalS = 0.04;
         m_PeakPowerW = 120000.0;
     }
 

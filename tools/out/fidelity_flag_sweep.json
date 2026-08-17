@@ -1,0 +1,1981 @@
+{
+  "trials": 80,
+  "flag_names": [
+    "dem_clutter",
+    "atm_loss",
+    "weather_rain",
+    "two_ray",
+    "refraction",
+    "nlos",
+    "knife",
+    "cfar_gate",
+    "cfar_thermal_fill"
+  ],
+  "cost_weight": {
+    "dem_clutter": 2.0,
+    "atm_loss": 0.2,
+    "weather_rain": 0.3,
+    "two_ray": 0.8,
+    "refraction": 0.3,
+    "nlos": 1.5,
+    "knife": 3.0,
+    "cfar_gate": 1.0,
+    "cfar_thermal_fill": 0.4
+  },
+  "cost_only_not_in_pd_chain": {
+    "clutter_map": 1.2,
+    "dem_span_occlusion": 4.0,
+    "esm_receive": 2.0,
+    "dwell_scheduler": 3.0,
+    "prf_folds": 0.2,
+    "measurement_noise": 0.2
+  },
+  "geometry": {
+    "us": {
+      "unambiguous_range_m": 37474.05725,
+      "unambiguous_velocity_ms": 33.31027311111111,
+      "range_fold_at_max": false,
+      "doppler_fold_at_50ms": true,
+      "radio_horizon_m": 48524.850361904966,
+      "inside_horizon_at_max": true
+    },
+    "ussr": {
+      "unambiguous_range_m": 749481.145,
+      "unambiguous_velocity_ms": 93.685143125,
+      "range_fold_at_max": false,
+      "doppler_fold_at_50ms": false,
+      "radio_horizon_m": 48524.850361904966,
+      "inside_horizon_at_max": true
+    }
+  },
+  "named_packs": {
+    "vacuum": {
+      "pack": "none",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 0.0,
+      "score": 6.255,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9625,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.56
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.19
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.43
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 43.18
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.01
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.33
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    "rdf_airtest": {
+      "pack": "none",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 0.0,
+      "score": 6.255,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9625,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.56
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.19
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.43
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 43.18
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.01
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.33
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    "rdf_product_defaults": {
+      "pack": "dem_clutter+nlos+knife+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": true,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 7.5,
+      "score": 5.0925,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.95,
+          "mean_snr_db": 22.23
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.52
+        },
+        "head_4km": {
+          "pd_cfar": 0.95,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 29.81
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.925,
+          "pd_snr": 0.95,
+          "mean_snr_db": 22.24
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.7625,
+          "pd_snr": 0.7625,
+          "mean_snr_db": 8.23
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -49.19
+        },
+        "head_4km": {
+          "pd_cfar": 0.6875,
+          "pd_snr": 0.6875,
+          "mean_snr_db": 6.33
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.1,
+          "pd_snr": 0.1,
+          "mean_snr_db": -1.46
+        },
+        "cfar_far": 0.0
+      }
+    },
+    "gbrs_full": {
+      "pack": "dem_clutter+atm_loss+two_ray+refraction+nlos+knife+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": true,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 9.2,
+      "score": 7.8675,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.975,
+          "mean_snr_db": 25.7
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.29
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.87
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.9125,
+          "pd_snr": 0.95,
+          "mean_snr_db": 22.08
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.5
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.93
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.19
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.1,
+          "pd_snr": 0.1,
+          "mean_snr_db": -1.49
+        },
+        "cfar_far": 0.0
+      }
+    },
+    "gbrs_full_rain": {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+refraction+nlos+knife+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": true,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 9.5,
+      "score": 7.9425,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9375,
+          "mean_snr_db": 22.73
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.27
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.8875,
+          "pd_snr": 0.925,
+          "mean_snr_db": 20.48
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.1,
+          "pd_snr": 0.1,
+          "mean_snr_db": -1.65
+        },
+        "cfar_far": 0.0
+      }
+    }
+  },
+  "top15_by_score": [
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 4.3,
+      "score": 10.005,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.67
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.975,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.14
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+refraction+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 4.6,
+      "score": 10.005,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.67
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.975,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.14
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+knife+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 7.3,
+      "score": 10.005,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.67
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.975,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.14
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0125,
+          "pd_snr": 0.0125,
+          "mean_snr_db": -4.9
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+refraction+knife+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 7.6,
+      "score": 10.005,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.67
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.975,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.14
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0125,
+          "pd_snr": 0.0125,
+          "mean_snr_db": -4.9
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.2,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+two_ray+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.4,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.975,
+          "mean_snr_db": 25.7
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.29
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.87
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.5
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.93
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.19
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray+refraction+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.5,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+weather_rain+two_ray+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.5,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+two_ray+refraction+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.7,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.975,
+          "mean_snr_db": 25.7
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.29
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.87
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.5
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.93
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.19
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.7,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9375,
+          "mean_snr_db": 22.73
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.27
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+weather_rain+two_ray+refraction+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.8,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+refraction+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 5.0,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9375,
+          "mean_snr_db": 22.73
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.27
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray+knife+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 7.2,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0125,
+          "pd_snr": 0.0125,
+          "mean_snr_db": -4.72
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+two_ray+knife+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 7.4,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.975,
+          "mean_snr_db": 25.7
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.29
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.87
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.5
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.93
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.19
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0125,
+          "pd_snr": 0.0125,
+          "mean_snr_db": -4.74
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray+refraction+knife+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": true,
+        "nlos": false,
+        "knife": true,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 7.5,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0125,
+          "pd_snr": 0.0125,
+          "mean_snr_db": -4.72
+        },
+        "cfar_far": 0.0
+      }
+    }
+  ],
+  "pareto_score_then_cost": [
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 4.3,
+      "score": 10.005,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.67
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.975,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.14
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 4.2,
+      "score": 9.93,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.58
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 33.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray+cfar_gate",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 3.8,
+      "score": 9.8925,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9125,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.75
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.9
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+atm_loss+weather_rain+two_ray",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 3.3,
+      "score": 9.7425,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9625,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.67
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.09
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 31.14
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.4625,
+          "pd_snr": 0.4625,
+          "mean_snr_db": 3.1
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -54.33
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.03
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "dem_clutter+two_ray",
+      "flags": {
+        "dem_clutter": true,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": true,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 2.8,
+      "score": 9.6675,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 25.75
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -31.01
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.9
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.5375,
+          "pd_snr": 0.5375,
+          "mean_snr_db": 3.56
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -53.87
+        },
+        "head_4km": {
+          "pd_cfar": 0.6125,
+          "pd_snr": 0.6125,
+          "mean_snr_db": 5.21
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "atm_loss+weather_rain+cfar_gate+cfar_thermal_fill",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": true
+      },
+      "cost": 1.9,
+      "score": 8.8425,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.7375,
+          "pd_snr": 0.925,
+          "mean_snr_db": 19.52
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -37.27
+        },
+        "head_4km": {
+          "pd_cfar": 0.9375,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 30.88
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 1.0,
+          "mean_snr_db": 42.51
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.47
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.44
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "atm_loss+weather_rain+cfar_gate",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 1.5,
+      "score": 8.5925,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.775,
+          "pd_snr": 0.925,
+          "mean_snr_db": 19.48
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -37.27
+        },
+        "head_4km": {
+          "pd_cfar": 0.9375,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 30.67
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 42.72
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.47
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.15
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "cfar_gate",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": true,
+        "cfar_thermal_fill": false
+      },
+      "cost": 1.0,
+      "score": 6.5175,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.875,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.56
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.19
+        },
+        "head_4km": {
+          "pd_cfar": 0.95,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.43
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 43.18
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.01
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.33
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "atm_loss+weather_rain",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": true,
+        "weather_rain": true,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 0.5,
+      "score": 6.3675,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.925,
+          "pd_snr": 0.925,
+          "mean_snr_db": 19.48
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -37.27
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 30.67
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 42.72
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.47
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.15
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "atm_loss",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": true,
+        "weather_rain": false,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 0.2,
+      "score": 6.2925,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.95,
+          "pd_snr": 0.95,
+          "mean_snr_db": 22.28
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.47
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.27
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 43.12
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.07
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.31
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    },
+    {
+      "pack": "none",
+      "flags": {
+        "dem_clutter": false,
+        "atm_loss": false,
+        "weather_rain": false,
+        "two_ray": false,
+        "refraction": false,
+        "nlos": false,
+        "knife": false,
+        "cfar_gate": false,
+        "cfar_thermal_fill": false
+      },
+      "cost": 0.0,
+      "score": 6.255,
+      "us": {
+        "head_7km": {
+          "pd_cfar": 0.9625,
+          "pd_snr": 0.9625,
+          "mean_snr_db": 22.56
+        },
+        "tang_7km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -34.19
+        },
+        "head_4km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 32.43
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      },
+      "ussr": {
+        "head_10km": {
+          "pd_cfar": 0.9875,
+          "pd_snr": 0.9875,
+          "mean_snr_db": 43.18
+        },
+        "tang_10km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -14.01
+        },
+        "head_4km": {
+          "pd_cfar": 1.0,
+          "pd_snr": 1.0,
+          "mean_snr_db": 59.33
+        },
+        "blocked_4km": {
+          "pd_cfar": 0.0,
+          "pd_snr": 0.0,
+          "mean_snr_db": -300.0
+        },
+        "cfar_far": 0.0
+      }
+    }
+  ],
+  "gbrs_full_rank": 95,
+  "rdf_defaults_rank": 309
+}

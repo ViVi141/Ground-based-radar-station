@@ -27,6 +27,21 @@ class GBRS_RadarStationConstants
     // the FRB pad on the same placement.
     static const int BUILDING_VALUE = 250;
 
+    // Parked beam does not need beam-overlap dwells. 8 Hz is enough for TWS
+    // kinematics and keeps ScanOnce off the 60 fps cadence.
+    static const float STARE_UPDATE_INTERVAL_S = 0.12;
+
+    // RDF clamps classify to 256. Eden sphere discovery queues ~15k DYNAMIC
+    // entities; infantry fail IsRadarCandidate only after that queue drains.
+    static const int SCATTERER_CLASSIFY_PER_TICK = 256;
+    static const int SCATTERER_REFRESH_PER_TICK = 128;
+    static const int SCATTERER_MAX_ENTRIES = 512;
+    // RDF Configure floors this at 0.25 s. 1 s is enough for new vehicles
+    // and avoids a 7–10 km sphere query four times a second after the
+    // first fill (s_Seen already skips re-queue).
+    static const float SCATTERER_DISCOVERY_INTERVAL_S = 1.0;
+    static const float SCATTERER_DISCOVERY_RANGE_SCALE = 1.25;
+
     //------------------------------------------------------------------------------------------------
     static bool IsRadarPrefab(ResourceName prefab)
     {

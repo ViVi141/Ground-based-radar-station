@@ -80,10 +80,9 @@ class GBRS_RadarStationConfig
         hw.Validate();
     }
 
-    // RDF 1.0.0 (2026-08-05) removed ApplyRealisticChannel / ApplyIdealChannel.
-    // Recreate the former realistic-channel profile with the opt-in Enable* APIs:
-    //   CFAR gate + thermal fill, measurement noise/bias, clear-air + weather
-    //   rain/fog loss, LOS two-ray, 4/3-Earth refraction, PRF ambiguity folds.
+    // Channel opt-in kept after tools/sweep_fidelity_flags.py (512 combos).
+    // DEM clutter + CFAR + thermal fill + two-ray move Pd; 4/3 refraction,
+    // clear-air / rain loss, and PRF range fold are no-ops inside 7–10 km.
     static void ApplyRealisticChannelOptIn(RDF_RadarSettings settings)
     {
         if (!settings)
@@ -91,28 +90,59 @@ class GBRS_RadarStationConfig
 
         settings.SetMeasurementNoise(3.5, 5.0, 0.2, 0.15);
         settings.EnableCfarThermalFill(true);
-        settings.EnableAtmosphericPathLoss(true);
         settings.EnableLosTwoRayMultipath();
-        settings.EnableAtmosphericRefraction();
-        settings.EnablePrfAmbiguityFolds(true, true);
+        settings.DisableAtmosphericPathLoss();
+        settings.m_EnableAtmosphericRefraction = false;
+        settings.m_EnableRangeAmbiguityFold = false;
+        settings.m_EnableDopplerAmbiguityFold = false;
     }
 
-    // RDF 1.0.0 system layer (layered, opt-in): dwell/resource scheduling.
-    // Fire-control dwells (locked target) and track dwells (confirmed tracks)
-    // are force-refreshed within a beam-time budget; SEARCH keeps the fair
-    // cursor, so mechanical rotation is unaffected. 20 ms budget ≈ 5× fire-
-    // control or 10× track dwells per scan — plenty for a single-station lock.
+    // Dwell scheduler adds extra ScanOnce slices for LOCK/TWS. SEARCH rotation
+    // does not use them; keep off unless a dedicated fire-control load returns.
     static void ApplySystemLayers(RDF_RadarSettings settings)
     {
         if (!settings)
             return;
 
-        settings.m_EnableDwellScheduler = true;
-        settings.m_DwellBudgetMs = 20.0;
-        settings.m_FireControlDwellPeriodS = 0.25;
-        settings.m_FireControlDwellMs = 4.0;
-        settings.m_TrackDwellPeriodS = 1.0;
-        settings.m_TrackDwellMs = 2.0;
+        settings.m_EnableDwellScheduler = false;
+    }
+
+    // RDF 1.0.2 LOS queue + BudgetGovernor default to 4–5 Hz SEARCH (16 traces
+    // per Tick, scan ≤ ~30% of one server frame, LOS cap 20). GBRS mechanical
+    // dwells are 40–50 ms (stare 120 ms) so those defaults starve the current
+    // beam. Keep the queue (flatten TraceMove spikes) but pin the per-tick
+    // slice and disable the governor.
+    static void ApplyMechanicalScanBudget(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.m_EnableLosFrameQueue = true;
+        settings.m_LosTracesPerTick = 12;
+        settings.m_LosQueueMax = 128;
+        settings.m_EnableAdaptiveBudget = false;
+    }
+
+    // RDF ProcessPending only runs when ScattererRegistry.Tick runs, and
+    // ScanOnce is the only RDF caller. Stare (120 ms) then classifies at
+    // ~8 Hz, so a 15k Eden dump sits in front of the in-beam helicopter.
+    // Pin the RDF-max classify slice; GBRS_RadarStationComponent also Ticks
+    // the registry every powered frame so the queue is not scan-gated.
+    static void ApplyScattererDiscoveryBudget(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.m_ScattererDiscoveryIntervalS =
+            GBRS_RadarStationConstants.SCATTERER_DISCOVERY_INTERVAL_S;
+        settings.m_ScattererDiscoveryRangeScale =
+            GBRS_RadarStationConstants.SCATTERER_DISCOVERY_RANGE_SCALE;
+        settings.m_ScattererClassifyPerTick =
+            GBRS_RadarStationConstants.SCATTERER_CLASSIFY_PER_TICK;
+        settings.m_ScattererRefreshPerTick =
+            GBRS_RadarStationConstants.SCATTERER_REFRESH_PER_TICK;
+        settings.m_ScattererMaxEntries =
+            GBRS_RadarStationConstants.SCATTERER_MAX_ENTRIES;
     }
 
     // Enables RDF channel / environment / track features for air search.
@@ -123,23 +153,27 @@ class GBRS_RadarStationConfig
 
         ApplyRealisticChannelOptIn(settings);
         settings.m_EnableDemClutter = true;
-        settings.m_EnableDemSpanOcclusion = true;
-        settings.m_EnableCoarseRd = true;
+        // Span occlusion needs extra DEM column samples; SURF packs rarely
+        // carry building spans, so this is cost without PPI change.
+        settings.m_EnableDemSpanOcclusion = false;
+        // Coarse RD is off in RDF product defaults; the GBRS PPI does not
+        // draw it, and 20–50 ms dwells would pay for it every scan.
+        settings.m_EnableCoarseRd = false;
         settings.m_RdCellsPerScan = 32;
         settings.m_RdMapAlpha = 0.2;
         settings.m_RdDecayPerScan = 0.97;
         settings.m_RdClutterBlend = 0.35;
-        settings.m_EnableClutterMap = true;
+        settings.m_EnableClutterMap = false;
         settings.m_ClutterMapAlpha = 0.15;
         settings.m_EnableNlosMultipath = true;
         settings.m_EnableKnifeEdgeDiffraction = true;
-        settings.m_EnableEsmReceive = true;
+        settings.m_EnableEsmReceive = false;
         settings.m_EnableRwrReporting = true;
         settings.m_EnableMeasurementSynthesis = true;
         settings.m_EnableCfarGate = true;
         settings.m_EnableCfarThermalFill = true;
-        settings.m_EnableAtmosphericLoss = true;
-        settings.m_EnableWeatherDrivenRainLoss = true;
+        settings.m_EnableAtmosphericLoss = false;
+        settings.m_EnableWeatherDrivenRainLoss = false;
         settings.m_EnableWlrHudAlerts = true;
         settings.m_FairScanCursor = true;
         settings.m_TrackCoastOnMiss = true;
@@ -151,8 +185,9 @@ class GBRS_RadarStationConfig
         // intervals; GBRS_RadarProjectileTrackerFix raises the tracker's own
         // miss allowance when mechanical scan is enabled.
         settings.m_TrackMaxMisses = 32;
-        // Wider association gates reduce track fragmentation from measurement
-        // noise during mechanical scans.
+        // RDF 1.0.2 FindGatingTrack already drops leftover plots inside an
+        // existing track gate. 8° / 600 m is wide enough for mechanical-scan
+        // measurement noise without merging a formation.
         settings.m_TrackGateAzimuthDeg = 8.0;
         settings.m_TrackGateRangeM = 600.0;
         if (!settings.m_MeasurementModel)
@@ -160,11 +195,8 @@ class GBRS_RadarStationConfig
 
         ApplyEwStack(settings);
         ApplySystemLayers(settings);
-
-        // RDF 1.0.0 clutter-boundary sharpening: asymmetric EMA (fast-down) +
-        // footprint σ⁰ mix. Keeps land/water and ridge edges crisper on the PPI
-        // without changing the detection gate.
-        settings.EnableClutterSharpen(true, settings.m_ClutterMapAlpha, 0.45, true);
+        ApplyMechanicalScanBudget(settings);
+        ApplyScattererDiscoveryBudget(settings);
     }
 
     // WLR fidelity: projectile-only counter-battery search.
@@ -196,7 +228,7 @@ class GBRS_RadarStationConfig
         settings.m_EnableDemClutter = false;
         settings.m_EnableDemSpanOcclusion = false;
         settings.m_EnableDemLosPrecheck = false;
-        settings.m_EnableCoarseRd = true;
+        settings.m_EnableCoarseRd = false;
         settings.m_RdCellsPerScan = 24;
         settings.m_RdMapAlpha = 0.15;
         settings.m_RdDecayPerScan = 0.97;
@@ -213,8 +245,8 @@ class GBRS_RadarStationConfig
         // small shell returns intermittent, which fragmented the tracker.
         settings.m_EnableCfarGate = false;
         settings.m_EnableCfarThermalFill = false;
-        settings.m_EnableAtmosphericLoss = true;
-        settings.m_EnableWeatherDrivenRainLoss = true;
+        settings.m_EnableAtmosphericLoss = false;
+        settings.m_EnableWeatherDrivenRainLoss = false;
         settings.m_EnableBallisticPrediction = true;
         settings.m_EnableWeaponLocate = true;
         settings.m_EnableDemGroundForWlr = true;
@@ -228,6 +260,13 @@ class GBRS_RadarStationConfig
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
         ApplySystemLayers(settings);
+        ApplyMechanicalScanBudget(settings);
+        ApplyScattererDiscoveryBudget(settings);
+        // RDF 1.0.2 default is 2 solves/scan (queue the rest). GBRS PPI launch
+        // / impact / ETA need the fix in the same barrage, so take the governor
+        // max and keep the overflow queue.
+        settings.m_WeaponLocateSolvesPerScan = 6;
+        settings.m_WeaponLocateQueueMax = 16;
 
         if (settings.m_EwStack)
             settings.m_EwStack.Clear();
@@ -307,9 +346,9 @@ class GBRS_RadarStationConfig
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(64);
         settings.m_Range = 7000.0;
-        // At 10 RPM the stock 2.5-degree azimuth beam moves 4.8 degrees in
-        // 80 ms, leaving permanent scan gaps. 20 ms dwells move 1.2 degrees.
-        settings.m_UpdateInterval = 0.02;
+        // 10 RPM × 2.5° beam ≈ 42 ms on target. 40 ms keeps overlap without
+        // running ScanOnce on almost every game frame (20 ms was hitching).
+        settings.m_UpdateInterval = 0.04;
         settings.m_SectorHalfAngleDeg = 180.0;
         settings.m_EnableMechanicalScan = true;
         settings.m_UseBoundsCenter = false;
@@ -318,11 +357,7 @@ class GBRS_RadarStationConfig
         settings.m_MaxLosTracesPerScan = 128;
         settings.m_FreshUpdateBudgetMin = 64;
         settings.m_FreshUpdateBudgetMax = 128;
-        settings.m_ScattererDiscoveryIntervalS = 0.25;
-        settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 96;
-        settings.m_ScattererRefreshPerTick = 128;
-        settings.m_ScattererMaxEntries = 512;
+        ApplyScattererDiscoveryBudget(settings);
         settings.m_IncludeVehicles = true;
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
@@ -344,10 +379,9 @@ class GBRS_RadarStationConfig
         ApplyFullFidelity(settings);
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_CA;
         ApplyWorkstationReadout(settings, true);
-        // Narrow 2.5° / 10 RPM otherwise splits one aircraft across beam revisits.
-        // Shared ApplyFullFidelity gates (8° / 600 m) are enough for USSR 6°.
-        settings.m_TrackGateAzimuthDeg = 14.0;
-        settings.m_TrackGateRangeM = 900.0;
+        // RDF 1.0.2 FindGatingTrack drops leftover plots already inside an
+        // existing track gate, so the old 14° / 900 m US gate would merge a
+        // formation. Keep the shared 8° / 600 m fidelity gates.
         settings.m_TrackCoastMaxSec = 16.0;
         settings.Validate();
         return settings;
@@ -369,11 +403,7 @@ class GBRS_RadarStationConfig
         settings.m_MaxLosTracesPerScan = 96;
         settings.m_FreshUpdateBudgetMin = 48;
         settings.m_FreshUpdateBudgetMax = 96;
-        settings.m_ScattererDiscoveryIntervalS = 0.25;
-        settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 96;
-        settings.m_ScattererRefreshPerTick = 128;
-        settings.m_ScattererMaxEntries = 512;
+        ApplyScattererDiscoveryBudget(settings);
         settings.m_IncludeVehicles = true;
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
@@ -415,23 +445,21 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // Shared WLR geometry: rotating projectile search with mortar elevation beams.
-    // Clutter stays in the channel; high-look beams + CFAR + include/display
-    // filters keep ground returns from dominating the operator picture.
+    // Shared WLR geometry: parked projectile search with mortar elevation beams.
+    // RDF CreateWlrSettings is stare (mechanical scan off, ScanRpm=0). Keep that
+    // contract; Demo/operator stare aims the beam. Infantry must never enter
+    // WLR discovery/display — only shells/rockets.
     static void ApplyWlrProductFlags(RDF_RadarSettings settings)
     {
         if (!settings)
             return;
 
         settings.m_SectorHalfAngleDeg = 180.0;
-        settings.m_UpdateInterval = 0.05;
+        settings.m_UpdateInterval = 0.15;
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
-        // Keep mechanical scan on so the station antenna / PPI sweep continue
-        // after switching from PD SEARCH (stock RDF WLR is stare / ScanRpm=0).
-        // Infantry must never enter WLR discovery/display — only shells/rockets.
-        settings.m_EnableMechanicalScan = true;
+        settings.m_EnableMechanicalScan = false;
         settings.m_WeaponLocateMinHits = 3;
         settings.m_WeaponLocateMinSpanS = 0.8;
         settings.m_TrackConfirmHits = 2;
@@ -449,21 +477,19 @@ class GBRS_RadarStationConfig
         if (settings.m_Hardware)
         {
             // No MTI: ballistic Doppler is not a slow-clutter notch problem.
-            // DEM clutter is off in ApplyWlrFidelity, so a horizon beam can
-            // cover the near/flat portion of the trajectory.
             settings.m_Hardware.m_EnableMti = false;
+            settings.m_Hardware.m_ScanRpm = 0.0;
             settings.m_Hardware.ClearElevationBeams();
-            settings.m_Hardware.AddElevationBeam("mortar_horizon", 8.0, 16.0, 0.0);
-            settings.m_Hardware.AddElevationBeam("mortar_low", 18.0, 22.0, 0.0);
-            settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 26.0, 0.0);
-            settings.m_Hardware.AddElevationBeam("mortar_high", 55.0, 26.0, -0.5);
+            settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
+            settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 30.0, 0.0);
+            settings.m_Hardware.AddElevationBeam("mortar_high", 55.0, 28.0, -0.5);
             settings.m_Hardware.Validate();
         }
 
         ApplyWlrFidelity(settings);
     }
 
-    // US counter-battery WLR (~8 km rotating search).
+    // US counter-battery WLR (~8 km parked search; operator/Demo stare aims).
     // Offline-tuned (tools/simulate_wlr_projectile.py + WLR_VALIDATION.md):
     // 500 kW gives ~8.6 dB at beam center and ~3.0 dB at 12 deg offset.
     // Gate 4 dB keeps center detections and drops the cheap offset lobe,
@@ -478,16 +504,11 @@ class GBRS_RadarStationConfig
         settings.m_MaxLosTracesPerScan = 96;
         settings.m_FreshUpdateBudgetMin = 48;
         settings.m_FreshUpdateBudgetMax = 96;
-        settings.m_ScattererDiscoveryIntervalS = 0.25;
-        settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 96;
-        settings.m_ScattererRefreshPerTick = 128;
-        settings.m_ScattererMaxEntries = 512;
+        ApplyScattererDiscoveryBudget(settings);
         settings.m_DetectionSnrDb = 4.0;
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 25.0;
-            settings.m_Hardware.m_ScanRpm = 10.0;
             settings.m_Hardware.m_PeakPowerW = 500000.0;
         }
         ApplyWlrProductFlags(settings);
@@ -504,7 +525,7 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // USSR counter-battery WLR (~10 km rotating search, wider beam).
+    // USSR counter-battery WLR (~10 km parked search, wider beam).
     // VHF hardware (P-18-like) gives a large lambda^2 advantage at 10 km:
     // offline chain (no clutter) shows ~30 dB center SNR — far above the gate,
     // so peak power stays at the P-18 default (250 kW, CreateP18Like). The
@@ -518,16 +539,11 @@ class GBRS_RadarStationConfig
         settings.m_MaxLosTracesPerScan = 96;
         settings.m_FreshUpdateBudgetMin = 48;
         settings.m_FreshUpdateBudgetMax = 96;
-        settings.m_ScattererDiscoveryIntervalS = 0.25;
-        settings.m_ScattererDiscoveryRangeScale = 1.25;
-        settings.m_ScattererClassifyPerTick = 96;
-        settings.m_ScattererRefreshPerTick = 128;
-        settings.m_ScattererMaxEntries = 512;
+        ApplyScattererDiscoveryBudget(settings);
         settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
         {
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
-            settings.m_Hardware.m_ScanRpm = 6.0;
         }
         ApplyWlrProductFlags(settings);
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.

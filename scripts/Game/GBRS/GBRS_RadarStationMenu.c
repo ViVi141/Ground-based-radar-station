@@ -26,7 +26,7 @@ class GBRS_PpiZoomWheelHandler : ScriptedWidgetEventHandler
 
 class GBRS_RadarStationMenu : ChimeraMenuBase
 {
-	protected static const int FEED_INTERVAL_MS = 33;
+	protected static const int FEED_INTERVAL_MS = 50;
 	protected static const int CLUSTER_INTERVAL_MS = 100;
 	protected static const int PERSIST_MAX_BLIPS = 512;
 	protected static const int DISPLAY_MAX_BLIPS = 64;
