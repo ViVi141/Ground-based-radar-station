@@ -29,6 +29,13 @@ class GBRS_RadarStationConstants
     // the FRB pad on the same placement.
     static const int BUILDING_VALUE = 250;
 
+    // Locked battlefield intel nets. kHz, 200 kHz steps, inside AN/PRC-77
+    // 30000–76000. Offset from vanilla platoon (US 48000 / USSR 42000).
+    static const int INTEL_FREQ_US_KHZ = 45600;
+    static const int INTEL_FREQ_USSR_KHZ = 39600;
+    static const float INTEL_RADIO_RANGE_M = 25000.0;
+    static const string INTEL_CHANNEL_NAME = "RADAR NET";
+
     // Parked beam does not need beam-overlap dwells. 8 Hz is enough for TWS
     // kinematics and keeps ScanOnce off the 60 fps cadence.
     static const float STARE_UPDATE_INTERVAL_S = 0.12;
@@ -43,6 +50,41 @@ class GBRS_RadarStationConstants
     // first fill (s_Seen already skips re-queue).
     static const float SCATTERER_DISCOVERY_INTERVAL_S = 1.0;
     static const float SCATTERER_DISCOVERY_RANGE_SCALE = 1.25;
+
+    //------------------------------------------------------------------------------------------------
+    static bool IsIntelFrequencyKhz(int freqKhz)
+    {
+        if (freqKhz == INTEL_FREQ_US_KHZ)
+            return true;
+        if (freqKhz == INTEL_FREQ_USSR_KHZ)
+            return true;
+        return false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    static string GetIntelChannelName(int freqKhz)
+    {
+        if (!IsIntelFrequencyKhz(freqKhz))
+            return "";
+        return INTEL_CHANNEL_NAME;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    static int GetIntelFrequencyKhz(Faction faction, EGBRS_RadarFactionPreset fallbackPreset)
+    {
+        if (faction)
+        {
+            FactionKey key = faction.GetFactionKey();
+            if (key == "USSR")
+                return INTEL_FREQ_USSR_KHZ;
+            if (key == "US")
+                return INTEL_FREQ_US_KHZ;
+        }
+
+        if (fallbackPreset == EGBRS_RadarFactionPreset.USSR)
+            return INTEL_FREQ_USSR_KHZ;
+        return INTEL_FREQ_US_KHZ;
+    }
 
     //------------------------------------------------------------------------------------------------
     static bool IsRadarPrefab(ResourceName prefab)

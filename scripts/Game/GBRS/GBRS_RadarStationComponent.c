@@ -710,6 +710,7 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         m_bPowered = false;
         SetAntennaSpinning(false);
+        SyncIntelRadio(false);
     }
 
     protected void OnCompositionFullyBuilt(bool spawned)
@@ -1344,6 +1345,7 @@ class GBRS_RadarStationComponent : ScriptComponent
 
             if (IsAuthority())
                 StartSupplyDrain();
+            SyncIntelRadio(true);
             return;
         }
 
@@ -1362,6 +1364,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         StopSupplyDrain();
         ClearContactEvents();
         GBRS_RadarStationMenu.CloseIfBound(this);
+        SyncIntelRadio(false);
     }
 
     protected bool IsValidWorkstationMode(string mode)
@@ -3128,6 +3131,9 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         affiliation.SetAffiliatedFactionByKey(factionKey);
+
+        if (m_bPowered)
+            SyncIntelRadio(true);
     }
 
     protected SCR_ResourceComponent ResolveLinkedProviderResourceComponent()
@@ -3237,5 +3243,12 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_DetectVisual.Clear();
         if (m_aGeomLayerBackups)
             m_aGeomLayerBackups.Clear();
+        SyncIntelRadio(false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void SyncIntelRadio(bool powered)
+    {
+        GBRS_IntelRadioNet.ConfigureStationRadio(this, powered);
     }
 }

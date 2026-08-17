@@ -6,7 +6,7 @@
 //! Conflict-base early-warning integration.
 //!
 //! GBRS ships `GBRS_CampaignRadarWarning` as the stock Conflict consumer:
-//! faction popups for new air contacts and WLR impacts inside a friendly base.
+//! locked intel-net radio for tuned players, faction popups for the rest.
 //!
 //! Example:
 //!   GBRS_RadarStationEvents.OnRadarContact.Insert(MyContactHandler);

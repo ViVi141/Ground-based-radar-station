@@ -267,4 +267,29 @@ modded class SCR_PlayerController
 
         popup.PopupMsg(title, 6, subtitle);
     }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_NotifyIntelRadio(string title, string subtitle)
+    {
+        if (RplSession.Mode() == RplMode.None)
+        {
+            RpcDo_GBRS_IntelRadio(title, subtitle);
+            return;
+        }
+
+        Rpc(RpcDo_GBRS_IntelRadio, title, subtitle);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+    protected void RpcDo_GBRS_IntelRadio(string title, string subtitle)
+    {
+        SCR_UISoundEntity.SoundEvent(SCR_SoundEvent.SOUND_RADIO_TURN_ON);
+
+        SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
+        if (!popup)
+            return;
+
+        popup.PopupMsg(title, 6, subtitle);
+    }
 }

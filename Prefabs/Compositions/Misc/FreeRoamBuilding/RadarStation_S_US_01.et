@@ -67,6 +67,18 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    m_bDebugLog 0
    m_vDestroyedFireOffset -3.5 2.5 -1.5
   }
+  BaseRadioComponent "{69FCEDCE10011050}" {
+   "Turned on" 0
+   Transceivers {
+    RadioTransceiver "{69FCEDCE10011051}" {
+     ChannelFrequency 45600
+     "Transmitting Range" 25000
+     "Min tunable frequency" 30000
+     "Max tunable frequency" 76000
+     "Frequency resolution" 200
+    }
+   }
+  }
   GBRS_RadarStationDamageManagerComponent "{69FCEDCE10011020}" {
    "Additional hit zones" {
     SCR_HitZone Default {

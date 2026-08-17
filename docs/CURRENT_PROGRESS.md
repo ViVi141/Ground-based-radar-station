@@ -14,7 +14,7 @@
 4. **根因修复**：原版 `EvaluateBuildingStatus` 在 `ToBuildValue==0` 时会立刻 `SpawnComposition()` 并删掉四角桩。雷达强制建造值 250。
 5. 施工期间推迟 RDF `Configure`，减轻 `Cannot set entity as ACTIVE, it's not registered!`。
 6. E_ stub Flags 与官方 FreeRoam 对齐：`0x100000 0x403`。
-7. Conflict 敌情消费者：`GBRS_CampaignRadarWarning` 订阅事件 API，向覆盖基地所属阵营弹 `RADAR CONTACT` / `INCOMING FIRE`（三位地图格）。不改 `m_bEnemiesPresent`。
+7. Conflict 敌情消费者：`GBRS_CampaignRadarWarning` 订阅事件 API。开机雷达在锁定情报网（美 45.6 / 苏 39.6 MHz）发 `ScriptedRadioMessage`；未调频的己方玩家仍弹 `RADAR CONTACT` / `INCOMING FIRE`。不改 `m_bEnemiesPresent`。
 8. 伤害调试 Print/Shape 默认关闭（组件 Attribute `m_bDebugDraw`）。
 9. 美军 PD 关联门加宽到 14° / 900 m，PPI 显示聚类 8° / 700 m。
 

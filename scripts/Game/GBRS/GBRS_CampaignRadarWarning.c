@@ -3,8 +3,8 @@
 //!
 //! Vanilla EvaluateEnemyPresence only looks at characters inside the HQ
 //! compound. Distant air search must not set m_bEnemiesPresent (that flag
-//! locks the build button). This class instead radio-warns the station
-//! faction: new air contacts, and WLR impacts that land in a friendly base.
+//! locks the build button). Powered stations transmit on the locked intel
+//! net; players not tuned still get the faction popup.
 class GBRS_CampaignRadarWarning
 {
     protected static const float AIR_COOLDOWN_S = 20.0;
@@ -62,7 +62,7 @@ class GBRS_CampaignRadarWarning
         if (covering)
             subtitle = grid + "  " + covering.GetBaseNameUpperCase();
 
-        NotifyFaction(stationFaction, "RADAR CONTACT", subtitle);
+        BroadcastWarning(station, stationFaction, "RADAR CONTACT", subtitle);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ class GBRS_CampaignRadarWarning
 
         string grid = GBRS_MapGrid.Format(fix.m_ImpactPos);
         string subtitle = grid + "  " + threatened.GetBaseNameUpperCase();
-        NotifyFaction(stationFaction, "INCOMING FIRE", subtitle);
+        BroadcastWarning(station, stationFaction, "INCOMING FIRE", subtitle);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -173,7 +173,22 @@ class GBRS_CampaignRadarWarning
     }
 
     //------------------------------------------------------------------------------------------------
-    protected static void NotifyFaction(notnull Faction faction, string title, string subtitle)
+    protected static void BroadcastWarning(
+        GBRS_RadarStationComponent station,
+        notnull Faction faction,
+        string title,
+        string subtitle)
+    {
+        bool sentRadio = GBRS_IntelRadioNet.TransmitFromStation(station, title, subtitle);
+        NotifyFaction(faction, title, subtitle, sentRadio);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static void NotifyFaction(
+        notnull Faction faction,
+        string title,
+        string subtitle,
+        bool skipTunedPlayers)
     {
         PlayerManager playerManager = GetGame().GetPlayerManager();
         if (!playerManager)
@@ -189,6 +204,12 @@ class GBRS_CampaignRadarWarning
                 continue;
             if (playerFaction != faction)
                 continue;
+
+            if (skipTunedPlayers)
+            {
+                if (GBRS_IntelRadioNet.IsPlayerTunedToIntel(playerId))
+                    continue;
+            }
 
             SCR_PlayerController playerController =
                 SCR_PlayerController.Cast(playerManager.GetPlayerController(playerId));
