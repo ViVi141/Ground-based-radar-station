@@ -269,22 +269,22 @@ modded class SCR_PlayerController
     }
 
     //------------------------------------------------------------------------------------------------
-    void GBRS_NotifyIntelRadio(string title, string subtitle)
+    void GBRS_NotifyIntelRadio(string title, string subtitle, int voiceKind, int gridPacked, float quality)
     {
         if (RplSession.Mode() == RplMode.None)
         {
-            RpcDo_GBRS_IntelRadio(title, subtitle);
+            RpcDo_GBRS_IntelRadio(title, subtitle, voiceKind, gridPacked, quality);
             return;
         }
 
-        Rpc(RpcDo_GBRS_IntelRadio, title, subtitle);
+        Rpc(RpcDo_GBRS_IntelRadio, title, subtitle, voiceKind, gridPacked, quality);
     }
 
     //------------------------------------------------------------------------------------------------
     [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-    protected void RpcDo_GBRS_IntelRadio(string title, string subtitle)
+    protected void RpcDo_GBRS_IntelRadio(string title, string subtitle, int voiceKind, int gridPacked, float quality)
     {
-        SCR_UISoundEntity.SoundEvent(SCR_SoundEvent.SOUND_RADIO_TURN_ON);
+        GBRS_IntelRadioSoundEntity.PlayIntelVoice(voiceKind, gridPacked, quality);
 
         SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
         if (!popup)

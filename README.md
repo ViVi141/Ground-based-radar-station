@@ -37,7 +37,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 | 美军 | **45.6 MHz**（45600 kHz） | `RADAR NET` |
 | 苏军 | **39.6 MHz**（39600 kHz） | `RADAR NET` |
 
-开机才发射，用阵营加密，距离约 25 km。手台调到该频后 CHANNEL 按键被拒。没调频的己方玩家仍弹 `RADAR CONTACT` / `INCOMING FIRE` + 三位地图格。不会改原版 `EvaluateEnemyPresence`（那是营区内步兵，会锁建造按钮）。不要调到排级网（美 48.0 / 苏 42.0）。
+开机才发射，用阵营加密，距离约 25 km。调到该频会听到原版电台人声（空情：发现目标；炮击：基地遇袭，美/俄语）再加弹窗。没调频的己方玩家仍只弹 `RADAR CONTACT` / `INCOMING FIRE`。CHANNEL 按键被拒。不会改原版 `EvaluateEnemyPresence`。不要调到排级网（美 48.0 / 苏 42.0）。音频设置里关掉 HQ Announcer 则只留弹窗。
 
 ## 外形与射频
 

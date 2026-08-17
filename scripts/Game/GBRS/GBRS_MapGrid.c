@@ -18,4 +18,20 @@ class GBRS_MapGrid
 
         return Math.Floor(east).ToString(3, 0) + " " + Math.Floor(north).ToString(3, 0);
     }
+
+    //------------------------------------------------------------------------------------------------
+    //! Packed 6-digit grid for HQ radio Grid signal: EEE * 1000 + NNN.
+    static int Pack(vector pos)
+    {
+        float east = pos[0] * PRECISION;
+        float north = pos[2] * PRECISION;
+        if (east < 0.0)
+            east = WRAP + east;
+        if (north < 0.0)
+            north = WRAP + north;
+
+        int eastI = Math.Floor(east);
+        int northI = Math.Floor(north);
+        return eastI * 1000 + northI;
+    }
 }

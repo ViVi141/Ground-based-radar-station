@@ -52,7 +52,12 @@ class GBRS_IntelRadioNet
     }
 
     //------------------------------------------------------------------------------------------------
-    static bool TransmitFromStation(GBRS_RadarStationComponent station, string title, string subtitle)
+    static bool TransmitFromStation(
+        GBRS_RadarStationComponent station,
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked)
     {
         if (!station)
             return false;
@@ -86,6 +91,8 @@ class GBRS_IntelRadioNet
 
         GBRS_IntelRadioMsg msg = new GBRS_IntelRadioMsg();
         msg.SetIntelText(title, subtitle);
+        msg.SetVoiceKind(voiceKind);
+        msg.SetGridPacked(gridPacked);
         msg.SetEncryptionKey(radio.GetEncryptionKey());
         transceiver.BeginTransmissionFreq(msg, freqKhz);
         return true;

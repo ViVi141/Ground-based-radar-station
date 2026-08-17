@@ -62,7 +62,13 @@ class GBRS_CampaignRadarWarning
         if (covering)
             subtitle = grid + "  " + covering.GetBaseNameUpperCase();
 
-        BroadcastWarning(station, stationFaction, "RADAR CONTACT", subtitle);
+        BroadcastWarning(
+            station,
+            stationFaction,
+            "RADAR CONTACT",
+            subtitle,
+            GBRS_RadarStationConstants.INTEL_VOICE_AIR,
+            GBRS_MapGrid.Pack(target.m_Position));
     }
 
     //------------------------------------------------------------------------------------------------
@@ -100,7 +106,13 @@ class GBRS_CampaignRadarWarning
 
         string grid = GBRS_MapGrid.Format(fix.m_ImpactPos);
         string subtitle = grid + "  " + threatened.GetBaseNameUpperCase();
-        BroadcastWarning(station, stationFaction, "INCOMING FIRE", subtitle);
+        BroadcastWarning(
+            station,
+            stationFaction,
+            "INCOMING FIRE",
+            subtitle,
+            GBRS_RadarStationConstants.INTEL_VOICE_WLR,
+            GBRS_MapGrid.Pack(fix.m_ImpactPos));
     }
 
     //------------------------------------------------------------------------------------------------
@@ -177,9 +189,12 @@ class GBRS_CampaignRadarWarning
         GBRS_RadarStationComponent station,
         notnull Faction faction,
         string title,
-        string subtitle)
+        string subtitle,
+        int voiceKind,
+        int gridPacked)
     {
-        bool sentRadio = GBRS_IntelRadioNet.TransmitFromStation(station, title, subtitle);
+        bool sentRadio = GBRS_IntelRadioNet.TransmitFromStation(
+            station, title, subtitle, voiceKind, gridPacked);
         NotifyFaction(faction, title, subtitle, sentRadio);
     }
 

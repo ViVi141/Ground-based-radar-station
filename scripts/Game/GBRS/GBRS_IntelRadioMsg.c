@@ -5,12 +5,26 @@ class GBRS_IntelRadioMsg : ScriptedRadioMessage
 {
     protected string m_sTitle;
     protected string m_sSubtitle;
+    protected int m_iVoiceKind;
+    protected int m_iGridPacked;
 
     //------------------------------------------------------------------------------------------------
     void SetIntelText(string title, string subtitle)
     {
         m_sTitle = title;
         m_sSubtitle = subtitle;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void SetVoiceKind(int voiceKind)
+    {
+        m_iVoiceKind = voiceKind;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void SetGridPacked(int gridPacked)
+    {
+        m_iGridPacked = gridPacked;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -57,6 +71,6 @@ class GBRS_IntelRadioMsg : ScriptedRadioMessage
         if (!gbrsController)
             return;
 
-        gbrsController.GBRS_NotifyIntelRadio(m_sTitle, m_sSubtitle);
+        gbrsController.GBRS_NotifyIntelRadio(m_sTitle, m_sSubtitle, m_iVoiceKind, m_iGridPacked, quality);
     }
 }

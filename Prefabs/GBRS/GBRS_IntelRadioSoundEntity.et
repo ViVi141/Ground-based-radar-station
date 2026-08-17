@@ -1,0 +1,12 @@
+GBRS_IntelRadioSoundEntity {
+ ID "69FCEDCEA0050001"
+ components {
+  SimpleSoundComponent "{69FCEDCEA0050002}" {
+   Filenames {
+    "{F74F3305B3A080B9}Sounds/RadioProtocol/RadioProtocol_Campaign_SL_US.acp" "{FC7A7A9F92D1E225}Sounds/RadioProtocol/RadioProtocol_Campaign_SL_RU.acp" "{4C150398BA2526DE}Sounds/VO/HQCommander/VO_HQC_BattalionHQ.acp" "{AE2F5A66C21FD675}Sounds/VO/HQCommander/VO_HQC_Commander_Miscellaneous_1.acp" "{F34ADBB7D82FD8FF}Sounds/VO/HQCommander/VO_HQC_Commander_Objectives_1.acp" "{3D4053893395ED97}Sounds/VO/HQCommander/VO_HQC_Commander_Objectives_2.acp" "{4A4A3B01C73702E7}Sounds/VO/HQCommander/VO_HQC_Commander_Objectives_3.acp" "{060DF7BB525E2DA9}Sounds/VO/HQCommander/VO_HQC_Commander_Support_1.acp" "{38DE725F01D84C95}Sounds/VO/HQCommander/VO_HQC_GridCoordinates_Commander.acp" "{EAF0170F393462F3}Sounds/VO/HQCommander/VO_HQC_GridCoordinates_SquadL.acp" "{89602EB34B93DE6B}Sounds/VO/HQCommander/VO_HQC_SquadL_Objectives_1.acp" "{A22881EF74C0EE8E}Sounds/VO/HQCommander/VO_HQC_SquadL_Objectives_2.acp" "{2D95B2FE947D32EA}Sounds/VO/HQCommander/VO_HQC_SquadL_Support_1.acp" "{B48B0B67899A037A}Sounds/VO/HQCommander/VO_HQC_SquadL_Support_2.acp" "{BEC7770A04409030}Sounds/RadioProtocol/RadioProtocol_Report_US.acp" "{B42CA0D861799AE9}Sounds/RadioProtocol/RadioProtocol_Report_RU.acp" "{7F439DEA74FDB888}Sounds/RadioProtocol/RadioProtocol_Combat_US.acp" "{B3A7EF95B5D7D620}Sounds/RadioProtocol/RadioProtocol_Combat_RU.acp"
+   }
+   DistanceManagement 0
+  }
+ }
+ coords 0 0 0
+}
