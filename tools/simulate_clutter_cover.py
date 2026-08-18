@@ -130,11 +130,26 @@ class Hardware:
     prf_hz: float
     scan_rpm: float
     elevation_beams: list[ElevationBeam] = field(default_factory=list)
+    receiver_recovery_s: float = 0.0
 
     def wavelength_m(self) -> float:
         if self.frequency_hz <= 0.0:
             return 1.0
         return C_LIGHT / self.frequency_hz
+
+    def tx_blanking_time_s(self) -> float:
+        blank = self.pulse_width_s
+        if blank < 0.0:
+            blank = 0.0
+        if self.receiver_recovery_s > 0.0:
+            blank = blank + self.receiver_recovery_s
+        return blank
+
+    def min_detectable_range_m(self) -> float:
+        blank = self.tx_blanking_time_s()
+        if blank <= 0.0:
+            return 0.0
+        return C_LIGHT * blank * 0.5
 
     def processing_gain(self) -> float:
         # RDF_RadarHardware.GetProcessingGain
@@ -242,12 +257,14 @@ def make_us() -> tuple[Hardware, Settings]:
             ElevationBeam("mid", 18.0, 24.0, 0.0),
             ElevationBeam("high", 40.0, 30.0, -1.0),
         ],
+        receiver_recovery_s=0.2e-6,
     )
     settings = Settings(
         range_m=7000.0,
         update_interval_s=0.02,
         detection_snr_db=8.0,
         dem_clutter_scale=1.0,
+        min_distance_m=hw.min_detectable_range_m(),
     )
     return hw, settings
 
@@ -274,12 +291,14 @@ def make_ussr() -> tuple[Hardware, Settings]:
             ElevationBeam("mid", 18.0, 24.0, 0.0),
             ElevationBeam("high", 42.0, 30.0, -1.0),
         ],
+        receiver_recovery_s=1.0e-6,
     )
     settings = Settings(
         range_m=10000.0,
         update_interval_s=0.04,
         detection_snr_db=5.0,
         dem_clutter_scale=0.10,
+        min_distance_m=hw.min_detectable_range_m(),
     )
     return hw, settings
 
@@ -923,6 +942,40 @@ def apply_cfar_single_target(
 # --- PhysicalDetect.Process (active radar path) ---
 
 
+def effective_min_distance_m(hw: Hardware, settings: Settings) -> float:
+    pulse_min = hw.min_detectable_range_m()
+    floor = settings.min_distance_m
+    if pulse_min > floor:
+        return pulse_min
+    return floor
+
+
+def undetected_result(
+    rcs_m2: float,
+    azimuth_offset_deg: float,
+    elevation_deg: float,
+) -> DetectResult:
+    return DetectResult(
+        False,
+        False,
+        -300.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        rcs_m2,
+        "",
+        azimuth_offset_deg,
+        elevation_deg,
+        0.0,
+        0.0,
+    )
+
+
 def physical_detect(
     hw: Hardware,
     settings: Settings,
@@ -941,6 +994,9 @@ def physical_detect(
     cell_size_m: float = CELL_SIZE_M,
 ) -> DetectResult:
     elevation_deg = math.degrees(math.atan2(target_agl_m - radar_agl_m, max(1.0, range_m)))
+    min_d = effective_min_distance_m(hw, settings)
+    if range_m <= min_d:
+        return undetected_result(rcs_m2, azimuth_offset_deg, elevation_deg)
 
     multipath = 1.0
     used_knife = False

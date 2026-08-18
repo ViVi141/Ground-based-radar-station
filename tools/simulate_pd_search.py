@@ -14,6 +14,7 @@ Scenarios:
   4. Radial speed effects: head-on (fast), tangential (MTI null -> rotor
      sidebands only), hovering (rotor sidebands)
   5. Low-altitude (near beam lower edge) vs cruise AGL
+  6. Pulse blind zone: Pd=0 inside 0.5 Rmin, recovers past 1.1 Rmin
 
 Reuses the 1:1 offline chain from simulate_clutter_cover.py.
 """
@@ -120,6 +121,47 @@ def main() -> None:
     )
     report_scenario("low AGL head-on 50 (range 3 km)", us_hw, us_set_low, 3000, 50.0, 0.0, "scan")
     report_scenario("low AGL tangential 0 (range 3 km)", us_hw, us_set_low, 3000, 0.0, 0.0, "scan")
+
+    print("\n--- Pulse blind zone (TX blanking Rmin, beam center, UH-1) ---")
+    us_rmin = s.effective_min_distance_m(us_hw, us_set)
+    ussr_rmin = s.effective_min_distance_m(ussr_hw, ussr_set)
+    print("  US Rmin=%.1f m   USSR Rmin=%.1f m" % (us_rmin, ussr_rmin))
+    report_scenario(
+        "US inside 0.5 Rmin (must miss)",
+        us_hw,
+        us_set,
+        0.5 * us_rmin,
+        50.0,
+        0.0,
+        "center",
+    )
+    report_scenario(
+        "US outside 1.1 Rmin (must recover)",
+        us_hw,
+        us_set,
+        1.1 * us_rmin,
+        50.0,
+        0.0,
+        "center",
+    )
+    report_scenario(
+        "USSR inside 0.5 Rmin (must miss)",
+        ussr_hw,
+        ussr_set,
+        0.5 * ussr_rmin,
+        50.0,
+        0.0,
+        "center",
+    )
+    report_scenario(
+        "USSR outside 1.1 Rmin (must recover)",
+        ussr_hw,
+        ussr_set,
+        1.1 * ussr_rmin,
+        50.0,
+        0.0,
+        "center",
+    )
 
 
 if __name__ == "__main__":

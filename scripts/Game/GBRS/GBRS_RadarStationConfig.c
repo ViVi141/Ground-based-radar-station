@@ -11,6 +11,13 @@
 class GBRS_RadarStationConfig
 {
     protected static const float MTI_DISPLAY_MIN_RADIAL_SPEED_MS = 3.0;
+    // X-band ferrite circulator recovery on the SHORAD search pulse.
+    protected static const float US_SEARCH_RECEIVER_RECOVERY_S = 0.0000002;
+    // VHF TR-tube recovery on the P-18-like long pulse.
+    protected static const float USSR_SEARCH_RECEIVER_RECOVERY_S = 0.000001;
+    // Counter-battery locating pulse (not the EW search pulse).
+    protected static const float WLR_PULSE_WIDTH_S = 0.000001;
+    protected static const float WLR_RECEIVER_RECOVERY_S = 0.0000005;
 
     // Display-side gate for PPI / detect visuals.
     // WLR is projectile-only: never paint vehicles, infantry, or anonymous clutter.
@@ -22,6 +29,12 @@ class GBRS_RadarStationConfig
 
         if (target.m_Entity && ChimeraCharacter.Cast(target.m_Entity))
             return false;
+
+        if (settings)
+        {
+            if (target.m_Distance <= settings.GetEffectiveMinDistance())
+                return false;
+        }
 
         // Counter-battery product: IncludeProjectiles on, vehicles off.
         // Workstation readout sets KeepEntityTruth=false, so RDF measurement
@@ -57,6 +70,43 @@ class GBRS_RadarStationConfig
             radialSpeed = -radialSpeed;
 
         return radialSpeed >= MTI_DISPLAY_MIN_RADIAL_SPEED_MS;
+    }
+
+    // TX blanking Rmin = c·(τ + recovery)/2. Syncs m_MinDistance so HUD/debug
+    // match RDF GetEffectiveMinDistance (pulse eclipsing, not a 40 m floor).
+    static void ApplySearchPulseBlindZone(RDF_RadarHardware hw, bool usFaction)
+    {
+        if (!hw)
+            return;
+
+        if (usFaction)
+            hw.m_ReceiverRecoveryS = US_SEARCH_RECEIVER_RECOVERY_S;
+        else
+            hw.m_ReceiverRecoveryS = USSR_SEARCH_RECEIVER_RECOVERY_S;
+        hw.Validate();
+    }
+
+    static void ApplyWlrPulseBlindZone(RDF_RadarHardware hw)
+    {
+        if (!hw)
+            return;
+
+        hw.m_PulseWidthS = WLR_PULSE_WIDTH_S;
+        hw.m_ReceiverRecoveryS = WLR_RECEIVER_RECOVERY_S;
+        hw.Validate();
+    }
+
+    static void SyncMinDistanceToPulseBlind(RDF_RadarSettings settings)
+    {
+        if (!settings)
+            return;
+
+        settings.m_EnablePulseBlindZone = true;
+        if (!settings.m_Hardware)
+            return;
+
+        float rmin = settings.m_Hardware.GetMinDetectableRangeM();
+        settings.m_MinDistance = rmin;
     }
 
     // Re-stamp PD MTI after swapping Hardware (e.g. P-18 RF front-end).
@@ -361,7 +411,6 @@ class GBRS_RadarStationConfig
         settings.m_IncludeVehicles = true;
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
-        settings.m_MinDistance = 40.0;
         settings.m_EnablePhysicalDetection = true;
         settings.m_DetectionSnrDb = 8.0;
         settings.m_KeepUndetected = false;
@@ -374,7 +423,7 @@ class GBRS_RadarStationConfig
             settings.m_Hardware.AddElevationBeam("low", 2.0, 16.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mid", 18.0, 24.0, 0.0);
             settings.m_Hardware.AddElevationBeam("high", 40.0, 30.0, -1.0);
-            settings.m_Hardware.Validate();
+            ApplySearchPulseBlindZone(settings.m_Hardware, true);
         }
         ApplyFullFidelity(settings);
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_CA;
@@ -383,6 +432,7 @@ class GBRS_RadarStationConfig
         // existing track gate, so the old 14° / 900 m US gate would merge a
         // formation. Keep the shared 8° / 600 m fidelity gates.
         settings.m_TrackCoastMaxSec = 16.0;
+        SyncMinDistanceToPulseBlind(settings);
         settings.Validate();
         return settings;
     }
@@ -407,7 +457,6 @@ class GBRS_RadarStationConfig
         settings.m_IncludeVehicles = true;
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
-        settings.m_MinDistance = 40.0;
         settings.m_EnablePhysicalDetection = true;
         // Wider EW beam + VHF clutter: slightly softer gate than US SHORAD.
         settings.m_DetectionSnrDb = 5.0;
@@ -428,7 +477,7 @@ class GBRS_RadarStationConfig
         // Do not load SHORAD profile HwCalib over VHF RF; keep P-18 bin-0 floor.
         hw.m_LoadHwCalibFromProfile = false;
         hw.m_MtiClutterFloor = 0.01;
-        hw.Validate();
+        ApplySearchPulseBlindZone(hw, false);
         settings.m_Hardware = hw;
 
         ApplyFullFidelity(settings);
@@ -441,6 +490,7 @@ class GBRS_RadarStationConfig
         // Greater-of CFAR for clutter-edge VHF EW scenes.
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_GO;
         ApplyWorkstationReadout(settings, false);
+        SyncMinDistanceToPulseBlind(settings);
         settings.Validate();
         return settings;
     }
@@ -470,7 +520,6 @@ class GBRS_RadarStationConfig
         settings.m_UseBoundsCenter = false;
         settings.m_UseLocalOffset = false;
         settings.m_OriginOffset = "0 0 0";
-        settings.m_MinDistance = 15.0;
         settings.m_EnablePhysicalDetection = true;
         settings.m_KeepUndetected = false;
 
@@ -483,10 +532,11 @@ class GBRS_RadarStationConfig
             settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 30.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_high", 55.0, 28.0, -0.5);
-            settings.m_Hardware.Validate();
+            ApplyWlrPulseBlindZone(settings.m_Hardware);
         }
 
         ApplyWlrFidelity(settings);
+        SyncMinDistanceToPulseBlind(settings);
     }
 
     // US counter-battery WLR (~8 km parked search; operator/Demo stare aims).

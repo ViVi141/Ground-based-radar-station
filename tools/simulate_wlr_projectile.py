@@ -176,7 +176,7 @@ def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
             az_beamwidth_deg=cfg.beamwidth_deg,
             system_loss_db=8.0,
             noise_figure_db=6.0,
-            pulse_width_s=6.0e-6,
+            pulse_width_s=1.0e-6,
             bandwidth_hz=166666.0,
             pulses_integrated=12,
             coherent_integration=True,
@@ -187,6 +187,7 @@ def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
             elevation_beams=[
                 s.ElevationBeam(n, b, w, r) for (n, b, w, r) in cfg.elevation_beams
             ],
+            receiver_recovery_s=0.5e-6,
         )
     else:
         hw = s.Hardware(
@@ -197,7 +198,7 @@ def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
             az_beamwidth_deg=cfg.beamwidth_deg,
             system_loss_db=6.0,
             noise_figure_db=5.0,
-            pulse_width_s=5.0e-7,
+            pulse_width_s=1.0e-6,
             bandwidth_hz=4.0e6,
             pulses_integrated=32,
             coherent_integration=True,
@@ -208,11 +209,15 @@ def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
             elevation_beams=[
                 s.ElevationBeam(n, b, w, r) for (n, b, w, r) in cfg.elevation_beams
             ],
+            receiver_recovery_s=0.5e-6,
         )
     return hw
 
 
-def build_settings(cfg: ScanConfig, range_m: float) -> s.Settings:
+def build_settings(cfg: ScanConfig, range_m: float, hw: s.Hardware | None = None) -> s.Settings:
+    min_d = 40.0
+    if hw is not None:
+        min_d = hw.min_detectable_range_m()
     return s.Settings(
         range_m=range_m,
         update_interval_s=cfg.update_interval_s,
@@ -221,7 +226,7 @@ def build_settings(cfg: ScanConfig, range_m: float) -> s.Settings:
         enable_dem_clutter=False,
         enable_atmospheric_loss=True,
         enable_cfar_gate=False,
-        min_distance_m=40.0,
+        min_distance_m=min_d,
     )
 
 
@@ -286,7 +291,7 @@ def validate_faction(
     radial_ms: float = 180.0,
 ) -> dict:
     hw = build_hw(cfg, faction)
-    settings = build_settings(cfg, range_m)
+    settings = build_settings(cfg, range_m, hw)
 
     flight_s = _flight_time_exact(range_m, v0_ms, 0.0, 90.0)
 
@@ -428,7 +433,7 @@ def main() -> None:
 
     print("\n--- Azimuth offset impact (beam center vs edge, US 8 km) ---")
     hw_az = build_hw(us_cfg, "US")
-    settings_az = build_settings(us_cfg, 8000.0)
+    settings_az = build_settings(us_cfg, 8000.0, hw_az)
     for off in (0.0, 5.0, 10.0, 12.0):
         res = snr_at(hw_az, settings_az, 8000.0, PROJECTILE_RCS_M2, 180.0, 15.0, off, 1)
         print(f"  az_off {off:>4.0f} deg -> {res.snr_db:>6.1f} dB "
@@ -444,7 +449,7 @@ def main() -> None:
             )
             hw_j = build_hw(cfg_j, "US")
             hw_j.peak_power_w = pw
-            settings_j = build_settings(cfg_j, 8000.0)
+            settings_j = build_settings(cfg_j, 8000.0, hw_j)
             res = snr_at(hw_j, settings_j, 8000.0, PROJECTILE_RCS_M2, 180.0, 15.0, 0.0, 1)
             ok = res.snr_db >= 6.0
             print(f"{pw:>8.0f} {bw:>5.0f} {res.snr_db:>7.1f}  "
@@ -459,7 +464,7 @@ def main() -> None:
     print(f"{'gate':>5} {'maxSNR':>7}  verdict @beam-center")
     hw = build_hw(us_cfg, "US")
     for gate in (-2.0, 0.0, 2.0, 4.0, 6.0):
-        settings = build_settings(ScanConfig(25.0, 10.0, gate, 0.15, us_cfg.elevation_beams), 8000.0)
+        settings = build_settings(ScanConfig(25.0, 10.0, gate, 0.15, us_cfg.elevation_beams), 8000.0, hw)
         res = snr_at(hw, settings, 8000.0, PROJECTILE_RCS_M2, 180.0, 15.0, 0.0, 1)
         ok = res.snr_db >= gate
         print(f"{gate:>5.1f} {res.snr_db:>7.1f}  {'PASS' if ok else 'FAIL'}")
@@ -469,7 +474,7 @@ def main() -> None:
     for pw in (120000.0, 250000.0, 500000.0, 1000000.0):
         hw_p = build_hw(us_cfg, "US")
         hw_p.peak_power_w = pw
-        settings_p = build_settings(us_cfg, 8000.0)
+        settings_p = build_settings(us_cfg, 8000.0, hw_p)
         res = snr_at(hw_p, settings_p, 8000.0, PROJECTILE_RCS_M2, 180.0, 15.0, 0.0, 1)
         ok = res.snr_db >= 6.0
         print(f"{pw:>8.0f} {res.snr_db:>7.1f}  {'PASS' if ok else 'FAIL'}")

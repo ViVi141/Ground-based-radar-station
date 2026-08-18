@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GBRS 三维覆盖</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <aside id="panel">
+        <h1>GBRS 三维覆盖</h1>
+        <p class="sub">Eden DEM · 点选目标看通视 / 脉冲球 / 波束</p>
+
+        <div class="row" id="faction-row">
+          <button data-faction="US" class="active">美军</button>
+          <button data-faction="USSR">苏军</button>
+        </div>
+        <div class="row" id="mode-row">
+          <button data-mode="search" class="active">PD 搜索</button>
+          <button data-mode="wlr">WLR 反炮兵</button>
+        </div>
+        <div class="row" id="click-row">
+          <button data-click="target" class="active">选目标</button>
+          <button data-click="radar">放雷达</button>
+        </div>
+
+        <label class="slider">
+          目标离地高度 <span id="agl-val">20</span> m AGL
+          <input id="agl" type="range" min="0" max="500" step="1" value="20" />
+        </label>
+        <label class="slider">
+          垂直夸张 <span id="exag-val">6</span>×
+          <input id="exag" type="range" min="1" max="10" step="1" value="6" />
+        </label>
+        <label class="slider">
+          <input id="overlay" type="checkbox" checked />
+          显示该高度覆盖着色
+        </label>
+
+        <div class="legend">
+          <div class="swatch" style="background:#2ecc71"></div>
+          <span>可探测</span>
+          <div class="swatch" style="background:#c0392b"></div>
+          <span>脉冲盲区</span>
+          <div class="swatch" style="background:#2c4a6b"></div>
+          <span>山影</span>
+          <div class="swatch" style="background:#9aa0a6"></div>
+          <span>波束外</span>
+          <div class="swatch" style="background:#1a1a1d"></div>
+          <span>超距 / 无数据</span>
+        </div>
+
+        <div id="stats">
+          <h2>选点</h2>
+          <dl>
+            <dt>预设</dt>
+            <dd id="s-preset">—</dd>
+            <dt>Rmin</dt>
+            <dd id="s-rmin">—</dd>
+            <dt>量程</dt>
+            <dd id="s-range">—</dd>
+            <dt>地面距离</dt>
+            <dd id="s-ground">—</dd>
+            <dt>斜距</dt>
+            <dd id="s-slant">—</dd>
+            <dt>仰角</dt>
+            <dd id="s-el">—</dd>
+            <dt>波束</dt>
+            <dd id="s-beam">—</dd>
+            <dt>世界坐标</dt>
+            <dd id="s-xyz">—</dd>
+          </dl>
+          <div id="verdict">在地图上单击放置目标</div>
+        </div>
+
+        <div id="rhi-wrap">
+          <h2>RHI 切片（沿选点方位，真高度）</h2>
+          <canvas id="rhi" width="640" height="220"></canvas>
+        </div>
+      </aside>
+      <div id="view">
+        <div id="busy">正在计算覆盖…</div>
+        <div id="hint">拖动旋转 · 滚轮缩放 · 单击选点</div>
+      </div>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

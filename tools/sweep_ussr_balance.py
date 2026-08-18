@@ -58,12 +58,14 @@ def make_ussr_variant(
             ElevationBeam("mid", 18.0, 24.0, 0.0),
             ElevationBeam("high", 42.0, 30.0, -1.0),
         ],
+        receiver_recovery_s=1.0e-6,
     )
     settings = Settings(
         range_m=10000.0,
         update_interval_s=0.04,
         detection_snr_db=detection_snr_db,
         dem_clutter_scale=dem_clutter_scale,
+        min_distance_m=hw.min_detectable_range_m(),
     )
     return hw, settings
 

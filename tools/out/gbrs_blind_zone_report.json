@@ -1,0 +1,143 @@
+{
+  "formula": "Rmin = c * (pulse_width_s + receiver_recovery_s) / 2",
+  "c_m_s": 299792458.0,
+  "station_xyz": [
+    4771.01,
+    27.8448,
+    11214.7
+  ],
+  "radar_origin_crop": [
+    4771.01,
+    35.84379959106445,
+    11214.7
+  ],
+  "target_agl_m": 80.0,
+  "radar_mast_agl_m": 8.0,
+  "old_floors_removed_m": {
+    "search": 40.0,
+    "wlr": 15.0
+  },
+  "products": {
+    "us_search": {
+      "label": "US search",
+      "pulse_width_s": 5e-07,
+      "receiver_recovery_s": 2e-07,
+      "expected_rmin_m": 104.92736029999999,
+      "effective_rmin_m": 104.92736029999999,
+      "rmin_matches_formula": true,
+      "inside": {
+        "range_m": 52.463680149999995,
+        "pd_snr": 0.0,
+        "pd_cfar": 0.0,
+        "mean_snr_db": -300.0,
+        "trials": 80
+      },
+      "outside": {
+        "range_m": 115.42009632999999,
+        "pd_snr": 0.9875,
+        "pd_cfar": 0.9875,
+        "mean_snr_db": 33.28622235769037,
+        "trials": 80
+      },
+      "inside_pd_zero": true,
+      "outside_pd_recovers": true,
+      "pass": true
+    },
+    "ussr_search": {
+      "label": "USSR search",
+      "pulse_width_s": 6e-06,
+      "receiver_recovery_s": 1e-06,
+      "expected_rmin_m": 1049.273603,
+      "effective_rmin_m": 1049.273603,
+      "rmin_matches_formula": true,
+      "inside": {
+        "range_m": 524.6368015,
+        "pd_snr": 0.0,
+        "pd_cfar": 0.0,
+        "mean_snr_db": -300.0,
+        "trials": 80
+      },
+      "outside": {
+        "range_m": 1154.2009633000002,
+        "pd_snr": 0.8375,
+        "pd_cfar": 0.8375,
+        "mean_snr_db": 9.315230382656779,
+        "trials": 80
+      },
+      "inside_pd_zero": true,
+      "outside_pd_recovers": true,
+      "pass": true
+    },
+    "wlr": {
+      "label": "WLR locating",
+      "pulse_width_s": 1e-06,
+      "receiver_recovery_s": 5e-07,
+      "expected_rmin_m": 224.8443435,
+      "effective_rmin_m": 224.8443435,
+      "rmin_matches_formula": true,
+      "inside": {
+        "range_m": 112.42217175,
+        "detected_snr": false,
+        "snr_db": -300.0
+      },
+      "outside": {
+        "range_m": 247.32877785000002,
+        "detected_snr": true,
+        "snr_db": 67.52052457377124
+      },
+      "inside_pd_zero": true,
+      "outside_pd_recovers": true,
+      "pass": true
+    }
+  },
+  "maps": [
+    {
+      "product": "us_search",
+      "kind": "closeup",
+      "path": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\gbrs_blind_us_search_closeup.png",
+      "paint_range_m": 2500.0,
+      "rmin_m": 104.92736029999999,
+      "covered_km2": 0.378064,
+      "dem_cell_m": 4.0
+    },
+    {
+      "product": "ussr_search",
+      "kind": "closeup",
+      "path": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\gbrs_blind_ussr_search_closeup.png",
+      "paint_range_m": 2500.0,
+      "rmin_m": 1049.273603,
+      "covered_km2": 0.122416,
+      "dem_cell_m": 4.0
+    },
+    {
+      "product": "wlr",
+      "kind": "closeup",
+      "path": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\gbrs_blind_wlr_closeup.png",
+      "paint_range_m": 2500.0,
+      "rmin_m": 224.8443435,
+      "covered_km2": 0.343088,
+      "dem_cell_m": 4.0
+    },
+    {
+      "product": "us_search",
+      "kind": "island",
+      "path": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\gbrs_blind_us_search_island.png",
+      "paint_range_m": 7000.0,
+      "rmin_m": 104.92736029999999,
+      "covered_km2": 11.548672,
+      "land_coverage_pct": 22.421025426929884,
+      "dem_cell_m": 32.0
+    },
+    {
+      "product": "ussr_search",
+      "kind": "island",
+      "path": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\gbrs_blind_ussr_search_island.png",
+      "paint_range_m": 10000.0,
+      "rmin_m": 1049.273603,
+      "covered_km2": 9.150464,
+      "land_coverage_pct": 17.765054372676488,
+      "dem_cell_m": 32.0
+    }
+  ],
+  "pass": true
+}

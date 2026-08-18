@@ -1,0 +1,49 @@
+{
+  "station_xyz": [
+    4771.01,
+    27.8448,
+    11214.7
+  ],
+  "radar_origin": [
+    4771.01,
+    35.84379959106445,
+    11214.7
+  ],
+  "ridge_bearing_deg": 270.0,
+  "sea_bearing_deg": 0.0,
+  "vertical_exaggeration_3d": 6.0,
+  "note": "Top-down maps used 80 m AGL only. RHI uses slant-range Rmin (sphere). 3D height is exaggerated.",
+  "us_rmin_m": 104.92736029999999,
+  "ussr_rmin_m": 1049.273603,
+  "wlr_rmin_m": 224.8443435,
+  "us_search_land_visible_by_agl": {
+    "5": {
+      "land_km2": 10.755702479338842,
+      "visible_km2": 4.989090909090908,
+      "visible_pct": 46.3855421686747
+    },
+    "20": {
+      "land_km2": 10.755702479338842,
+      "visible_km2": 7.273057851239669,
+      "visible_pct": 67.62048192771084
+    },
+    "80": {
+      "land_km2": 10.755702479338842,
+      "visible_km2": 10.707107438016527,
+      "visible_pct": 99.54819277108433
+    },
+    "300": {
+      "land_km2": 10.755702479338842,
+      "visible_km2": 10.69090909090909,
+      "visible_pct": 99.39759036144578
+    }
+  },
+  "maps": [
+    "gbrs_rhi_us_ridge.png",
+    "gbrs_rhi_ussr_ridge.png",
+    "gbrs_rhi_us_sea.png",
+    "gbrs_rhi_wlr_ridge.png",
+    "gbrs_volume_3d_us_agl_layers.png",
+    "gbrs_volume_3d_min_agl.png"
+  ]
+}

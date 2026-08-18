@@ -1619,7 +1619,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             Print("[GBRS-DEBUG] PdSettings mode=" + ((int)sensor.GetMode()).ToString()
                 + " range=" + settings.m_Range.ToString()
                 + " interval=" + settings.m_UpdateInterval.ToString()
-                + " minDist=" + settings.m_MinDistance.ToString()
+                + " minDist=" + settings.GetEffectiveMinDistance().ToString()
                 + " projectiles=" + projFlag
                 + " mti=" + mtiMode
                 + " coherent=" + BoolDebugFlag(settings.m_Hardware && settings.m_Hardware.m_CoherentIntegration)
@@ -1699,7 +1699,6 @@ class GBRS_RadarStationComponent : ScriptComponent
         settings.m_IncludeVehicles = true;
         settings.m_IncludeProjectiles = false;
         settings.m_IncludeRadarEmitters = true;
-        settings.m_MinDistance = 40.0;
         settings.m_EnablePhysicalDetection = true;
         settings.m_DetectionSnrDb = m_ManualConfig.m_DetectionSnrDb;
         settings.m_KeepUndetected = false;
@@ -1717,7 +1716,10 @@ class GBRS_RadarStationComponent : ScriptComponent
                 m_ManualConfig.m_ElevationBoresightDeg,
                 m_ManualConfig.m_ElevationBeamwidthDeg,
                 0.0);
-            settings.m_Hardware.Validate();
+            bool usFaction = true;
+            if (m_eFactionPreset == EGBRS_RadarFactionPreset.USSR)
+                usFaction = false;
+            GBRS_RadarStationConfig.ApplySearchPulseBlindZone(settings.m_Hardware, usFaction);
         }
 
         m_fElevationBoresightDeg = m_ManualConfig.m_ElevationBoresightDeg;
@@ -1726,6 +1728,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         GBRS_RadarStationConfig.ApplyFullFidelity(settings);
         settings.m_DemClutterScale = m_ManualConfig.m_DemClutterScale;
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_CA;
+        GBRS_RadarStationConfig.SyncMinDistanceToPulseBlind(settings);
         settings.Validate();
 
         PushSensorSettings(owner, settings, ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
@@ -2560,7 +2563,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             if (settings.m_Range > 0.0)
                 rangeM = settings.m_Range;
-            minDist = settings.m_MinDistance;
+            minDist = settings.GetEffectiveMinDistance();
             if (settings.m_Hardware)
                 coneHalf = settings.m_Hardware.m_AzimuthBeamwidthDeg * 0.5;
         }

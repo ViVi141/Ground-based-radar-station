@@ -1,0 +1,17 @@
+{
+  "width": 192,
+  "height": 192,
+  "cell_m": 68.06282722513089,
+  "origin_x": -1728.9899999999998,
+  "origin_z": 4714.700000000001,
+  "y_min": -0.4977259933948517,
+  "y_max": 239.08399963378906,
+  "radar": [
+    4771.01,
+    35.84379959106445,
+    11214.7
+  ],
+  "mast_agl_m": 8.0,
+  "half_m": 6500.0,
+  "source": "profile:C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\profile\\RDF\\DemData\\GM_Eden tiles=8383"
+}

@@ -205,6 +205,7 @@ def cover_base_rays(
     azimuth_steps: int,
     step_m: float,
     los_step_m: float,
+    min_range_m: float = 0.0,
 ) -> float:
     """Paint coverage into cover/count grids. Returns covered area m^2 for this radar."""
     ox, oy, oz = origin
@@ -236,14 +237,15 @@ def cover_base_rays(
             if not clear:
                 break
 
-            lx, lz = dem.world_to_local(tx, tz)
-            if 0 <= lx < w and 0 <= lz < h:
-                if not visited[lz, lx]:
-                    visited[lz, lx] = True
-                    covered_cells += 1
-                cover[lz, lx] = 1
-                if count is not None:
-                    count[lz, lx] = count[lz, lx] + 1
+            if dist + 0.5 >= min_range_m:
+                lx, lz = dem.world_to_local(tx, tz)
+                if 0 <= lx < w and 0 <= lz < h:
+                    if not visited[lz, lx]:
+                        visited[lz, lx] = True
+                        covered_cells += 1
+                    cover[lz, lx] = 1
+                    if count is not None:
+                        count[lz, lx] = count[lz, lx] + 1
             dist += step_m
 
     return float(covered_cells) * cell * cell
@@ -281,12 +283,16 @@ def _save_map(
     count: np.ndarray | None = None,
     title: str = "",
     cover_alpha: float = 0.45,
+    rings: list[tuple[float, float, float, str, str, str]] | None = None,
+    xlim: tuple[float, float] | None = None,
+    ylim: tuple[float, float] | None = None,
 ) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.colors import Normalize
+    from matplotlib.patches import Circle
 
     rgb = _terrain_rgb(dem)
     extent = [
@@ -298,6 +304,10 @@ def _save_map(
 
     fig_w = 12.0
     fig_h = 12.0 * (dem.height / max(1, dem.width))
+    if xlim is not None and ylim is not None:
+        span_x = max(1.0, xlim[1] - xlim[0])
+        span_z = max(1.0, ylim[1] - ylim[0])
+        fig_h = fig_w * (span_z / span_x)
     fig, ax = plt.subplots(figsize=(fig_w, max(8.0, fig_h)), dpi=140)
     ax.imshow(rgb, origin="lower", extent=extent, interpolation="nearest")
 
@@ -335,10 +345,22 @@ def _save_map(
         "town": "#4ecdc4",
         "small": "#95e1d3",
         "relay": "#aaaaaa",
+        "radar": "#ffffff",
     }
     for base in bases:
         color = kind_color.get(base.kind, "#ffffff")
-        ax.plot(base.x, base.z, "o", color=color, markersize=5, markeredgecolor="k", markeredgewidth=0.4)
+        marker_size = 5
+        if base.kind == "radar":
+            marker_size = 8
+        ax.plot(
+            base.x,
+            base.z,
+            "o",
+            color=color,
+            markersize=marker_size,
+            markeredgecolor="k",
+            markeredgewidth=0.4,
+        )
         if base.kind in ("MOB", "major", "military"):
             ax.text(
                 base.x + 80.0,
@@ -350,12 +372,32 @@ def _save_map(
                 va="bottom",
             )
 
+    if rings:
+        for cx, cz, radius_m, color, linestyle, label in rings:
+            ring = Circle(
+                (cx, cz),
+                radius_m,
+                fill=False,
+                edgecolor=color,
+                linestyle=linestyle,
+                linewidth=1.4,
+                label=label,
+            )
+            ax.add_patch(ring)
+        ax.legend(loc="upper right", fontsize=8, framealpha=0.8)
+
     ax.set_aspect("equal")
     ax.set_xlabel("world X (m)")
     ax.set_ylabel("world Z (m)")
     ax.set_title(title)
-    ax.set_xlim(extent[0], extent[1])
-    ax.set_ylim(extent[2], extent[3])
+    if xlim is not None:
+        ax.set_xlim(xlim[0], xlim[1])
+    else:
+        ax.set_xlim(extent[0], extent[1])
+    if ylim is not None:
+        ax.set_ylim(ylim[0], ylim[1])
+    else:
+        ax.set_ylim(extent[2], extent[3])
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path)
