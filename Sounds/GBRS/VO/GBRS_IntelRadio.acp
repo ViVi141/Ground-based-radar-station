@@ -1,0 +1,1444 @@
+AudioClass {
+ sounds {
+  SoundClass "10000" {
+   id 10000
+   name "SOUND_GBRS_AIR_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20000:65" {
+       id 20000
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10001" {
+   id 10001
+   name "SOUND_GBRS_WLR_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20001:65" {
+       id 20001
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10002" {
+   id 10002
+   name "SOUND_GBRS_OUT_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20002:65" {
+       id 20002
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10003" {
+   id 10003
+   name "SOUND_GBRS_HDG_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20003:65" {
+       id 20003
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10004" {
+   id 10004
+   name "SOUND_GBRS_ALT_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20004:65" {
+       id 20004
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10005" {
+   id 10005
+   name "SOUND_GBRS_M_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20005:65" {
+       id 20005
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10006" {
+   id 10006
+   name "SOUND_GBRS_LCH_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20006:65" {
+       id 20006
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10007" {
+   id 10007
+   name "SOUND_GBRS_IMP_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20007:65" {
+       id 20007
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10008" {
+   id 10008
+   name "SOUND_GBRS_ETA_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20008:65" {
+       id 20008
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10009" {
+   id 10009
+   name "SOUND_GBRS_SEC_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20009:65" {
+       id 20009
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10010" {
+   id 10010
+   name "SOUND_GBRS_NOW_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20010:65" {
+       id 20010
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10011" {
+   id 10011
+   name "SOUND_GBRS_D0_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20011:65" {
+       id 20011
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10012" {
+   id 10012
+   name "SOUND_GBRS_D1_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20012:65" {
+       id 20012
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10013" {
+   id 10013
+   name "SOUND_GBRS_D2_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20013:65" {
+       id 20013
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10014" {
+   id 10014
+   name "SOUND_GBRS_D3_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20014:65" {
+       id 20014
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10015" {
+   id 10015
+   name "SOUND_GBRS_D4_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20015:65" {
+       id 20015
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10016" {
+   id 10016
+   name "SOUND_GBRS_D5_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20016:65" {
+       id 20016
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10017" {
+   id 10017
+   name "SOUND_GBRS_D6_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20017:65" {
+       id 20017
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10018" {
+   id 10018
+   name "SOUND_GBRS_D7_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20018:65" {
+       id 20018
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10019" {
+   id 10019
+   name "SOUND_GBRS_D8_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20019:65" {
+       id 20019
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10020" {
+   id 10020
+   name "SOUND_GBRS_D9_US"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20020:65" {
+       id 20020
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10021" {
+   id 10021
+   name "SOUND_GBRS_AIR_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20021:65" {
+       id 20021
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10022" {
+   id 10022
+   name "SOUND_GBRS_WLR_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20022:65" {
+       id 20022
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10023" {
+   id 10023
+   name "SOUND_GBRS_OUT_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20023:65" {
+       id 20023
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10024" {
+   id 10024
+   name "SOUND_GBRS_HDG_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20024:65" {
+       id 20024
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10025" {
+   id 10025
+   name "SOUND_GBRS_ALT_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20025:65" {
+       id 20025
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10026" {
+   id 10026
+   name "SOUND_GBRS_M_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20026:65" {
+       id 20026
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10027" {
+   id 10027
+   name "SOUND_GBRS_LCH_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20027:65" {
+       id 20027
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10028" {
+   id 10028
+   name "SOUND_GBRS_IMP_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20028:65" {
+       id 20028
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10029" {
+   id 10029
+   name "SOUND_GBRS_ETA_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20029:65" {
+       id 20029
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10030" {
+   id 10030
+   name "SOUND_GBRS_SEC_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20030:65" {
+       id 20030
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10031" {
+   id 10031
+   name "SOUND_GBRS_NOW_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20031:65" {
+       id 20031
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10032" {
+   id 10032
+   name "SOUND_GBRS_D0_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20032:65" {
+       id 20032
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10033" {
+   id 10033
+   name "SOUND_GBRS_D1_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20033:65" {
+       id 20033
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10034" {
+   id 10034
+   name "SOUND_GBRS_D2_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20034:65" {
+       id 20034
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10035" {
+   id 10035
+   name "SOUND_GBRS_D3_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20035:65" {
+       id 20035
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10036" {
+   id 10036
+   name "SOUND_GBRS_D4_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20036:65" {
+       id 20036
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10037" {
+   id 10037
+   name "SOUND_GBRS_D5_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20037:65" {
+       id 20037
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10038" {
+   id 10038
+   name "SOUND_GBRS_D6_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20038:65" {
+       id 20038
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10039" {
+   id 10039
+   name "SOUND_GBRS_D7_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20039:65" {
+       id 20039
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10040" {
+   id 10040
+   name "SOUND_GBRS_D8_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20040:65" {
+       id 20040
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10041" {
+   id 10041
+   name "SOUND_GBRS_D9_USSR"
+   version 5
+   volume_dB 6
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20041:65" {
+       id 20041
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+  SoundClass "10042" {
+   id 10042
+   name "SOUND_GBRS_HISS"
+   version 5
+   volume_dB 0
+   ins {
+    ConnectionsClass "con:64" {
+     id 64
+     links {
+      ConnectionClass "20042:65" {
+       id 20042
+       port 65
+      }
+     }
+    }
+   }
+   outState 30000
+   outStatePort 19463
+  }
+ }
+ mixers {
+  MixerClass "30000" {
+   id 30000
+   name "OutputState GBRS Intel"
+   version 4
+   res "{B764D803219C775E}Sounds/FinalMix.afm"
+   ins {
+    ConnectionsClass "con:19463" {
+     id 19463
+     links {
+      ConnectionClass "10000:65" {
+       id 10000
+       port 65
+      }
+      ConnectionClass "10001:65" {
+       id 10001
+       port 65
+      }
+      ConnectionClass "10002:65" {
+       id 10002
+       port 65
+      }
+      ConnectionClass "10003:65" {
+       id 10003
+       port 65
+      }
+      ConnectionClass "10004:65" {
+       id 10004
+       port 65
+      }
+      ConnectionClass "10005:65" {
+       id 10005
+       port 65
+      }
+      ConnectionClass "10006:65" {
+       id 10006
+       port 65
+      }
+      ConnectionClass "10007:65" {
+       id 10007
+       port 65
+      }
+      ConnectionClass "10008:65" {
+       id 10008
+       port 65
+      }
+      ConnectionClass "10009:65" {
+       id 10009
+       port 65
+      }
+      ConnectionClass "10010:65" {
+       id 10010
+       port 65
+      }
+      ConnectionClass "10011:65" {
+       id 10011
+       port 65
+      }
+      ConnectionClass "10012:65" {
+       id 10012
+       port 65
+      }
+      ConnectionClass "10013:65" {
+       id 10013
+       port 65
+      }
+      ConnectionClass "10014:65" {
+       id 10014
+       port 65
+      }
+      ConnectionClass "10015:65" {
+       id 10015
+       port 65
+      }
+      ConnectionClass "10016:65" {
+       id 10016
+       port 65
+      }
+      ConnectionClass "10017:65" {
+       id 10017
+       port 65
+      }
+      ConnectionClass "10018:65" {
+       id 10018
+       port 65
+      }
+      ConnectionClass "10019:65" {
+       id 10019
+       port 65
+      }
+      ConnectionClass "10020:65" {
+       id 10020
+       port 65
+      }
+      ConnectionClass "10021:65" {
+       id 10021
+       port 65
+      }
+      ConnectionClass "10022:65" {
+       id 10022
+       port 65
+      }
+      ConnectionClass "10023:65" {
+       id 10023
+       port 65
+      }
+      ConnectionClass "10024:65" {
+       id 10024
+       port 65
+      }
+      ConnectionClass "10025:65" {
+       id 10025
+       port 65
+      }
+      ConnectionClass "10026:65" {
+       id 10026
+       port 65
+      }
+      ConnectionClass "10027:65" {
+       id 10027
+       port 65
+      }
+      ConnectionClass "10028:65" {
+       id 10028
+       port 65
+      }
+      ConnectionClass "10029:65" {
+       id 10029
+       port 65
+      }
+      ConnectionClass "10030:65" {
+       id 10030
+       port 65
+      }
+      ConnectionClass "10031:65" {
+       id 10031
+       port 65
+      }
+      ConnectionClass "10032:65" {
+       id 10032
+       port 65
+      }
+      ConnectionClass "10033:65" {
+       id 10033
+       port 65
+      }
+      ConnectionClass "10034:65" {
+       id 10034
+       port 65
+      }
+      ConnectionClass "10035:65" {
+       id 10035
+       port 65
+      }
+      ConnectionClass "10036:65" {
+       id 10036
+       port 65
+      }
+      ConnectionClass "10037:65" {
+       id 10037
+       port 65
+      }
+      ConnectionClass "10038:65" {
+       id 10038
+       port 65
+      }
+      ConnectionClass "10039:65" {
+       id 10039
+       port 65
+      }
+      ConnectionClass "10040:65" {
+       id 10040
+       port 65
+      }
+      ConnectionClass "10041:65" {
+       id 10041
+       port 65
+      }
+      ConnectionClass "10042:65" {
+       id 10042
+       port 65
+      }
+     }
+    }
+   }
+   path "{B764D803219C775E}Sounds/FinalMix.afm"
+   inputs {
+    "WPN_Handling" "WPN_Shots" "WPN_Explosions" "WNP_BulletHits" "CHAR" "ENV_AMB_2D" "VEH_Animations" "Impacts" "Dialog" "ENV_Doors" "VEH_Engine" "VEH_Tires" "VON" "SFX" "SFX_Reverb_OBSOLETE" "VON_Reverb_Small" "Dialog_Reverb" "Impacts_EXT" "ENV_AMB_3D" "WPN_SonicCracks" "CHAR_Gear" "PA" "SFX_Reverb_Exterior" "ENV_AMB_3D_Reverb_Exterior" "SFX_Direct" "SFX_Reverb_Small" "SFX_Reverb_Medium" "SFX_Reverb_Large" "WPN_Shots_Player" "Dialog_Reverb_Small" "Dialog_Reverb_Medium" "Dialog_Reverb_Large" "WPN_TravelingProjectile" "Dialog_Delay_Exterior" "SFX_Reverb_InCabin" "VON_Reverb_Medium" "VON_Reverb_Large"
+   }
+  }
+ }
+ banks_local {
+  BankLocalClass "20000" {
+   id 20000
+   name "SOUND_GBRS_AIR_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_AIR_US.wav" {
+     Filename "{69FCEDCEA0060001}Sounds/GBRS/VO/US/air.wav"
+    }
+   }
+  }
+  BankLocalClass "20001" {
+   id 20001
+   name "SOUND_GBRS_WLR_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_WLR_US.wav" {
+     Filename "{69FCEDCEA0060002}Sounds/GBRS/VO/US/wlr.wav"
+    }
+   }
+  }
+  BankLocalClass "20002" {
+   id 20002
+   name "SOUND_GBRS_OUT_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_OUT_US.wav" {
+     Filename "{69FCEDCEA0060003}Sounds/GBRS/VO/US/out.wav"
+    }
+   }
+  }
+  BankLocalClass "20003" {
+   id 20003
+   name "SOUND_GBRS_HDG_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_HDG_US.wav" {
+     Filename "{69FCEDCEA0060040}Sounds/GBRS/VO/US/hdg.wav"
+    }
+   }
+  }
+  BankLocalClass "20004" {
+   id 20004
+   name "SOUND_GBRS_ALT_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_ALT_US.wav" {
+     Filename "{69FCEDCEA0060041}Sounds/GBRS/VO/US/alt.wav"
+    }
+   }
+  }
+  BankLocalClass "20005" {
+   id 20005
+   name "SOUND_GBRS_M_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_M_US.wav" {
+     Filename "{69FCEDCEA0060042}Sounds/GBRS/VO/US/meters.wav"
+    }
+   }
+  }
+  BankLocalClass "20006" {
+   id 20006
+   name "SOUND_GBRS_LCH_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_LCH_US.wav" {
+     Filename "{69FCEDCEA0060043}Sounds/GBRS/VO/US/lch.wav"
+    }
+   }
+  }
+  BankLocalClass "20007" {
+   id 20007
+   name "SOUND_GBRS_IMP_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_IMP_US.wav" {
+     Filename "{69FCEDCEA0060044}Sounds/GBRS/VO/US/imp.wav"
+    }
+   }
+  }
+  BankLocalClass "20008" {
+   id 20008
+   name "SOUND_GBRS_ETA_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_ETA_US.wav" {
+     Filename "{69FCEDCEA0060045}Sounds/GBRS/VO/US/eta.wav"
+    }
+   }
+  }
+  BankLocalClass "20009" {
+   id 20009
+   name "SOUND_GBRS_SEC_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_SEC_US.wav" {
+     Filename "{69FCEDCEA0060046}Sounds/GBRS/VO/US/sec.wav"
+    }
+   }
+  }
+  BankLocalClass "20010" {
+   id 20010
+   name "SOUND_GBRS_NOW_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_NOW_US.wav" {
+     Filename "{69FCEDCEA0060047}Sounds/GBRS/VO/US/now.wav"
+    }
+   }
+  }
+  BankLocalClass "20011" {
+   id 20011
+   name "SOUND_GBRS_D0_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D0_US.wav" {
+     Filename "{69FCEDCEA0060010}Sounds/GBRS/VO/US/d0.wav"
+    }
+   }
+  }
+  BankLocalClass "20012" {
+   id 20012
+   name "SOUND_GBRS_D1_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D1_US.wav" {
+     Filename "{69FCEDCEA0060011}Sounds/GBRS/VO/US/d1.wav"
+    }
+   }
+  }
+  BankLocalClass "20013" {
+   id 20013
+   name "SOUND_GBRS_D2_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D2_US.wav" {
+     Filename "{69FCEDCEA0060012}Sounds/GBRS/VO/US/d2.wav"
+    }
+   }
+  }
+  BankLocalClass "20014" {
+   id 20014
+   name "SOUND_GBRS_D3_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D3_US.wav" {
+     Filename "{69FCEDCEA0060013}Sounds/GBRS/VO/US/d3.wav"
+    }
+   }
+  }
+  BankLocalClass "20015" {
+   id 20015
+   name "SOUND_GBRS_D4_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D4_US.wav" {
+     Filename "{69FCEDCEA0060014}Sounds/GBRS/VO/US/d4.wav"
+    }
+   }
+  }
+  BankLocalClass "20016" {
+   id 20016
+   name "SOUND_GBRS_D5_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D5_US.wav" {
+     Filename "{69FCEDCEA0060015}Sounds/GBRS/VO/US/d5.wav"
+    }
+   }
+  }
+  BankLocalClass "20017" {
+   id 20017
+   name "SOUND_GBRS_D6_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D6_US.wav" {
+     Filename "{69FCEDCEA0060016}Sounds/GBRS/VO/US/d6.wav"
+    }
+   }
+  }
+  BankLocalClass "20018" {
+   id 20018
+   name "SOUND_GBRS_D7_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D7_US.wav" {
+     Filename "{69FCEDCEA0060017}Sounds/GBRS/VO/US/d7.wav"
+    }
+   }
+  }
+  BankLocalClass "20019" {
+   id 20019
+   name "SOUND_GBRS_D8_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D8_US.wav" {
+     Filename "{69FCEDCEA0060018}Sounds/GBRS/VO/US/d8.wav"
+    }
+   }
+  }
+  BankLocalClass "20020" {
+   id 20020
+   name "SOUND_GBRS_D9_US"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D9_US.wav" {
+     Filename "{69FCEDCEA0060019}Sounds/GBRS/VO/US/d9.wav"
+    }
+   }
+  }
+  BankLocalClass "20021" {
+   id 20021
+   name "SOUND_GBRS_AIR_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_AIR_USSR.wav" {
+     Filename "{69FCEDCEA0060021}Sounds/GBRS/VO/USSR/air.wav"
+    }
+   }
+  }
+  BankLocalClass "20022" {
+   id 20022
+   name "SOUND_GBRS_WLR_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_WLR_USSR.wav" {
+     Filename "{69FCEDCEA0060022}Sounds/GBRS/VO/USSR/wlr.wav"
+    }
+   }
+  }
+  BankLocalClass "20023" {
+   id 20023
+   name "SOUND_GBRS_OUT_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_OUT_USSR.wav" {
+     Filename "{69FCEDCEA0060023}Sounds/GBRS/VO/USSR/out.wav"
+    }
+   }
+  }
+  BankLocalClass "20024" {
+   id 20024
+   name "SOUND_GBRS_HDG_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_HDG_USSR.wav" {
+     Filename "{69FCEDCEA0060050}Sounds/GBRS/VO/USSR/hdg.wav"
+    }
+   }
+  }
+  BankLocalClass "20025" {
+   id 20025
+   name "SOUND_GBRS_ALT_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_ALT_USSR.wav" {
+     Filename "{69FCEDCEA0060051}Sounds/GBRS/VO/USSR/alt.wav"
+    }
+   }
+  }
+  BankLocalClass "20026" {
+   id 20026
+   name "SOUND_GBRS_M_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_M_USSR.wav" {
+     Filename "{69FCEDCEA0060052}Sounds/GBRS/VO/USSR/meters.wav"
+    }
+   }
+  }
+  BankLocalClass "20027" {
+   id 20027
+   name "SOUND_GBRS_LCH_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_LCH_USSR.wav" {
+     Filename "{69FCEDCEA0060053}Sounds/GBRS/VO/USSR/lch.wav"
+    }
+   }
+  }
+  BankLocalClass "20028" {
+   id 20028
+   name "SOUND_GBRS_IMP_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_IMP_USSR.wav" {
+     Filename "{69FCEDCEA0060054}Sounds/GBRS/VO/USSR/imp.wav"
+    }
+   }
+  }
+  BankLocalClass "20029" {
+   id 20029
+   name "SOUND_GBRS_ETA_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_ETA_USSR.wav" {
+     Filename "{69FCEDCEA0060055}Sounds/GBRS/VO/USSR/eta.wav"
+    }
+   }
+  }
+  BankLocalClass "20030" {
+   id 20030
+   name "SOUND_GBRS_SEC_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_SEC_USSR.wav" {
+     Filename "{69FCEDCEA0060056}Sounds/GBRS/VO/USSR/sec.wav"
+    }
+   }
+  }
+  BankLocalClass "20031" {
+   id 20031
+   name "SOUND_GBRS_NOW_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_NOW_USSR.wav" {
+     Filename "{69FCEDCEA0060057}Sounds/GBRS/VO/USSR/now.wav"
+    }
+   }
+  }
+  BankLocalClass "20032" {
+   id 20032
+   name "SOUND_GBRS_D0_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D0_USSR.wav" {
+     Filename "{69FCEDCEA0060030}Sounds/GBRS/VO/USSR/d0.wav"
+    }
+   }
+  }
+  BankLocalClass "20033" {
+   id 20033
+   name "SOUND_GBRS_D1_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D1_USSR.wav" {
+     Filename "{69FCEDCEA0060031}Sounds/GBRS/VO/USSR/d1.wav"
+    }
+   }
+  }
+  BankLocalClass "20034" {
+   id 20034
+   name "SOUND_GBRS_D2_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D2_USSR.wav" {
+     Filename "{69FCEDCEA0060032}Sounds/GBRS/VO/USSR/d2.wav"
+    }
+   }
+  }
+  BankLocalClass "20035" {
+   id 20035
+   name "SOUND_GBRS_D3_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D3_USSR.wav" {
+     Filename "{69FCEDCEA0060033}Sounds/GBRS/VO/USSR/d3.wav"
+    }
+   }
+  }
+  BankLocalClass "20036" {
+   id 20036
+   name "SOUND_GBRS_D4_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D4_USSR.wav" {
+     Filename "{69FCEDCEA0060034}Sounds/GBRS/VO/USSR/d4.wav"
+    }
+   }
+  }
+  BankLocalClass "20037" {
+   id 20037
+   name "SOUND_GBRS_D5_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D5_USSR.wav" {
+     Filename "{69FCEDCEA0060035}Sounds/GBRS/VO/USSR/d5.wav"
+    }
+   }
+  }
+  BankLocalClass "20038" {
+   id 20038
+   name "SOUND_GBRS_D6_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D6_USSR.wav" {
+     Filename "{69FCEDCEA0060036}Sounds/GBRS/VO/USSR/d6.wav"
+    }
+   }
+  }
+  BankLocalClass "20039" {
+   id 20039
+   name "SOUND_GBRS_D7_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D7_USSR.wav" {
+     Filename "{69FCEDCEA0060037}Sounds/GBRS/VO/USSR/d7.wav"
+    }
+   }
+  }
+  BankLocalClass "20040" {
+   id 20040
+   name "SOUND_GBRS_D8_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D8_USSR.wav" {
+     Filename "{69FCEDCEA0060038}Sounds/GBRS/VO/USSR/d8.wav"
+    }
+   }
+  }
+  BankLocalClass "20041" {
+   id 20041
+   name "SOUND_GBRS_D9_USSR"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_D9_USSR.wav" {
+     Filename "{69FCEDCEA0060039}Sounds/GBRS/VO/USSR/d9.wav"
+    }
+   }
+  }
+  BankLocalClass "20042" {
+   id 20042
+   name "SOUND_GBRS_HISS"
+   version 7
+   Samples {
+    AudioBankSampleClass "SOUND_GBRS_HISS.wav" {
+     Filename "{69FCEDCEA0060060}Sounds/GBRS/VO/hiss.wav"
+    }
+   }
+  }
+ }
+}

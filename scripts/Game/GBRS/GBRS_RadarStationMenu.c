@@ -76,6 +76,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected int m_iFocusedManualParam;
 
 	protected float m_fLastModeNavS;
+	protected float m_fLastIntelTxS;
 	// 0 = follow RF max until the operator zooms the PPI.
 	protected float m_PpiViewRangeM;
 	protected ref GBRS_PpiZoomWheelHandler m_PpiWheelHandler;
@@ -318,6 +319,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			MuteWLibSounds(widgets.m_wModeTabLock);
 		if (widgets.m_wModeTabManual)
 			MuteWLibSounds(widgets.m_wModeTabManual);
+
+		if (widgets.m_wIntelTxBtn)
+		{
+			MuteWLibSounds(widgets.m_wIntelTxBtn);
+			ScriptInvoker invIntel = ButtonActionComponent.GetOnAction(widgets.m_wIntelTxBtn, true);
+			if (invIntel)
+				invIntel.Insert(OnIntelTxBtn);
+			widgets.m_wIntelTxBtn.SetColor(Color.FromRGBA(90, 255, 160, 255));
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -543,6 +553,22 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	{
 		m_iFocusedModeTab = 1;
 		ActivateFocusedModeTab();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnIntelTxBtn(Widget w, float value, EActionTrigger reason)
+	{
+		if (!m_Station)
+			return;
+		if (!m_Station.IsPowered())
+			return;
+
+		float nowS = System.GetTickCount() * 0.001;
+		if ((nowS - m_fLastIntelTxS) < 0.4)
+			return;
+
+		m_fLastIntelTxS = nowS;
+		GBRS_PlayerControllerNet.RequestForceIntelTx(m_Station);
 	}
 
 	//------------------------------------------------------------------------------------------------

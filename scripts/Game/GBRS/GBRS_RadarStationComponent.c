@@ -141,6 +141,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ref map<int, float> m_ContactLastSeen;
     protected ref map<int, bool> m_WlrFiredTrackIds;
     protected float m_fNextContactUpdateS;
+    protected float m_fLastForceIntelS;
     protected bool m_bLockLayerEnabled;
 
     override void OnPostInit(IEntity owner)
@@ -831,6 +832,28 @@ class GBRS_RadarStationComponent : ScriptComponent
     bool IsStationAuthority()
     {
         return IsAuthority();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Operator TX NET. Authority-only. Interrupts the current intel VO.
+    bool AuthorityForceIntelTx()
+    {
+        if (!IsAuthority())
+            return false;
+        if (IsDestroyed())
+            return false;
+        if (!m_bPowered)
+            return false;
+
+        float nowS = System.GetTickCount() * 0.001;
+        if ((nowS - m_fLastForceIntelS) < 1.0)
+            return false;
+
+        bool sent = GBRS_CampaignRadarWarning.ForceBroadcastFromStation(this);
+        if (sent)
+            m_fLastForceIntelS = nowS;
+
+        return sent;
     }
 
     SCR_CampaignMilitaryBaseComponent GetCoveringCampaignBase(bool sameFactionOnly)
@@ -2329,7 +2352,7 @@ class GBRS_RadarStationComponent : ScriptComponent
                 continue;
 
             RDF_RadarWlrFix fix = sol.m_Fix;
-            if (!fix.m_LaunchValid && !fix.m_ImpactValid)
+            if (!fix.m_ImpactValid)
                 continue;
 
             m_WlrFiredTrackIds.Set(id, true);

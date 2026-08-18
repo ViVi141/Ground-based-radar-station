@@ -136,6 +136,20 @@ FrameWidgetClass {
       }
      }
     }
+    ButtonWidgetClass "{69FCEDCEB00101C0}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
+     Name "IntelTxBtn"
+     Slot LayoutSlot "{69FCEDCEB00101C1}" {
+      Padding 16 0 8 0
+      VerticalAlign 1
+     }
+     components {
+      SCR_ButtonTextComponent "{69FCEDCEB00101C2}" {
+       m_sText "TX NET"
+      }
+     }
+     {
+     }
+    }
     HorizontalLayoutWidgetClass "{69FCEDCEB00101E0}" {
      Name "NavHints"
      Slot LayoutSlot "{69FCEDCEB00101E1}" {

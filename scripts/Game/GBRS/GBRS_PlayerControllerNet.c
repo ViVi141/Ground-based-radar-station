@@ -88,6 +88,25 @@ class GBRS_PlayerControllerNet
     }
 
     //------------------------------------------------------------------------------------------------
+    static bool RequestForceIntelTx(GBRS_RadarStationComponent station)
+    {
+        if (!station)
+            return false;
+
+        RplId stationId = station.GetStationRplId();
+        if (!stationId.IsValid())
+            return false;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(GetGame().GetPlayerController());
+        if (!playerController)
+            return false;
+
+        playerController.GBRS_RpcAsk_ForceIntelTx(stationId);
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
     static GBRS_RadarStationComponent ResolveStation(RplId stationId)
     {
         if (!stationId.IsValid())
@@ -146,6 +165,12 @@ modded class SCR_PlayerController
     void GBRS_RpcAsk_AntennaStare(RplId stationId, bool enabled, float azDeg)
     {
         Rpc(RpcAsk_GBRS_AntennaStare, stationId, enabled, azDeg);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_RpcAsk_ForceIntelTx(RplId stationId)
+    {
+        Rpc(RpcAsk_GBRS_ForceIntelTx, stationId);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -246,9 +271,53 @@ modded class SCR_PlayerController
     }
 
     //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Server)]
+    protected void RpcAsk_GBRS_ForceIntelTx(RplId stationId)
+    {
+        GBRS_RadarStationComponent station = GBRS_PlayerControllerNet.ResolveStation(stationId);
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
+            return;
+
+        bool sent = station.AuthorityForceIntelTx();
+        GBRS_NotifyIntelTxResult(sent);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_NotifyIntelTxResult(bool sent)
+    {
+        if (GBRS_IsLocalPlayerController())
+        {
+            RpcDo_GBRS_IntelTxResult(sent);
+            return;
+        }
+
+        Rpc(RpcDo_GBRS_IntelTxResult, sent);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+    protected void RpcDo_GBRS_IntelTxResult(bool sent)
+    {
+        if (sent)
+            return;
+
+        SCR_HintManagerComponent.ShowCustomHint("NO CONTACT", "RADAR NET", 3, false);
+    }
+
+    //------------------------------------------------------------------------------------------------
     void GBRS_NotifyRadarWarning(string title, string subtitle)
     {
-        if (RplSession.Mode() == RplMode.None)
+        if (GBRS_IsLocalPlayerController())
         {
             RpcDo_GBRS_RadarWarning(title, subtitle);
             return;
@@ -261,30 +330,90 @@ modded class SCR_PlayerController
     [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
     protected void RpcDo_GBRS_RadarWarning(string title, string subtitle)
     {
-        SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
-        if (!popup)
-            return;
-
-        popup.PopupMsg(title, 6, subtitle);
+        GBRS_ShowIntelAlert(title, subtitle, false, 0, 0, 0, 0, 1.0, "", false);
     }
 
     //------------------------------------------------------------------------------------------------
-    void GBRS_NotifyIntelRadio(string title, string subtitle, int voiceKind, int gridPacked, float quality)
+    void GBRS_NotifyIntelRadio(
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        float quality,
+        string factionKey,
+        bool interrupt)
     {
-        if (RplSession.Mode() == RplMode.None)
+        int voicePacked = voiceKind;
+        if (interrupt)
+            voicePacked = voicePacked + 10;
+
+        if (GBRS_IsLocalPlayerController())
         {
-            RpcDo_GBRS_IntelRadio(title, subtitle, voiceKind, gridPacked, quality);
+            RpcDo_GBRS_IntelRadio(
+                title, subtitle, voicePacked, gridPacked, paramA, paramB, quality, factionKey);
             return;
         }
 
-        Rpc(RpcDo_GBRS_IntelRadio, title, subtitle, voiceKind, gridPacked, quality);
+        Rpc(RpcDo_GBRS_IntelRadio, title, subtitle, voicePacked, gridPacked, paramA, paramB, quality, factionKey);
     }
 
     //------------------------------------------------------------------------------------------------
     [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-    protected void RpcDo_GBRS_IntelRadio(string title, string subtitle, int voiceKind, int gridPacked, float quality)
+    protected void RpcDo_GBRS_IntelRadio(
+        string title,
+        string subtitle,
+        int voicePacked,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        float quality,
+        string factionKey)
     {
-        GBRS_IntelRadioSoundEntity.PlayIntelVoice(voiceKind, gridPacked, quality);
+        bool interrupt = false;
+        int voiceKind = voicePacked;
+        if (voiceKind >= 10)
+        {
+            interrupt = true;
+            voiceKind = voiceKind - 10;
+        }
+
+        GBRS_ShowIntelAlert(
+            title, subtitle, true, voiceKind, gridPacked, paramA, paramB, quality, factionKey, interrupt);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected bool GBRS_IsLocalPlayerController()
+    {
+        PlayerController local = GetGame().GetPlayerController();
+        if (!local)
+            return false;
+        if (local != this)
+            return false;
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void GBRS_ShowIntelAlert(
+        string title,
+        string subtitle,
+        bool playVoice,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        float quality,
+        string factionKey,
+        bool interrupt)
+    {
+        if (playVoice)
+        {
+            GBRS_IntelRadioSoundEntity.PlayIntelVoice(
+                voiceKind, gridPacked, paramA, paramB, quality, factionKey, interrupt);
+        }
+
+        SCR_HintManagerComponent.ShowCustomHint(subtitle, title, 6, true);
 
         SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
         if (!popup)

@@ -10,6 +10,7 @@ class GBRS_RadarStationHudWidgets
     Widget m_wModeTabWlr;
     Widget m_wModeTabLock;
     Widget m_wModeTabManual;
+    Widget m_wIntelTxBtn;
     Widget m_wNavHints;
     Widget m_wHintTabPrev;
     Widget m_wHintTabNext;
@@ -93,6 +94,7 @@ class GBRS_RadarStationHudWidgets
         m_wModeTabWlr = root.FindAnyWidget("ModeTabWlr");
         m_wModeTabLock = root.FindAnyWidget("ModeTabLock");
         m_wModeTabManual = root.FindAnyWidget("ModeTabManual");
+        m_wIntelTxBtn = root.FindAnyWidget("IntelTxBtn");
         m_wNavHints = root.FindAnyWidget("NavHints");
         m_wHintTabPrev = root.FindAnyWidget("HintTabPrev");
         m_wHintTabNext = root.FindAnyWidget("HintTabNext");
@@ -207,6 +209,7 @@ class GBRS_RadarStationHudWidgets
         m_wModeTabWlr = null;
         m_wModeTabLock = null;
         m_wModeTabManual = null;
+        m_wIntelTxBtn = null;
         m_wNavHints = null;
         m_wHintTabPrev = null;
         m_wHintTabNext = null;

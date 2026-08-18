@@ -1,0 +1,17 @@
+MetaFileClass {
+ Name "{69FCEDCEA0060100}Sounds/GBRS/VO/GBRS_IntelRadio.acp"
+ Configurations {
+  ACPResourceClass PC {
+  }
+  ACPResourceClass XBOX_ONE : PC {
+  }
+  ACPResourceClass XBOX_SERIES : PC {
+  }
+  ACPResourceClass PS4 : PC {
+  }
+  ACPResourceClass PS5 : PC {
+  }
+  ACPResourceClass HEADLESS : PC {
+  }
+ }
+}

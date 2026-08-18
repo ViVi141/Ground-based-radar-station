@@ -39,6 +39,8 @@ class GBRS_RadarStationConstants
     static const int INTEL_VOICE_WLR = 1;
     static const ResourceName PREFAB_INTEL_RADIO_SOUND =
         "{69FCEDCEA0050001}Prefabs/GBRS/GBRS_IntelRadioSoundEntity.et";
+    static const ResourceName ACP_INTEL_RADIO_VO =
+        "{69FCEDCEA0060100}Sounds/GBRS/VO/GBRS_IntelRadio.acp";
 
     // Parked beam does not need beam-overlap dwells. 8 Hz is enough for TWS
     // kinematics and keeps ScanOnce off the 60 fps cadence.
