@@ -315,22 +315,28 @@ modded class SCR_PlayerController
     }
 
     //------------------------------------------------------------------------------------------------
-    void GBRS_NotifyRadarWarning(string title, string subtitle)
+    void GBRS_NotifyIntelBriefing(string title, string subtitle)
     {
         if (GBRS_IsLocalPlayerController())
         {
-            RpcDo_GBRS_RadarWarning(title, subtitle);
+            RpcDo_GBRS_IntelBriefing(title, subtitle);
             return;
         }
 
-        Rpc(RpcDo_GBRS_RadarWarning, title, subtitle);
+        Rpc(RpcDo_GBRS_IntelBriefing, title, subtitle);
     }
 
     //------------------------------------------------------------------------------------------------
     [RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-    protected void RpcDo_GBRS_RadarWarning(string title, string subtitle)
+    protected void RpcDo_GBRS_IntelBriefing(string title, string subtitle)
     {
-        GBRS_ShowIntelAlert(title, subtitle, false, 0, 0, 0, 0, 1.0, "", false);
+        SCR_HintManagerComponent.ShowCustomHint(subtitle, title, 12, false);
+
+        SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
+        if (!popup)
+            return;
+
+        popup.PopupMsg(title, 12, subtitle);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -412,13 +418,5 @@ modded class SCR_PlayerController
             GBRS_IntelRadioSoundEntity.PlayIntelVoice(
                 voiceKind, gridPacked, paramA, paramB, quality, factionKey, interrupt);
         }
-
-        SCR_HintManagerComponent.ShowCustomHint(subtitle, title, 6, true);
-
-        SCR_PopUpNotification popup = SCR_PopUpNotification.GetInstance();
-        if (!popup)
-            return;
-
-        popup.PopupMsg(title, 6, subtitle);
     }
 }

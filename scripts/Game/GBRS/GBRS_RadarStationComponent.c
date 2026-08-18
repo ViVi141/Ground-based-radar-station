@@ -143,6 +143,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected float m_fNextContactUpdateS;
     protected float m_fLastForceIntelS;
     protected bool m_bLockLayerEnabled;
+    protected bool m_bIntelBriefingSent;
 
     override void OnPostInit(IEntity owner)
     {
@@ -175,6 +176,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         ApplyUnderConstructionLock();
         BindCoveringBaseFactionListener();
         GBRS_CampaignRadarWarning.EnsureBound();
+        if (IsCompositionReady())
+            QueueIntelBriefing();
     }
 
     override void EOnFrame(IEntity owner, float timeSlice)
@@ -334,6 +337,12 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
         ClearContactEvents();
         ShutdownRadar();
+        if (GetGame())
+        {
+            ScriptCallQueue queue = GetGame().GetCallqueue();
+            if (queue)
+                queue.Remove(TryNotifyIntelBriefing);
+        }
         super.OnDelete(owner);
     }
 
@@ -730,6 +739,43 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_BuildingComposition.GetOnCompositionSpawned().Remove(OnCompositionFullyBuilt);
             m_bCompositionBuildGateBound = false;
         }
+
+        QueueIntelBriefing();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void QueueIntelBriefing()
+    {
+        if (m_bIntelBriefingSent)
+            return;
+        if (!GetGame())
+            return;
+
+        GetGame().GetCallqueue().CallLater(TryNotifyIntelBriefing, 1000, false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void TryNotifyIntelBriefing()
+    {
+        if (m_bIntelBriefingSent)
+            return;
+        if (!IsAuthority())
+            return;
+        if (IsDestroyed())
+            return;
+        if (!IsCompositionReady())
+            return;
+
+        IEntity owner = GetOwner();
+        if (!owner)
+            return;
+
+        Faction faction = SCR_Faction.GetEntityFaction(owner);
+        if (!faction)
+            return;
+
+        m_bIntelBriefingSent = true;
+        GBRS_IntelRadioNet.NotifyIntelBriefing(this, faction);
     }
 
     bool IsCompositionReady()

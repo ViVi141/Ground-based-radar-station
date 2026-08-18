@@ -4,8 +4,7 @@
 //! Vanilla EvaluateEnemyPresence only looks at characters inside the HQ
 //! compound. Distant air search must not set m_bEnemiesPresent (that flag
 //! locks the build button). Powered stations transmit on the locked intel
-//! net; players not tuned still get the faction popup. Open Game Master
-//! editors get HQ voice + popup directly (editor VON is not on RADAR NET).
+//! net. Only players tuned to RADAR NET hear the voice traffic.
 //! Same launch/impact sheaf counts as one intel-net fire mission.
 class GBRS_WlrWarnMission
 {
@@ -589,8 +588,9 @@ class GBRS_CampaignRadarWarning
         int paramB,
         bool interrupt)
     {
+        GBRS_IntelRadioNet.BeginIntelTxBatch();
         GBRS_IntelRadioNet.TransmitFromStation(
-            station, title, subtitle, voiceKind, gridPacked, paramA, paramB);
+            station, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt);
         GBRS_IntelRadioNet.NotifyListeners(
             station, faction, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt);
     }

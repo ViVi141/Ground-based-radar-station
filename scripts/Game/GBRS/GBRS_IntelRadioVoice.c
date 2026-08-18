@@ -3,6 +3,7 @@
 //! Air: prefix + grid + heading + altitude + out.
 //! WLR: prefix + launch grid + impact grid + ETA + out.
 //! Grid packing is EEE*1000+NNN.
+//! Playback follows the local handheld / backpack / editor radio.
 [EntityEditorProps(category: "GameScripted/GBRS", description: "Intel-net radio voice bank")]
 class GBRS_IntelRadioSoundEntityClass : GenericEntityClass
 {
@@ -236,13 +237,8 @@ class GBRS_IntelRadioSoundEntity : GenericEntity
         if (!soundComp)
             return false;
 
-        PlayerController localController = GetGame().GetPlayerController();
-        if (localController)
-        {
-            IEntity controlled = localController.GetControlledEntity();
-            if (controlled)
-                SetOrigin(controlled.GetOrigin());
-        }
+        SnapToLocalRadio();
+        soundComp.SetSignalValueStr("TransmissionQuality", m_fPendingQuality);
 
         string factionKey = m_sPendingFactionKey;
         if (factionKey.IsEmpty())
@@ -289,6 +285,7 @@ class GBRS_IntelRadioSoundEntity : GenericEntity
         }
 
         m_PlayedHiss = soundComp.PlayStr("SOUND_GBRS_HISS");
+        ApplyPlayingTransforms();
     }
 
     //------------------------------------------------------------------------------------------------
@@ -330,12 +327,14 @@ class GBRS_IntelRadioSoundEntity : GenericEntity
         {
             if (!soundComp.IsFinishedPlaying(m_PlayedRadio))
             {
+                ApplyPlayingTransforms();
                 GetGame().GetCallqueue().CallLater(AdvanceQueue, 20, false);
                 return;
             }
         }
 
         EnsureHiss();
+        ApplyPlayingTransforms();
 
         if (!PlayNextClip())
         {
@@ -374,10 +373,63 @@ class GBRS_IntelRadioSoundEntity : GenericEntity
 
             m_PlayedRadio = soundComp.PlayStr(eventName);
             if (m_PlayedRadio != AudioHandle.Invalid)
+            {
+                ApplyPlayingTransforms();
                 return true;
+            }
         }
 
         return false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void SnapToLocalRadio()
+    {
+        PlayerController localController = GetGame().GetPlayerController();
+        if (!localController)
+            return;
+
+        int playerId = localController.GetPlayerId();
+        IEntity radio = GBRS_IntelRadioNet.GetPlayerIntelRadioEntity(playerId);
+        IEntity attachTo = radio;
+
+        IEntity controlled = localController.GetControlledEntity();
+        if (radio)
+        {
+            if (controlled)
+            {
+                float distSq = vector.DistanceSq(radio.GetOrigin(), controlled.GetOrigin());
+                if (distSq > (25.0 * 25.0))
+                    attachTo = controlled;
+            }
+        }
+
+        if (!attachTo)
+            attachTo = controlled;
+        if (!attachTo)
+            return;
+
+        vector mat[4];
+        attachTo.GetWorldTransform(mat);
+        SetWorldTransform(mat);
+
+        SimpleSoundComponent soundComp = GetSoundComponent();
+        if (soundComp)
+            soundComp.SetTransformation(mat);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void ApplyPlayingTransforms()
+    {
+        SnapToLocalRadio();
+
+        vector mat[4];
+        GetWorldTransform(mat);
+
+        if (m_PlayedRadio != AudioHandle.Invalid)
+            AudioSystem.SetSoundTransformation(m_PlayedRadio, mat);
+        if (m_PlayedHiss != AudioHandle.Invalid)
+            AudioSystem.SetSoundTransformation(m_PlayedHiss, mat);
     }
 
     //------------------------------------------------------------------------------------------------

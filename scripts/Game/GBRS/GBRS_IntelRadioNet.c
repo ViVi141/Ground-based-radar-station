@@ -2,12 +2,24 @@
 //! Station transmitter + listen-only helpers for the locked GBRS intel net.
 //! Players keep vanilla handsets; this only parks the radar radio on a
 //! faction frequency and refuses CHANNEL PTT while tuned there.
-//!
-//! Game Master editor radios sit on GM / platoon freqs, not RADAR NET, and
-//! share one encryption key — ScriptedRadioMessage cannot reach them. Open
-//! editors therefore get the same HQ voice + popup over PlayerController.
+//! Contact traffic is radio-only: handhelds must be on RADAR NET.
+//! RF OnDelivery is the real gate; NotifyListeners is the Game Master fallback.
 class GBRS_IntelRadioNet
 {
+    protected static int s_iNotifyStamp;
+    protected static ref map<int, int> s_mNotifyStamp;
+
+    //------------------------------------------------------------------------------------------------
+    static void BeginIntelTxBatch()
+    {
+        s_iNotifyStamp = s_iNotifyStamp + 1;
+        if (s_iNotifyStamp > 1000000)
+            s_iNotifyStamp = 1;
+
+        if (!s_mNotifyStamp)
+            s_mNotifyStamp = new map<int, int>();
+    }
+
     //------------------------------------------------------------------------------------------------
     static void ConfigureStationRadio(GBRS_RadarStationComponent station, bool powered)
     {
@@ -63,7 +75,8 @@ class GBRS_IntelRadioNet
         int voiceKind,
         int gridPacked,
         int paramA,
-        int paramB)
+        int paramB,
+        bool interrupt)
     {
         if (!station)
             return false;
@@ -95,11 +108,12 @@ class GBRS_IntelRadioNet
         if (freqKhz > maxKhz)
             return false;
 
+        string factionKey = "";
+        if (faction)
+            factionKey = faction.GetFactionKey();
+
         GBRS_IntelRadioMsg msg = new GBRS_IntelRadioMsg();
-        msg.SetIntelText(title, subtitle);
-        msg.SetVoiceKind(voiceKind);
-        msg.SetGridPacked(gridPacked);
-        msg.SetVoiceParams(paramA, paramB);
+        FillIntelMsg(msg, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt, factionKey);
         string encryptionKey = radio.GetEncryptionKey();
         msg.SetEncryptionKey(encryptionKey);
         transceiver.BeginTransmissionFreq(msg, freqKhz);
@@ -109,10 +123,7 @@ class GBRS_IntelRadioNet
         if (!encryptionKey.IsEmpty())
         {
             GBRS_IntelRadioMsg openMsg = new GBRS_IntelRadioMsg();
-            openMsg.SetIntelText(title, subtitle);
-            openMsg.SetVoiceKind(voiceKind);
-            openMsg.SetGridPacked(gridPacked);
-            openMsg.SetVoiceParams(paramA, paramB);
+            FillIntelMsg(openMsg, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt, factionKey);
             openMsg.SetEncryptionKey("");
             transceiver.BeginTransmissionFreq(openMsg, freqKhz);
         }
@@ -121,9 +132,28 @@ class GBRS_IntelRadioNet
     }
 
     //------------------------------------------------------------------------------------------------
-    //! Direct delivery. ScriptedRadioMessage is not enough in Game Master:
-    //! editor VON is on GM channels, handsets have empty encryption, and
-    //! listen-server Owner RPCs may never run locally.
+    protected static void FillIntelMsg(
+        notnull GBRS_IntelRadioMsg msg,
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        bool interrupt,
+        string factionKey)
+    {
+        msg.SetIntelText(title, subtitle);
+        msg.SetVoiceKind(voiceKind);
+        msg.SetGridPacked(gridPacked);
+        msg.SetVoiceParams(paramA, paramB);
+        msg.SetInterrupt(interrupt);
+        msg.SetFactionKey(factionKey);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Game Master / editor fallback when RF never reaches the handset.
+    //! Players already claimed by OnDelivery are skipped.
     static void NotifyListeners(
         GBRS_RadarStationComponent station,
         notnull Faction faction,
@@ -154,7 +184,80 @@ class GBRS_IntelRadioNet
                 faction, station.GetFactionPreset());
         }
 
-        string factionKey = faction.GetFactionRadioEncryptionKey();
+        string encryptionKey = faction.GetFactionRadioEncryptionKey();
+        string factionKey = faction.GetFactionKey();
+
+        array<int> playerIds = {};
+        playerManager.GetPlayers(playerIds);
+
+        foreach (int playerId : playerIds)
+        {
+            bool tuned = IsPlayerTunedToIntel(playerId, stationFreqKhz, encryptionKey);
+            if (!tuned)
+                continue;
+
+            Faction playerFaction = GetPlayerFactionForIntel(playerId);
+            if (playerFaction && playerFaction != faction)
+                continue;
+
+            if (!IsPlayerInIntelRange(playerId, stationPos))
+                continue;
+
+            DeliverToPlayer(
+                playerId, title, subtitle, voiceKind, gridPacked, paramA, paramB, 1.0, factionKey, interrupt);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    static void DeliverToPlayer(
+        int playerId,
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        float quality,
+        string factionKey,
+        bool interrupt)
+    {
+        if (!TryClaimListener(playerId))
+            return;
+
+        PlayerManager playerManager = GetGame().GetPlayerManager();
+        if (!playerManager)
+            return;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(playerManager.GetPlayerController(playerId));
+        if (!playerController)
+            return;
+
+        playerController.GBRS_NotifyIntelRadio(
+            title, subtitle, voiceKind, gridPacked, paramA, paramB, quality, factionKey, interrupt);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! One-shot how-to after a station finishes building. Not a contact alert.
+    static void NotifyIntelBriefing(GBRS_RadarStationComponent station, notnull Faction faction)
+    {
+        PlayerManager playerManager = GetGame().GetPlayerManager();
+        if (!playerManager)
+            return;
+
+        int freqKhz = GBRS_RadarStationConstants.GetIntelFrequencyKhz(
+            faction, EGBRS_RadarFactionPreset.US);
+        if (station)
+        {
+            freqKhz = GBRS_RadarStationConstants.GetIntelFrequencyKhz(
+                faction, station.GetFactionPreset());
+        }
+
+        string mhz = GBRS_RadarStationConstants.FormatIntelFrequencyMhz(freqKhz);
+        string title = GBRS_RadarStationConstants.INTEL_CHANNEL_NAME + " ONLINE";
+        string subtitle =
+            "Tune handheld to " + GBRS_RadarStationConstants.INTEL_CHANNEL_NAME
+            + " (" + mhz + "). Air: grid heading altitude. WLR: launch impact ETA. Console TX NET rebroadcasts.";
 
         array<int> playerIds = {};
         playerManager.GetPlayers(playerIds);
@@ -166,40 +269,11 @@ class GBRS_IntelRadioNet
             if (!playerController)
                 continue;
 
-            if (IsPlayerEditorOpened(playerId))
-            {
-                playerController.GBRS_NotifyIntelRadio(
-                    title, subtitle, voiceKind, gridPacked, paramA, paramB, 1.0, faction.GetFactionKey(), interrupt);
-                continue;
-            }
-
-            bool tuned = IsPlayerTunedToIntel(playerId, stationFreqKhz, factionKey);
             Faction playerFaction = GetPlayerFactionForIntel(playerId);
-            bool sameFaction = false;
-            if (playerFaction && playerFaction == faction)
-                sameFaction = true;
-
-            // GM-placed soldiers often have no slotted faction. If they
-            // actually tuned this net, still deliver.
-            if (!sameFaction)
-            {
-                if (!tuned)
-                    continue;
-                if (playerFaction)
-                    continue;
-            }
-
-            if (!IsPlayerInIntelRange(playerId, stationPos))
+            if (playerFaction && playerFaction != faction)
                 continue;
 
-            if (tuned)
-            {
-                playerController.GBRS_NotifyIntelRadio(
-                    title, subtitle, voiceKind, gridPacked, paramA, paramB, 1.0, faction.GetFactionKey(), interrupt);
-                continue;
-            }
-
-            playerController.GBRS_NotifyRadarWarning(title, subtitle);
+            playerController.GBRS_NotifyIntelBriefing(title, subtitle);
         }
     }
 
@@ -216,24 +290,48 @@ class GBRS_IntelRadioNet
     //------------------------------------------------------------------------------------------------
     static bool IsPlayerTunedToIntel(int playerId, int freqKhz = 0, string encryptionKey = "")
     {
-        if (IsEditorRadioTunedToIntel(playerId, freqKhz, encryptionKey))
-            return true;
+        IEntity radio = GetPlayerIntelRadioEntity(playerId, freqKhz, encryptionKey);
+        if (!radio)
+            return false;
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Handheld, backpack, or open editor radio currently on RADAR NET.
+    static IEntity GetPlayerIntelRadioEntity(int playerId, int freqKhz = 0, string encryptionKey = "")
+    {
+        SCR_EditorManagerEntity editor = GetEditorManagerForPlayer(playerId);
+        if (editor)
+        {
+            if (editor.IsOpened())
+            {
+                if (IsRadioEntityTunedToIntel(editor, freqKhz, encryptionKey))
+                    return editor;
+            }
+        }
 
         IEntity controlled = GetGame().GetPlayerManager().GetPlayerControlledEntity(playerId);
         if (!controlled)
-            return false;
+            return null;
 
         SCR_GadgetManagerComponent gadgets =
             SCR_GadgetManagerComponent.Cast(controlled.FindComponent(SCR_GadgetManagerComponent));
         if (!gadgets)
-            return false;
+            return null;
 
-        if (IsRadioEntityTunedToIntel(gadgets.GetGadgetByType(EGadgetType.RADIO), freqKhz, encryptionKey))
-            return true;
-        if (IsRadioEntityTunedToIntel(gadgets.GetGadgetByType(EGadgetType.RADIO_BACKPACK), freqKhz, encryptionKey))
-            return true;
+        IEntity held = gadgets.GetHeldGadget();
+        if (IsRadioEntityTunedToIntel(held, freqKhz, encryptionKey))
+            return held;
 
-        return false;
+        IEntity handheld = gadgets.GetGadgetByType(EGadgetType.RADIO);
+        if (IsRadioEntityTunedToIntel(handheld, freqKhz, encryptionKey))
+            return handheld;
+
+        IEntity backpack = gadgets.GetGadgetByType(EGadgetType.RADIO_BACKPACK);
+        if (IsRadioEntityTunedToIntel(backpack, freqKhz, encryptionKey))
+            return backpack;
+
+        return null;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -306,15 +404,22 @@ class GBRS_IntelRadioNet
     }
 
     //------------------------------------------------------------------------------------------------
-    protected static bool IsEditorRadioTunedToIntel(int playerId, int freqKhz, string encryptionKey)
+    protected static bool TryClaimListener(int playerId)
     {
-        SCR_EditorManagerEntity editor = GetEditorManagerForPlayer(playerId);
-        if (!editor)
-            return false;
-        if (!editor.IsOpened())
+        if (playerId <= 0)
             return false;
 
-        return IsRadioEntityTunedToIntel(editor, freqKhz, encryptionKey);
+        if (!s_mNotifyStamp)
+            s_mNotifyStamp = new map<int, int>();
+
+        if (s_mNotifyStamp.Contains(playerId))
+        {
+            if (s_mNotifyStamp.Get(playerId) == s_iNotifyStamp)
+                return false;
+        }
+
+        s_mNotifyStamp.Set(playerId, s_iNotifyStamp);
+        return true;
     }
 
     //------------------------------------------------------------------------------------------------

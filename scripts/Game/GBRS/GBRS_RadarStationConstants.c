@@ -76,6 +76,14 @@ class GBRS_RadarStationConstants
     }
 
     //------------------------------------------------------------------------------------------------
+    static string FormatIntelFrequencyMhz(int freqKhz)
+    {
+        int mhz = freqKhz / 1000;
+        int tenth = (freqKhz % 1000) / 100;
+        return mhz.ToString() + "." + tenth.ToString() + " MHz";
+    }
+
+    //------------------------------------------------------------------------------------------------
     static int GetIntelFrequencyKhz(Faction faction, EGBRS_RadarFactionPreset fallbackPreset)
     {
         if (faction)
