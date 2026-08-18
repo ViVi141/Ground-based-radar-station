@@ -33,7 +33,11 @@ class GBRS_RadarStationConstants
     // 30000–76000. Offset from vanilla platoon (US 48000 / USSR 42000).
     static const int INTEL_FREQ_US_KHZ = 45600;
     static const int INTEL_FREQ_USSR_KHZ = 39600;
-    static const float INTEL_RADIO_RANGE_M = 25000.0;
+    // Local RADAR NET radius. Matches AN/PRC-77. Conflict HQ coverage
+    // or a chain of powered RelayTransceivers (GM towers, antennas,
+    // command vehicles) can rebroadcast farther.
+    static const float INTEL_RADIO_RANGE_M = 2000.0;
+    static const int INTEL_RELAY_MESH_MAX = 24;
     static const string INTEL_CHANNEL_NAME = "RADAR NET";
     static const int INTEL_VOICE_AIR = 0;
     static const int INTEL_VOICE_WLR = 1;

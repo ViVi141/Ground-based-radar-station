@@ -1,0 +1,722 @@
+{
+  "source": "C:\\Users\\74738\\Documents\\My Games\\ArmaReforgerWorkbench\\addons\\Ground-based radar station\\tools\\out\\conflict_eden_bases.json",
+  "date": "2026-08-19",
+  "dem_cell_m": 32.0,
+  "land_area_km2": 51.508224,
+  "rules": {
+    "radar_tx_m": 2000.0,
+    "old_radar_tx_m": 25000.0,
+    "handheld_prc77_m": 2000.0,
+    "handheld_prc68_m": 1300.0,
+    "handhelds_hop": false,
+    "base_radio_default_m": 1000.0,
+    "antenna_01_m": 2000.0,
+    "relay_tower_m": 3000.0,
+    "tx_tower_large_m": 5000.0,
+    "command_vehicle_m": 2000.0
+  },
+  "geometry": {
+    "ideal_2km_disk_km2": 12.566370614359172,
+    "ideal_25km_disk_km2": 1963.4954084936207,
+    "isolated_forward": {
+      "x": 11684.618,
+      "z": 11180.0,
+      "nn_base_m": 5461.389086021321,
+      "listen_2km_km2": 1.001472,
+      "listen_2km_land_pct": 1.9442953420409137,
+      "listen_25km_km2": 51.508224,
+      "listen_25km_land_pct": 100.0,
+      "handheld_chain_does_not_grow": true
+    }
+  },
+  "nn_spacing": {
+    "min_m": 468.2524606881403,
+    "p25_m": 693.9756023759054,
+    "median_m": 906.3540704590262,
+    "p75_m": 1092.876974725861,
+    "max_m": 1525.0379331020238,
+    "mean_m": 901.1264128010195,
+    "below_1km": 25,
+    "below_2km": 36,
+    "below_3km": 36,
+    "below_5km": 36,
+    "n": 36
+  },
+  "nn_rows": [
+    {
+      "name": "TownBaseLaruns",
+      "kind": "town",
+      "nn_m": 468.2524606881403,
+      "nn_name": "TownBaseLevie"
+    },
+    {
+      "name": "TownBaseLevie",
+      "kind": "town",
+      "nn_m": 468.2524606881403,
+      "nn_name": "TownBaseLaruns"
+    },
+    {
+      "name": "TownBaseDuras",
+      "kind": "town",
+      "nn_m": 477.5261247808072,
+      "nn_name": "TownBaseVernon"
+    },
+    {
+      "name": "TownBaseVernon",
+      "kind": "town",
+      "nn_m": 477.5261247808072,
+      "nn_name": "TownBaseDuras"
+    },
+    {
+      "name": "MilitaryBaseLevie",
+      "kind": "military",
+      "nn_m": 509.98132949224095,
+      "nn_name": "TownBaseLevie"
+    },
+    {
+      "name": "TownBaseFigari",
+      "kind": "town",
+      "nn_m": 600.2046442275549,
+      "nn_name": "TownBaseProvins"
+    },
+    {
+      "name": "TownBaseProvins",
+      "kind": "town",
+      "nn_m": 600.2046442275549,
+      "nn_name": "TownBaseFigari"
+    },
+    {
+      "name": "SmallBaseBlackLake",
+      "kind": "small",
+      "nn_m": 605.1849658948564,
+      "nn_name": "TownBaseDuras"
+    },
+    {
+      "name": "SmallBaseHornbeamValley",
+      "kind": "small",
+      "nn_m": 693.9756023759054,
+      "nn_name": "TownBaseTyrone"
+    },
+    {
+      "name": "TownBaseTyrone",
+      "kind": "town",
+      "nn_m": 693.9756023759054,
+      "nn_name": "SmallBaseHornbeamValley"
+    },
+    {
+      "name": "SmallBaseRichemont",
+      "kind": "small",
+      "nn_m": 772.1576449030285,
+      "nn_name": "TownBaseFigari"
+    },
+    {
+      "name": "MajorBaseChotain",
+      "kind": "major",
+      "nn_m": 787.2340845699164,
+      "nn_name": "TownBaseChotain"
+    },
+    {
+      "name": "TownBaseChotain",
+      "kind": "town",
+      "nn_m": 787.2340845699164,
+      "nn_name": "MajorBaseChotain"
+    },
+    {
+      "name": "SmallBaseSimonsWood",
+      "kind": "small",
+      "nn_m": 836.473905201086,
+      "nn_name": "TownBaseLaruns"
+    },
+    {
+      "name": "SmallBasePennantsPass",
+      "kind": "small",
+      "nn_m": 860.379684777026,
+      "nn_name": "TownBaseDuras"
+    },
+    {
+      "name": "MainBaseNorth",
+      "kind": "MOB",
+      "nn_m": 887.7872649107246,
+      "nn_name": "SmallBaseMaidensBay"
+    },
+    {
+      "name": "SmallBaseMaidensBay",
+      "kind": "small",
+      "nn_m": 887.7872649107246,
+      "nn_name": "MainBaseNorth"
+    },
+    {
+      "name": "MilitaryBaseVilleneuf",
+      "kind": "military",
+      "nn_m": 906.3540704590262,
+      "nn_name": "TownBaseVileneuf"
+    },
+    {
+      "name": "TownBaseVileneuf",
+      "kind": "town",
+      "nn_m": 906.3540704590262,
+      "nn_name": "MilitaryBaseVilleneuf"
+    },
+    {
+      "name": "TownBaseEntre_Deux",
+      "kind": "town",
+      "nn_m": 911.9628288333809,
+      "nn_name": "TownBaseMontignac"
+    },
+    {
+      "name": "TownBaseMontignac",
+      "kind": "town",
+      "nn_m": 911.9628288333809,
+      "nn_name": "TownBaseEntre_Deux"
+    },
+    {
+      "name": "SmallBaseTillersFind",
+      "kind": "small",
+      "nn_m": 913.0926156073679,
+      "nn_name": "TownBaseGravette"
+    },
+    {
+      "name": "TownBaseGravette",
+      "kind": "town",
+      "nn_m": 913.0926156073679,
+      "nn_name": "SmallBaseTillersFind"
+    },
+    {
+      "name": "TownBaseRegina",
+      "kind": "town",
+      "nn_m": 928.4189201049488,
+      "nn_name": "SmallBasePennantsPass"
+    },
+    {
+      "name": "TownBaseMeaux",
+      "kind": "town",
+      "nn_m": 983.2859669364759,
+      "nn_name": "TownBaseTyrone"
+    },
+    {
+      "name": "SmallBaseLake",
+      "kind": "small",
+      "nn_m": 1000.4810269869255,
+      "nn_name": "SmallBaseTillersFind"
+    },
+    {
+      "name": "MilitaryBaseAirfield",
+      "kind": "military",
+      "nn_m": 1078.0596398397408,
+      "nn_name": "MainBaseNorth"
+    },
+    {
+      "name": "TownBaseLe_Moule",
+      "kind": "town",
+      "nn_m": 1137.3289793842214,
+      "nn_name": "MilitaryBaseVilleneuf"
+    },
+    {
+      "name": "SmallBaseGoatbay",
+      "kind": "small",
+      "nn_m": 1150.9230449880156,
+      "nn_name": "TownBaseRegina"
+    },
+    {
+      "name": "SmallBaseMine",
+      "kind": "small",
+      "nn_m": 1157.281367806417,
+      "nn_name": "SmallBaseBlackLake"
+    },
+    {
+      "name": "MajorBaseMorton",
+      "kind": "major",
+      "nn_m": 1229.4388109726378,
+      "nn_name": "SmallBaseRichemont"
+    },
+    {
+      "name": "MainBaseSouth",
+      "kind": "MOB",
+      "nn_m": 1287.2016283543046,
+      "nn_name": "TownBaseVernon"
+    },
+    {
+      "name": "SmallBaseShepherds",
+      "kind": "small",
+      "nn_m": 1290.9851377165965,
+      "nn_name": "TownBaseLe_Moule"
+    },
+    {
+      "name": "SmallBaseAndresBeacon",
+      "kind": "small",
+      "nn_m": 1321.4145794214758,
+      "nn_name": "TownBaseEntre_Deux"
+    },
+    {
+      "name": "MajorBaseLamentin",
+      "kind": "major",
+      "nn_m": 1473.736902049035,
+      "nn_name": "TownBaseLe_Moule"
+    },
+    {
+      "name": "TownBaseKermovan",
+      "kind": "town",
+      "nn_m": 1525.0379331020238,
+      "nn_name": "SmallBaseAndresBeacon"
+    }
+  ],
+  "island_components_if_all_bases_one_faction": [
+    {
+      "radio_range_m": 1000.0,
+      "components": 19,
+      "largest": 6
+    },
+    {
+      "radio_range_m": 2000.0,
+      "components": 1,
+      "largest": 36
+    },
+    {
+      "radio_range_m": 3000.0,
+      "components": 1,
+      "largest": 36
+    },
+    {
+      "radio_range_m": 4000.0,
+      "components": 1,
+      "largest": 36
+    },
+    {
+      "radio_range_m": 5000.0,
+      "components": 1,
+      "largest": 36
+    }
+  ],
+  "north_us": {
+    "label": "north_us",
+    "hq": "MainBaseNorth",
+    "base_count": 22,
+    "radio_cases": {
+      "base_1km": {
+        "radio_range_m": 1000.0,
+        "hq_net_size": 2,
+        "component_count": 14,
+        "largest_component": 3,
+        "injecting_radars": 6,
+        "listen_mean_km2": 8.830789818181819,
+        "listen_median_km2": 8.75264,
+        "listen_max_km2": 12.085248,
+        "local_mean_km2": 8.684916363636363,
+        "old_25km_mean_km2": 51.508224
+      },
+      "antenna_2km": {
+        "radio_range_m": 2000.0,
+        "hq_net_size": 22,
+        "component_count": 1,
+        "largest_component": 22,
+        "injecting_radars": 22,
+        "listen_mean_km2": 32.79872,
+        "listen_median_km2": 32.79872,
+        "listen_max_km2": 32.79872,
+        "local_mean_km2": 8.684916363636363,
+        "old_25km_mean_km2": 51.508224
+      },
+      "relay_3km": {
+        "radio_range_m": 3000.0,
+        "hq_net_size": 22,
+        "component_count": 1,
+        "largest_component": 22,
+        "injecting_radars": 22,
+        "listen_mean_km2": 36.90291200000001,
+        "listen_median_km2": 36.902912,
+        "listen_max_km2": 36.902912,
+        "local_mean_km2": 8.684916363636363,
+        "old_25km_mean_km2": 51.508224
+      },
+      "tower_5km": {
+        "radio_range_m": 5000.0,
+        "hq_net_size": 22,
+        "component_count": 1,
+        "largest_component": 22,
+        "injecting_radars": 22,
+        "listen_mean_km2": 45.70009600000001,
+        "listen_median_km2": 45.700096,
+        "listen_max_km2": 45.700096,
+        "local_mean_km2": 8.684916363636363,
+        "old_25km_mean_km2": 51.508224
+      }
+    },
+    "per_base_default": [
+      {
+        "name": "MainBaseNorth",
+        "kind": "MOB",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "MajorBaseChotain",
+        "kind": "major",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "MajorBaseLamentin",
+        "kind": "major",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "MilitaryBaseAirfield",
+        "kind": "military",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "MilitaryBaseVilleneuf",
+        "kind": "military",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseAndresBeacon",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseHornbeamValley",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseLake",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseMaidensBay",
+        "kind": "small",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseRichemont",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseShepherds",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseTillersFind",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseEntre_Deux",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseFigari",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseGravette",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseKermovan",
+        "kind": "town",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseLe_Moule",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseMeaux",
+        "kind": "town",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseMontignac",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseProvins",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseTyrone",
+        "kind": "town",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseVileneuf",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      }
+    ]
+  },
+  "south_ussr": {
+    "label": "south_ussr",
+    "hq": "MainBaseSouth",
+    "base_count": 14,
+    "radio_cases": {
+      "base_1km": {
+        "radio_range_m": 1000.0,
+        "hq_net_size": 1,
+        "component_count": 6,
+        "largest_component": 5,
+        "injecting_radars": 4,
+        "listen_mean_km2": 9.631817142857143,
+        "listen_median_km2": 10.039808,
+        "listen_max_km2": 12.263424,
+        "local_mean_km2": 9.559113142857143,
+        "old_25km_mean_km2": 51.508224000000006
+      },
+      "antenna_2km": {
+        "radio_range_m": 2000.0,
+        "hq_net_size": 14,
+        "component_count": 1,
+        "largest_component": 14,
+        "injecting_radars": 14,
+        "listen_mean_km2": 30.58790399999999,
+        "listen_median_km2": 30.587904,
+        "listen_max_km2": 30.587904,
+        "local_mean_km2": 9.559113142857143,
+        "old_25km_mean_km2": 51.508224000000006
+      },
+      "relay_3km": {
+        "radio_range_m": 3000.0,
+        "hq_net_size": 14,
+        "component_count": 1,
+        "largest_component": 14,
+        "injecting_radars": 14,
+        "listen_mean_km2": 38.22591999999999,
+        "listen_median_km2": 38.22592,
+        "listen_max_km2": 38.22592,
+        "local_mean_km2": 9.559113142857143,
+        "old_25km_mean_km2": 51.508224000000006
+      },
+      "tower_5km": {
+        "radio_range_m": 5000.0,
+        "hq_net_size": 14,
+        "component_count": 1,
+        "largest_component": 14,
+        "injecting_radars": 14,
+        "listen_mean_km2": 47.756288000000005,
+        "listen_median_km2": 47.756288,
+        "listen_max_km2": 47.756288,
+        "local_mean_km2": 9.559113142857143,
+        "old_25km_mean_km2": 51.508224000000006
+      }
+    },
+    "per_base_default": [
+      {
+        "name": "MainBaseSouth",
+        "kind": "MOB",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "MajorBaseMorton",
+        "kind": "major",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "MilitaryBaseLevie",
+        "kind": "military",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseBlackLake",
+        "kind": "small",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseGoatbay",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseMine",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBasePennantsPass",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "SmallBaseSimonsWood",
+        "kind": "small",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseChotain",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseDuras",
+        "kind": "town",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseLaruns",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseLevie",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseRegina",
+        "kind": "town",
+        "inject_1km": false,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      },
+      {
+        "name": "TownBaseVernon",
+        "kind": "town",
+        "inject_1km": true,
+        "inject_2km": true,
+        "inject_3km": true,
+        "inject_5km": true
+      }
+    ]
+  },
+  "examples": {
+    "north_town_1km_base": {
+      "radar": "TownBaseEntre_Deux",
+      "inject": false,
+      "listen_km2": 11.164672,
+      "land_pct": 21.675513409276157
+    },
+    "north_town_2km_antenna": {
+      "radar": "TownBaseEntre_Deux",
+      "inject": true,
+      "listen_km2": 32.79872,
+      "land_pct": 63.67666646786346
+    },
+    "south_town_2km_antenna": {
+      "radar": "TownBaseChotain",
+      "inject": true,
+      "listen_km2": 30.587904,
+      "land_pct": 59.384505278225085
+    },
+    "north_union_2km_antenna": {
+      "listen_km2": 32.79872,
+      "land_pct": 63.67666646786346,
+      "max_overlap": 22
+    },
+    "south_union_2km_antenna": {
+      "listen_km2": 30.587904,
+      "land_pct": 59.384505278225085,
+      "max_overlap": 14
+    }
+  }
+}

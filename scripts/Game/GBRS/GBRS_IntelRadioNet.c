@@ -3,11 +3,17 @@
 //! Players keep vanilla handsets; this only parks the radar radio on a
 //! faction frequency and refuses CHANNEL PTT while tuned there.
 //! Contact traffic is radio-only: handhelds must be on RADAR NET.
+//! Local TX is INTEL_RADIO_RANGE_M (2 km). Farther hop uses either Conflict
+//! HQ coverage or a BFS of powered world RelayTransceivers (GM towers,
+//! antennas, command vehicles, Conflict relays). Handhelds do not hop.
 //! RF OnDelivery is the real gate; NotifyListeners is the Game Master fallback.
 class GBRS_IntelRadioNet
 {
     protected static int s_iNotifyStamp;
     protected static ref map<int, int> s_mNotifyStamp;
+    protected static int s_iRelayMeshStamp = -1;
+    protected static RplId s_RelayMeshStationId;
+    protected static ref array<BaseTransceiver> s_aRelayMesh;
 
     //------------------------------------------------------------------------------------------------
     static void BeginIntelTxBatch()
@@ -18,6 +24,8 @@ class GBRS_IntelRadioNet
 
         if (!s_mNotifyStamp)
             s_mNotifyStamp = new map<int, int>();
+
+        s_iRelayMeshStamp = -1;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -112,21 +120,33 @@ class GBRS_IntelRadioNet
         if (faction)
             factionKey = faction.GetFactionKey();
 
-        GBRS_IntelRadioMsg msg = new GBRS_IntelRadioMsg();
-        FillIntelMsg(msg, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt, factionKey);
         string encryptionKey = radio.GetEncryptionKey();
-        msg.SetEncryptionKey(encryptionKey);
-        transceiver.BeginTransmissionFreq(msg, freqKhz);
+        TransmitOnIntelFreq(
+            transceiver,
+            freqKhz,
+            encryptionKey,
+            title,
+            subtitle,
+            voiceKind,
+            gridPacked,
+            paramA,
+            paramB,
+            interrupt,
+            factionKey);
 
-        // Game Master handsets never get Conflict's SetEncryptionKey. A second
-        // unkeyed copy reaches those radios if the RadioManager is present.
-        if (!encryptionKey.IsEmpty())
-        {
-            GBRS_IntelRadioMsg openMsg = new GBRS_IntelRadioMsg();
-            FillIntelMsg(openMsg, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt, factionKey);
-            openMsg.SetEncryptionKey("");
-            transceiver.BeginTransmissionFreq(openMsg, freqKhz);
-        }
+        if (IsStationOnFactionRadioNet(station, faction))
+            RelayIntelFromFactionNet(
+                station,
+                faction,
+                freqKhz,
+                title,
+                subtitle,
+                voiceKind,
+                gridPacked,
+                paramA,
+                paramB,
+                interrupt,
+                factionKey);
 
         return true;
     }
@@ -149,6 +169,160 @@ class GBRS_IntelRadioNet
         msg.SetVoiceParams(paramA, paramB);
         msg.SetInterrupt(interrupt);
         msg.SetFactionKey(factionKey);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static void TransmitOnIntelFreq(
+        notnull BaseTransceiver transceiver,
+        int freqKhz,
+        string encryptionKey,
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        bool interrupt,
+        string factionKey)
+    {
+        GBRS_IntelRadioMsg msg = new GBRS_IntelRadioMsg();
+        FillIntelMsg(msg, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt, factionKey);
+        msg.SetEncryptionKey(encryptionKey);
+        transceiver.BeginTransmissionFreq(msg, freqKhz);
+
+        // Game Master handsets never get Conflict's SetEncryptionKey. A second
+        // unkeyed copy reaches those radios if the RadioManager is present.
+        if (encryptionKey.IsEmpty())
+            return;
+
+        GBRS_IntelRadioMsg openMsg = new GBRS_IntelRadioMsg();
+        FillIntelMsg(openMsg, title, subtitle, voiceKind, gridPacked, paramA, paramB, interrupt, factionKey);
+        openMsg.SetEncryptionKey("");
+        transceiver.BeginTransmissionFreq(openMsg, freqKhz);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! HQ RelayTransceiver injects RADAR NET into the Conflict coverage mesh.
+    //! Game Master / world RelayTransceivers hop from the collected mesh.
+    //! Does not retune HQ; BeginTransmissionFreq keeps the platoon channel.
+    protected static void RelayIntelFromFactionNet(
+        GBRS_RadarStationComponent station,
+        Faction faction,
+        int freqKhz,
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        bool interrupt,
+        string factionKey)
+    {
+        string encryptionKey = "";
+        if (faction)
+            encryptionKey = faction.GetFactionRadioEncryptionKey();
+
+        BaseTransceiver hqRelay = GetFactionIntelRelayTransceiver(station, faction);
+        if (hqRelay)
+        {
+            TransmitFromRelayNode(
+                hqRelay,
+                freqKhz,
+                encryptionKey,
+                title,
+                subtitle,
+                voiceKind,
+                gridPacked,
+                paramA,
+                paramB,
+                interrupt,
+                factionKey);
+        }
+
+        EnsureIntelRelayMesh(station, faction);
+        if (!s_aRelayMesh)
+            return;
+
+        foreach (BaseTransceiver meshRelay : s_aRelayMesh)
+        {
+            if (!meshRelay)
+                continue;
+            if (meshRelay == hqRelay)
+                continue;
+
+            TransmitFromRelayNode(
+                meshRelay,
+                freqKhz,
+                encryptionKey,
+                title,
+                subtitle,
+                voiceKind,
+                gridPacked,
+                paramA,
+                paramB,
+                interrupt,
+                factionKey);
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static void TransmitFromRelayNode(
+        notnull BaseTransceiver relay,
+        int freqKhz,
+        string encryptionKey,
+        string title,
+        string subtitle,
+        int voiceKind,
+        int gridPacked,
+        int paramA,
+        int paramB,
+        bool interrupt,
+        string factionKey)
+    {
+        BaseRadioComponent relayRadio = relay.GetRadio();
+        if (!relayRadio)
+            return;
+        if (!relayRadio.IsPowered())
+            return;
+
+        if (!CanTransmitOnIntelFreq(relay, freqKhz))
+            return;
+
+        string txKey = encryptionKey;
+        if (txKey.IsEmpty())
+            txKey = relayRadio.GetEncryptionKey();
+
+        TransmitOnIntelFreq(
+            relay,
+            freqKhz,
+            txKey,
+            title,
+            subtitle,
+            voiceKind,
+            gridPacked,
+            paramA,
+            paramB,
+            interrupt,
+            factionKey);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static bool CanTransmitOnIntelFreq(notnull BaseTransceiver relay, int freqKhz)
+    {
+        int minKhz = relay.GetMinFrequency();
+        int maxKhz = relay.GetMaxFrequency();
+        if (minKhz > 0)
+        {
+            if (freqKhz < minKhz)
+                return false;
+        }
+        if (maxKhz > 0)
+        {
+            if (freqKhz > maxKhz)
+                return false;
+        }
+
+        return true;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -186,6 +360,7 @@ class GBRS_IntelRadioNet
 
         string encryptionKey = faction.GetFactionRadioEncryptionKey();
         string factionKey = faction.GetFactionKey();
+        bool relayed = IsStationOnFactionRadioNet(station, faction);
 
         array<int> playerIds = {};
         playerManager.GetPlayers(playerIds);
@@ -200,7 +375,7 @@ class GBRS_IntelRadioNet
             if (playerFaction && playerFaction != faction)
                 continue;
 
-            if (!IsPlayerInIntelRange(playerId, stationPos))
+            if (!IsPlayerInIntelRange(playerId, stationPos, faction, relayed))
                 continue;
 
             DeliverToPlayer(
@@ -257,7 +432,7 @@ class GBRS_IntelRadioNet
         string title = GBRS_RadarStationConstants.INTEL_CHANNEL_NAME + " ONLINE";
         string subtitle =
             "Tune handheld to " + GBRS_RadarStationConstants.INTEL_CHANNEL_NAME
-            + " (" + mhz + "). Air: grid heading altitude. WLR: launch impact ETA. Console TX NET rebroadcasts.";
+            + " (" + mhz + "). 2 km local; HQ or placed relay towers hop farther. Air: grid heading altitude. WLR: launch impact ETA.";
 
         array<int> playerIds = {};
         playerManager.GetPlayers(playerIds);
@@ -335,7 +510,11 @@ class GBRS_IntelRadioNet
     }
 
     //------------------------------------------------------------------------------------------------
-    static bool IsPlayerInIntelRange(int playerId, vector stationPos)
+    static bool IsPlayerInIntelRange(
+        int playerId,
+        vector stationPos,
+        Faction faction,
+        bool relayed)
     {
         if (stationPos == vector.Zero)
             return true;
@@ -344,8 +523,399 @@ class GBRS_IntelRadioNet
         if (!controlled)
             return true;
 
+        vector playerPos = controlled.GetOrigin();
+        if (IsWithinLocalIntelRange(playerPos, stationPos))
+            return true;
+
+        if (!relayed)
+            return false;
+
+        if (faction)
+        {
+            if (IsPositionLinkedToFactionRadio(
+                playerPos, faction, SCR_ERadioCoverageStatus.RECEIVE, false))
+                return true;
+        }
+
+        return IsPositionNearRelayMesh(playerPos);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    static bool IsStationOnFactionRadioNet(GBRS_RadarStationComponent station, Faction faction)
+    {
+        if (!station)
+            return false;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return false;
+
+        if (faction)
+        {
+            if (IsPositionLinkedToFactionRadio(
+                owner.GetOrigin(), faction, SCR_ERadioCoverageStatus.SEND, true))
+                return true;
+        }
+
+        EnsureIntelRelayMesh(station, faction);
+        if (!s_aRelayMesh)
+            return false;
+        if (s_aRelayMesh.Count() <= 0)
+            return false;
+
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! True when pos is inside a Conflict coverage radio that can talk to HQ,
+    //! or (allowLocalTxReach) a networked radio sits inside the station's 2 km TX.
+    protected static bool IsPositionLinkedToFactionRadio(
+        vector pos,
+        notnull Faction faction,
+        SCR_ERadioCoverageStatus direction,
+        bool allowLocalTxReach)
+    {
+        SCR_CampaignFaction campaignFaction = SCR_CampaignFaction.Cast(faction);
+        if (!campaignFaction)
+            return false;
+
+        SCR_MilitaryBaseSystem baseSystem = SCR_MilitaryBaseSystem.GetInstance();
+        if (!baseSystem)
+            return false;
+
+        array<SCR_MilitaryBaseComponent> bases = {};
+        baseSystem.GetBases(bases);
+        if (bases.IsEmpty())
+            return false;
+
+        FactionKey factionKey = faction.GetFactionKey();
+        float localRangeM = GBRS_RadarStationConstants.INTEL_RADIO_RANGE_M;
+        float localRangeSq = localRangeM * localRangeM;
+
+        foreach (SCR_MilitaryBaseComponent base : bases)
+        {
+            if (!base)
+                continue;
+
+            SCR_CampaignMilitaryBaseComponent campaignBase =
+                SCR_CampaignMilitaryBaseComponent.Cast(base);
+            if (!campaignBase)
+                continue;
+
+            Faction baseFaction = campaignBase.GetFaction();
+            if (!baseFaction)
+                continue;
+            if (baseFaction.GetFactionKey() != factionKey)
+                continue;
+
+            if (!campaignBase.IsHQRadioTrafficPossible(campaignFaction, direction))
+                continue;
+
+            IEntity baseOwner = campaignBase.GetOwner();
+            if (!baseOwner)
+                continue;
+
+            float radioRangeM = GetCampaignBaseRadioRangeM(campaignBase);
+            if (radioRangeM <= 0.0)
+                continue;
+
+            float distSq = vector.DistanceSqXZ(pos, baseOwner.GetOrigin());
+            if (distSq <= (radioRangeM * radioRangeM))
+                return true;
+
+            if (allowLocalTxReach)
+            {
+                if (distSq <= localRangeSq)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static void EnsureIntelRelayMesh(GBRS_RadarStationComponent station, Faction faction)
+    {
+        RplId stationId;
+        if (station)
+            stationId = station.GetStationRplId();
+
+        if (s_aRelayMesh)
+        {
+            if (s_iRelayMeshStamp == s_iNotifyStamp)
+            {
+                if (s_RelayMeshStationId == stationId)
+                    return;
+            }
+        }
+
+        s_iRelayMeshStamp = s_iNotifyStamp;
+        s_RelayMeshStationId = stationId;
+        if (!s_aRelayMesh)
+            s_aRelayMesh = new array<BaseTransceiver>();
+        s_aRelayMesh.Clear();
+
+        CollectIntelRelayMesh(station, faction);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static void CollectIntelRelayMesh(GBRS_RadarStationComponent station, Faction faction)
+    {
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        ChimeraWorld world = ChimeraWorld.CastFrom(GetGame().GetWorld());
+        if (!world)
+            return;
+
+        RadioManagerEntity radioManager = world.GetRadioManager();
+        if (!radioManager)
+            return;
+
+        string factionEncryption = "";
+        if (faction)
+            factionEncryption = faction.GetFactionRadioEncryptionKey();
+
+        array<vector> queuePos = {};
+        array<float> queueRange = {};
+        array<BaseRadioComponent> visited = {};
+        queuePos.Insert(owner.GetOrigin());
+        queueRange.Insert(GBRS_RadarStationConstants.INTEL_RADIO_RANGE_M);
+
+        int cursor = 0;
+        while (cursor < queuePos.Count())
+        {
+            if (s_aRelayMesh.Count() >= GBRS_RadarStationConstants.INTEL_RELAY_MESH_MAX)
+                break;
+
+            vector searchPos = queuePos[cursor];
+            float searchRange = queueRange[cursor];
+            cursor = cursor + 1;
+
+            if (searchRange <= 0.0)
+                continue;
+
+            array<BaseTransceiver> found = {};
+            radioManager.GetTransceiversInRange(searchPos, searchRange, found);
+            if (found.IsEmpty())
+                continue;
+
+            foreach (BaseTransceiver transceiver : found)
+            {
+                if (s_aRelayMesh.Count() >= GBRS_RadarStationConstants.INTEL_RELAY_MESH_MAX)
+                    break;
+
+                if (!IsWorldRelayTransceiver(transceiver, station))
+                    continue;
+
+                BaseRadioComponent radio = transceiver.GetRadio();
+                if (!radio)
+                    continue;
+                if (visited.Contains(radio))
+                    continue;
+                if (!RelayAcceptsFactionEncryption(radio, factionEncryption))
+                    continue;
+
+                visited.Insert(radio);
+                s_aRelayMesh.Insert(transceiver);
+
+                IEntity radioOwner = radio.GetOwner();
+                if (!radioOwner)
+                    continue;
+
+                float hopRange = transceiver.GetRange();
+                if (hopRange <= 0.0)
+                    continue;
+
+                queuePos.Insert(radioOwner.GetOrigin());
+                queueRange.Insert(hopRange);
+            }
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static bool IsWorldRelayTransceiver(
+        BaseTransceiver transceiver,
+        GBRS_RadarStationComponent station)
+    {
+        if (!transceiver)
+            return false;
+
+        RelayTransceiver relay = RelayTransceiver.Cast(transceiver);
+        if (!relay)
+            return false;
+
+        BaseRadioComponent radio = transceiver.GetRadio();
+        if (!radio)
+            return false;
+        if (!radio.IsPowered())
+            return false;
+
+        IEntity owner = radio.GetOwner();
+        while (owner)
+        {
+            if (station)
+            {
+                GBRS_RadarStationComponent otherStation =
+                    GBRS_RadarStationComponent.Cast(owner.FindComponent(GBRS_RadarStationComponent));
+                if (otherStation)
+                {
+                    if (otherStation == station)
+                        return false;
+                }
+            }
+
+            if (ChimeraCharacter.Cast(owner))
+                return false;
+
+            if (SCR_EditorManagerEntity.Cast(owner))
+                return false;
+
+            owner = owner.GetParent();
+        }
+
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static bool RelayAcceptsFactionEncryption(
+        notnull BaseRadioComponent radio,
+        string factionEncryption)
+    {
+        if (factionEncryption.IsEmpty())
+            return true;
+
+        string radioKey = radio.GetEncryptionKey();
+        if (radioKey.IsEmpty())
+            return true;
+
+        if (radioKey == factionEncryption)
+            return true;
+
+        return false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static bool IsPositionNearRelayMesh(vector pos)
+    {
+        if (!s_aRelayMesh)
+            return false;
+
+        foreach (BaseTransceiver transceiver : s_aRelayMesh)
+        {
+            if (!transceiver)
+                continue;
+
+            BaseRadioComponent radio = transceiver.GetRadio();
+            if (!radio)
+                continue;
+
+            IEntity owner = radio.GetOwner();
+            if (!owner)
+                continue;
+
+            float rangeM = transceiver.GetRange();
+            if (rangeM <= 0.0)
+                continue;
+
+            float distSq = vector.DistanceSqXZ(pos, owner.GetOrigin());
+            if (distSq <= (rangeM * rangeM))
+                return true;
+        }
+
+        return false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static float GetCampaignBaseRadioRangeM(notnull SCR_CampaignMilitaryBaseComponent campaignBase)
+    {
+        IEntity owner = campaignBase.GetOwner();
+        if (!owner)
+            return 0.0;
+
+        BaseRadioComponent radio = BaseRadioComponent.Cast(owner.FindComponent(BaseRadioComponent));
+        if (!radio)
+            return 0.0;
+        if (!radio.IsPowered())
+            return 0.0;
+
+        float rangeM = campaignBase.GetRadioRange();
+        if (rangeM > 0.0)
+            return rangeM;
+
+        if (radio.TransceiversCount() <= 0)
+            return 0.0;
+
+        BaseTransceiver transceiver = radio.GetTransceiver(0);
+        if (!transceiver)
+            return 0.0;
+
+        return transceiver.GetRange();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static BaseTransceiver GetFactionIntelRelayTransceiver(
+        GBRS_RadarStationComponent station,
+        Faction faction)
+    {
+        SCR_CampaignFaction campaignFaction = SCR_CampaignFaction.Cast(faction);
+        if (!campaignFaction)
+            return null;
+
+        BaseTransceiver hqRelay = GetBaseRelayTransceiver(campaignFaction.GetMainBase());
+        if (hqRelay)
+            return hqRelay;
+
+        if (!station)
+            return null;
+
+        return GetBaseRelayTransceiver(station.GetCoveringCampaignBase(true));
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static BaseTransceiver GetBaseRelayTransceiver(SCR_CampaignMilitaryBaseComponent campaignBase)
+    {
+        if (!campaignBase)
+            return null;
+
+        IEntity owner = campaignBase.GetOwner();
+        if (!owner)
+            return null;
+
+        BaseRadioComponent radio = BaseRadioComponent.Cast(owner.FindComponent(BaseRadioComponent));
+        if (!radio)
+            return null;
+        if (!radio.IsPowered())
+            return null;
+
+        int count = radio.TransceiversCount();
+        int i;
+        for (i = 0; i < count; i++)
+        {
+            BaseTransceiver transceiver = radio.GetTransceiver(i);
+            if (!transceiver)
+                continue;
+
+            RelayTransceiver relay = RelayTransceiver.Cast(transceiver);
+            if (relay)
+                return relay;
+        }
+
+        if (count <= 0)
+            return null;
+
+        return radio.GetTransceiver(0);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static bool IsWithinLocalIntelRange(vector pos, vector stationPos)
+    {
         float rangeM = GBRS_RadarStationConstants.INTEL_RADIO_RANGE_M;
-        float distSq = vector.DistanceSq(controlled.GetOrigin(), stationPos);
+        float distSq = vector.DistanceSq(pos, stationPos);
         return distSq <= (rangeM * rangeM);
     }
 

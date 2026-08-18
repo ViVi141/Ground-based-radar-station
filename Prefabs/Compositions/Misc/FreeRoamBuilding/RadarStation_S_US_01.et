@@ -72,7 +72,7 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    Transceivers {
     RadioTransceiver "{69FCEDCE10011051}" {
      ChannelFrequency 45600
-     "Transmitting Range" 25000
+     "Transmitting Range" 2000
      "Min tunable frequency" 30000
      "Max tunable frequency" 76000
      "Frequency resolution" 200
