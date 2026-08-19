@@ -20,6 +20,12 @@ class GBRS_RadarStationEvents
     static ref ScriptInvoker<GBRS_RadarStationComponent, RDF_RadarTarget> OnRadarContactLost =
         new ScriptInvoker<GBRS_RadarStationComponent, RDF_RadarTarget>();
 
+    // Fired when a NEW fused multi-radar net track appears within this station's
+    // display range (multi-station picture, distinct from this station's own
+    // local OnRadarContact).
+    static ref ScriptInvoker<GBRS_RadarStationComponent, RDF_RadarFusedTrack> OnNetworkContact =
+        new ScriptInvoker<GBRS_RadarStationComponent, RDF_RadarFusedTrack>();
+
     // Fired when WLR produces a valid launch/impact solution.
     static ref ScriptInvoker<GBRS_RadarStationComponent, RDF_RadarWlrFix> OnWlrSolution =
         new ScriptInvoker<GBRS_RadarStationComponent, RDF_RadarWlrFix>();

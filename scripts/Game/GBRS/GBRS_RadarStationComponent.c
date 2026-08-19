@@ -153,6 +153,9 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected static int s_NextDatalinkSourceId = 1;
     protected int m_DatalinkSourceId;
     protected float m_fNextDatalinkPublishS;
+    protected bool m_bDatalinkIffSet;
+    // Fused-track seen map (fused id -> last seen s) for one-shot net alerts.
+    protected ref map<int, float> m_NetworkContactSeen;
 
     override void OnPostInit(IEntity owner)
     {
@@ -178,6 +181,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_ContactLastSeen = new map<int, float>();
         if (!m_WlrFiredTrackIds)
             m_WlrFiredTrackIds = new map<int, bool>();
+        if (!m_NetworkContactSeen)
+            m_NetworkContactSeen = new map<int, float>();
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
         if (IsCompositionReady())
@@ -220,6 +225,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         RenderScanVisuals(owner);
         UpdateContactEvents(owner);
         PublishDatalink(owner);
+        UpdateNetworkContactEvents(owner);
         UpdateWlrEvents(owner);
         DebugScanTick(owner);
     }
@@ -2430,6 +2436,13 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!hub || !hub.IsEnabled())
             return;
 
+        if (!m_bDatalinkIffSet)
+        {
+            // IFF resolver: compare target faction vs this station's faction.
+            hub.SetIffResolver(new GBRS_RadarIffResolver());
+            m_bDatalinkIffSet = true;
+        }
+
         if (m_DatalinkSourceId <= 0)
         {
             m_DatalinkSourceId = s_NextDatalinkSourceId;
@@ -2512,6 +2525,107 @@ class GBRS_RadarStationComponent : ScriptComponent
             dlNet = RDF_RadarDatalinkComponent.Cast(owner.FindComponent(RDF_RadarDatalinkComponent));
         if (dlNet)
             dlNet.BroadcastHubState();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! One-shot fused-track alerts: any NEW fused net track within this station's
+    //! display range fires OnNetworkContact (Enh 4 air picture) and, when it
+    //! carries a WLR launch/impact, the counter-battery intel alert (Enh 1).
+    //! Deduplicated per fused id so a target does not spam the net each publish.
+    protected void UpdateNetworkContactEvents(IEntity owner)
+    {
+        if (GBRS_RadarStationEvents.OnNetworkContact == null)
+            return;
+        RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();
+        if (!hub || !hub.IsEnabled())
+            return;
+
+        array<ref RDF_RadarFusedTrack> fused = hub.GetFusedTracks();
+        if (!fused)
+            return;
+
+        float nowS = System.GetTickCount() * 0.001;
+        vector origin = "0 0 0";
+        if (owner)
+            origin = owner.GetOrigin();
+
+        float rangeM = 2000.0;
+        RDF_RadarSensor netSensor = null;
+        if (m_Radar)
+            netSensor = m_Radar.GetSensor();
+        if (netSensor)
+        {
+            RDF_RadarSettings ns = netSensor.GetSettings();
+            if (ns && ns.m_Range > 0.0)
+                rangeM = ns.m_Range;
+        }
+        float rangeSq = rangeM * rangeM;
+
+        if (!m_NetworkContactSeen)
+            m_NetworkContactSeen = new map<int, float>();
+
+        foreach (RDF_RadarFusedTrack f : fused)
+        {
+            if (!f || f.m_FusedId <= 0)
+                continue;
+
+            vector d = f.m_WorldPos - origin;
+            float distSq = d[0] * d[0] + d[2] * d[2];
+            if (distSq > rangeSq)
+                continue;
+
+            bool seen = m_NetworkContactSeen.Contains(f.m_FusedId);
+            if (seen)
+            {
+                m_NetworkContactSeen.Set(f.m_FusedId, nowS);
+                continue;
+            }
+
+            m_NetworkContactSeen.Set(f.m_FusedId, nowS);
+
+            // Air picture (Enh 4): non-projectile fused net tracks.
+            if (f.m_Type != ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            {
+                if (GBRS_RadarStationEvents.OnNetworkContact != null)
+                    GBRS_RadarStationEvents.OnNetworkContact.Invoke(this, f);
+            }
+
+            // Counter-battery (Enh 1): fused track carrying a WLR launch/impact.
+            if (f.m_WlrImpactValid)
+            {
+                if (GBRS_RadarStationEvents.OnWlrSolution != null)
+                    GBRS_RadarStationEvents.OnWlrSolution.Invoke(this, FusedToWlrFix(f));
+            }
+        }
+
+        // Reap old entries so the seen map does not grow forever.
+        if (m_NetworkContactSeen.Count() > 128)
+        {
+            array<int> stale = new array<int>();
+            foreach (int id, float t : m_NetworkContactSeen)
+            {
+                if (nowS - t > 300.0)
+                    stale.Insert(id);
+            }
+            for (int i = 0; i < stale.Count(); i++)
+                m_NetworkContactSeen.Remove(stale.Get(i));
+        }
+    }
+
+    // Build an RDF_RadarWlrFix view from a fused track's WLR fields so the
+    // existing counter-battery warning path can consume a network fire-solution.
+    protected RDF_RadarWlrFix FusedToWlrFix(RDF_RadarFusedTrack f)
+    {
+        RDF_RadarWlrFix fix = new RDF_RadarWlrFix();
+        if (!f)
+            return fix;
+        fix.m_LaunchValid = f.m_WlrLaunchValid;
+        fix.m_LaunchPos = f.m_WlrLaunchPos;
+        fix.m_ImpactValid = f.m_WlrImpactValid;
+        fix.m_ImpactPos = f.m_WlrImpactPos;
+        if (f.m_TimeS > 0.0)
+            fix.m_ImpactTimeS = f.m_TimeS;
+        return fix;
     }
 
     //------------------------------------------------------------------------------------------------

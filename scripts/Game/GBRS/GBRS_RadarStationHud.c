@@ -103,6 +103,21 @@ class GBRS_RadarStationHud
 
     protected static ref GBRS_RadarStationHud s_Instance;
 
+    // Multi-radar network overlay toggle + live network status.
+    protected static bool s_NetworkOverlay = true;
+    protected static int s_NetFusedCount;
+    protected static int s_NetStationCount;
+
+    static void SetNetworkOverlayEnabled(bool enabled)
+    {
+        s_NetworkOverlay = enabled;
+    }
+
+    static bool IsNetworkOverlayEnabled()
+    {
+        return s_NetworkOverlay;
+    }
+
     protected Widget m_wRoot;
     protected ref GBRS_RadarStationHudWidgets m_Widgets;
 
@@ -989,6 +1004,8 @@ class GBRS_RadarStationHud
     // see contacts detected by its peers (multi-radar network picture).
     protected void DrawNetworkFusedTracks(vector origin)
     {
+        s_NetFusedCount = 0;
+        s_NetStationCount = 0;
         if (m_DisplayRange <= 0.0)
             return;
 
@@ -1000,6 +1017,7 @@ class GBRS_RadarStationHud
         if (!fused || fused.Count() < 1)
             return;
 
+        array<int> sourceIds = new array<int>();
         float rangeSq = m_DisplayRange * m_DisplayRange;
         int drawn = 0;
         foreach (RDF_RadarFusedTrack f : fused)
@@ -1009,9 +1027,18 @@ class GBRS_RadarStationHud
             if (drawn >= MAX_DRAW_BLIPS)
                 break;
 
+            // Track unique contributing stations for the status readout.
+            int c0 = f.m_ContributorRadarId0;
+            if (c0 > 0 && !sourceIds.Contains(c0))
+                sourceIds.Insert(c0);
+
             vector d = f.m_WorldPos - origin;
             float distSq = d[0] * d[0] + d[2] * d[2];
             if (distSq > rangeSq)
+                continue;
+
+            s_NetFusedCount = s_NetFusedCount + 1;
+            if (!s_NetworkOverlay)
                 continue;
 
             float bx;
@@ -1019,20 +1046,45 @@ class GBRS_RadarStationHud
             if (!WorldToPpi(origin, f.m_WorldPos, bx, by))
                 continue;
 
-            DrawPpiSquare(bx, by, 6.0, COL_NET);
+            int color = NetworkColor(f.m_Iff);
+            DrawPpiSquare(bx, by, 6.0, color);
 
             vector v = f.m_Velocity;
             float vLen = Math.Sqrt(v[0] * v[0] + v[2] * v[2]);
             if (vLen >= 3.0)
-                DrawPpiChevron(bx, by, v[0], v[2], COL_NET);
+                DrawPpiChevron(bx, by, v[0], v[2], color);
 
             string tag = "NET";
             if (f.m_ContributorCount > 1)
                 tag = "NET" + f.m_ContributorCount.ToString();
-            DrawPpiLabel(bx, by, tag + " " + GetPpiMapLabel(f.m_WorldPos), COL_NET);
+            DrawPpiLabel(bx, by, tag + " " + GetPpiMapLabel(f.m_WorldPos), color);
 
             drawn = drawn + 1;
         }
+
+        s_NetStationCount = sourceIds.Count();
+    }
+
+    // IFF-based color for the network overlay: friend green, foe red, neutral
+    // amber, unknown the default cyan-blue.
+    protected int NetworkColor(ERDF_RadarIff iff)
+    {
+        if (iff == ERDF_RadarIff.RDF_IFF_FRIEND)
+            return ARGB(230, 90, 255, 150);
+        if (iff == ERDF_RadarIff.RDF_IFF_FOE)
+            return ARGB(230, 255, 70, 70);
+        if (iff == ERDF_RadarIff.RDF_IFF_NEUTRAL)
+            return ARGB(230, 255, 200, 80);
+        return COL_NET;
+    }
+
+    // "NET" status line for the footer: fused count + contributing stations.
+    protected string NetworkStatusString()
+    {
+        if (s_NetFusedCount <= 0 && s_NetStationCount <= 0)
+            return "NET --";
+        return "NET f=" + s_NetFusedCount.ToString()
+            + " s=" + s_NetStationCount.ToString();
     }
 
     protected void DrawPlotAfterglow(float bx, float by, RDF_RadarTarget t)
@@ -2446,6 +2498,8 @@ class GBRS_RadarStationHud
 
         if (m_EccmStatus != "eccm=0")
             footer = footer + "   " + m_EccmStatus;
+
+        footer = footer + "   " + NetworkStatusString();
 
         m_Widgets.m_wListFooter.SetText(footer);
     }

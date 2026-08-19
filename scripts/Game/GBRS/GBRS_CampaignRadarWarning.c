@@ -38,6 +38,8 @@ class GBRS_CampaignRadarWarning
         s_Bound = true;
         if (GBRS_RadarStationEvents.OnRadarContact)
             GBRS_RadarStationEvents.OnRadarContact.Insert(OnRadarContact);
+        if (GBRS_RadarStationEvents.OnNetworkContact)
+            GBRS_RadarStationEvents.OnNetworkContact.Insert(OnNetworkContact);
         if (GBRS_RadarStationEvents.OnWlrSolution)
             GBRS_RadarStationEvents.OnWlrSolution.Insert(OnWlrSolution);
     }
@@ -90,6 +92,61 @@ class GBRS_CampaignRadarWarning
             subtitle,
             GBRS_RadarStationConstants.INTEL_VOICE_AIR,
             GBRS_MapGrid.Pack(target.m_Position),
+            headingDeg,
+            altitudeM,
+            false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Multi-radar network air picture: a NEW fused net track (detected by any
+    //! station) within this station's range is broadcast as an air-contact alert.
+    protected static void OnNetworkContact(GBRS_RadarStationComponent station, RDF_RadarFusedTrack track)
+    {
+        if (!station || !track)
+            return;
+        if (!station.IsStationAuthority())
+            return;
+        if (!station.IsPowered())
+            return;
+        if (station.IsDestroyed())
+            return;
+
+        if (track.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        Faction stationFaction = SCR_Faction.GetEntityFaction(owner);
+        if (!stationFaction)
+            return;
+
+        string key = string.Format("NAIR:%1", station.GetStationRplId());
+        if (!TryConsumeCooldown(key, AIR_COOLDOWN_S))
+            return;
+
+        string grid = GBRS_MapGrid.Format(track.m_WorldPos);
+        int headingDeg = HeadingDegFromVelocity(track.m_Velocity);
+        int altitudeM = (int)Math.Round(Math.Max(0.0, track.m_WorldPos[1]));
+
+        string subtitle = "NET " + grid;
+        if (headingDeg >= 0)
+            subtitle = subtitle + "  HDG " + headingDeg.ToString(3, 0);
+        if (altitudeM > 0)
+            subtitle = subtitle + "  " + altitudeM.ToString() + "M";
+
+        SCR_CampaignMilitaryBaseComponent covering = station.GetCoveringCampaignBase(true);
+        if (covering)
+            subtitle = subtitle + "  " + covering.GetBaseNameUpperCase();
+
+        BroadcastWarning(
+            station,
+            stationFaction,
+            "NET CONTACT",
+            subtitle,
+            GBRS_RadarStationConstants.INTEL_VOICE_AIR,
+            GBRS_MapGrid.Pack(track.m_WorldPos),
             headingDeg,
             altitudeM,
             false);
