@@ -1696,8 +1696,10 @@ class GBRS_RadarStationHud
     // the raw track position before a fix exists.
     protected vector WlrPositionOnArc(GBRS_WlrPersistDisplay entry, float worldNowS)
     {
-        if (!entry || (!entry.m_HasLaunch && !entry.m_HasImpact))
-            return entry ? entry.m_LivePos : "0 0 0";
+        if (!entry)
+            return "0 0 0";
+        if (!entry.m_HasLaunch && !entry.m_HasImpact)
+            return entry.m_LivePos;
 
         if (!entry.m_HasLaunch || !entry.m_HasImpact)
             return entry.m_LivePos;
