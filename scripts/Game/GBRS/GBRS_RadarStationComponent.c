@@ -2524,6 +2524,65 @@ class GBRS_RadarStationComponent : ScriptComponent
     }
 
     //------------------------------------------------------------------------------------------------
+    //! Chord-backed track velocity: prefer the measured position chord (true
+    //! motion direction). The filtered Doppler-radial velocity can reverse near
+    //! closest approach; only trust it when it clearly agrees with the chord.
+    protected static vector ReliableTrackVelocity(RDF_RadarTrack tr)
+    {
+        vector vel = "0 0 0";
+        if (!tr)
+            return vel;
+
+        if (tr.m_Positions && tr.m_Times)
+        {
+            int n = tr.m_Positions.Count();
+            if (n >= 2)
+            {
+                int last = n - 1;
+                vector newest = tr.m_Positions.Get(last);
+                float tNew = tr.m_Times.Get(last);
+                int chosen = 0;
+                int j = 0;
+                while (j < last)
+                {
+                    if (tNew - tr.m_Times.Get(j) >= 1.0)
+                        chosen = j;
+                    j = j + 1;
+                }
+                vector older = tr.m_Positions.Get(chosen);
+                float dt = tNew - tr.m_Times.Get(chosen);
+                if (dt >= 0.25)
+                {
+                    vector chord = newest - older;
+                    float cmag = chord.Length();
+                    if (cmag >= 3.0)
+                    {
+                        vector fv = tr.m_FilteredVelocity;
+                        float vMag = fv.Length();
+                        // Use filtered velocity only if it agrees (<= 60 deg).
+                        if (vMag >= 3.0)
+                        {
+                            float dot = fv[0] * chord[0] + fv[1] * chord[1] + fv[2] * chord[2];
+                            if (dot > 0.0 && cmag > 0.001)
+                            {
+                                float cosA = dot / (vMag * cmag);
+                                if (cosA >= 0.5)
+                                    return fv;
+                            }
+                        }
+                        // Chord is authoritative.
+                        vel = chord * (1.0 / dt);
+                    }
+                }
+            }
+        }
+
+        if (vel.Length() < 0.001)
+            vel = tr.m_FilteredVelocity;
+        return vel;
+    }
+
+    //------------------------------------------------------------------------------------------------
     //! Multi-radar datalink: publish this station's confirmed tracks into the
     //! shared RDF_RadarDatalinkHub. RDF_RadarFusionService (auto-fusion) merges
     //! tracks from all stations, so the network overlay can show a fused picture.
@@ -2596,7 +2655,10 @@ class GBRS_RadarStationComponent : ScriptComponent
             dt.m_SourceRadarId = m_DatalinkSourceId;
             dt.m_LocalTrackId = src.m_TrackId;
             dt.m_WorldPos = src.m_FilteredPosition;
-            dt.m_Velocity = src.m_FilteredVelocity;
+            // Use a chord-backed velocity so the fused/net track heading is the
+            // real motion direction (Doppler-radial velocity can reverse near
+            // closest approach) - matches the PPI heading fix.
+            dt.m_Velocity = ReliableTrackVelocity(src);
             dt.m_RangeM = src.m_FilteredRangeM;
             dt.m_AzimuthDeg = src.m_FilteredAzimuthDeg;
             dt.m_ElevationDeg = src.m_FilteredElevationDeg;
