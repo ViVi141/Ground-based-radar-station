@@ -6,7 +6,8 @@ Mirrors Enforce sources (do not "improve" formulas):
   RDF_RadarPhysicalDetect.c
   RDF_RadarCfarGate.c / RDF_RadarCfarProcessor.c
   RDF_RadarHardware.c / RDF_RadarRcsModel.c
-  RDF_RadarSurfaceTable builtins
+  RDF_RadarSurfaceTable builtins (RDF 1.1.0 per-band σ⁰ via gbrs_rdf_band.py)
+  RDF_RadarRcsModel.AspectRcsFromObb / AspectRcsFromExtents3D
   GBRS_RadarStationConfig.c (US / USSR search presets)
 
 Previous sim assumed boresight patternGain=1, fixed RCS=12, fixed radial=50,
@@ -28,28 +29,16 @@ C_LIGHT = 299792458.0
 FOUR_PI = 12.5663706144
 BOLTZMANN = 1.380649e-23
 T0_K = 290.0
-MIN_GRAZING_RAD = 0.00872664625
-MAX_SIGMA0 = 10.0
-THETA_REF_RAD = 0.523598775598  # 30 deg
 DEG_TO_RAD = 0.0174532925199
 CELL_SIZE_M = 30.0  # fallback when DEM absent; live DEM uses dem.cell_m
 
-# SurfaceTable builtins (RDF_RadarSurfaceTable.InstallBuiltins)
-# id -> (name, sigma0_ref_db, gamma_k, clutter_scale, atten_db_per_km)
-SURFACE_TABLE = {
-    0: ("unknown", -18.0, 1.0, 1.0, 0.0),
-    1: ("water", -22.0, 1.4, 1.0, 0.0),
-    2: ("vegetation", -14.0, 0.8, 1.0, 0.5),
-    3: ("soil", -18.0, 1.0, 1.0, 0.0),
-    4: ("sand", -20.0, 1.1, 1.0, 0.0),
-    5: ("gravel", -16.0, 1.0, 1.0, 0.0),
-    6: ("asphalt", -12.0, 1.0, 1.0, 0.0),
-    7: ("hard", -10.0, 1.0, 1.0, 0.0),
-    8: ("wood", -18.0, 1.0, 1.0, 0.2),
-    9: ("metal", -5.0, 0.5, 1.0, 0.0),
-    10: ("snow_ice", -20.0, 1.0, 1.0, 0.0),
-    11: ("fabric", -24.0, 1.0, 1.0, 0.0),
-}
+from gbrs_rdf_band import (
+    SURF_NAMES,
+    aspect_rcs_from_extents_3d,
+    band_for_frequency,
+    sigma0_linear,
+    surface_atten_db_per_km,
+)
 
 # UH-1H from RDF Signatures/rdf_radar_signatures.conf
 # Prefab: Prefabs/Vehicles/Helicopters/UH1H/UH1H_base.et (and armed_gunship_HE)
@@ -297,7 +286,7 @@ def make_ussr() -> tuple[Hardware, Settings]:
         range_m=10000.0,
         update_interval_s=0.04,
         detection_snr_db=5.0,
-        dem_clutter_scale=0.10,
+        dem_clutter_scale=0.5,
         min_distance_m=hw.min_detectable_range_m(),
     )
     return hw, settings
@@ -313,58 +302,6 @@ def wrap_delta_deg(delta_deg: float) -> float:
     while rel < -180.0:
         rel = rel + 360.0
     return rel
-
-
-def body_los_weights(
-    yaw_deg: float,
-    pitch_deg: float,
-    los_azimuth_deg: float,
-    los_elevation_deg: float,
-) -> tuple[float, float, float]:
-    rel_az = wrap_delta_deg(los_azimuth_deg - yaw_deg) * DEG_TO_RAD
-    rel_el = wrap_delta_deg(los_elevation_deg - pitch_deg) * DEG_TO_RAD
-    ce = math.cos(rel_el)
-    se = math.sin(rel_el)
-    ca = math.cos(rel_az)
-    sa = math.sin(rel_az)
-    return abs(ce * ca), abs(ce * sa), abs(se)
-
-
-def aspect_rcs_from_extents_3d(
-    mean_rcs_m2: float,
-    size_x: float,
-    size_y: float,
-    size_z: float,
-    yaw_deg: float,
-    pitch_deg: float,
-    los_azimuth_deg: float,
-    los_elevation_deg: float,
-) -> float:
-    """Matches RDF_RadarRcsModel.AspectRcsFromExtents3D."""
-    fallback = mean_rcs_m2
-    if fallback <= 0.0:
-        fallback = 1.0
-    u_f, u_s, u_t = body_los_weights(
-        yaw_deg, pitch_deg, los_azimuth_deg, los_elevation_deg
-    )
-    height = size_y
-    if height < 0.1:
-        height = 0.1
-    length = size_z
-    if length < 0.1:
-        length = 0.1
-    beam = size_x
-    if beam < 0.1:
-        beam = 0.1
-    projected = u_f * beam * height + u_s * length * height + u_t * beam * length
-    estimate = projected * 0.25
-    lo = fallback * 0.2
-    hi = fallback * 4.0
-    if estimate < lo:
-        estimate = lo
-    if estimate > hi:
-        estimate = hi
-    return estimate
 
 
 def hash_unit(seed: int, id_a: int, id_b: int, channel: int) -> float:
@@ -634,29 +571,6 @@ def doppler_hz(radial_ms: float, wavelength_m: float) -> float:
     return 2.0 * radial_ms / wavelength_m
 
 
-def get_sigma0(surface_class: int, grazing_rad: float) -> float:
-    entry = SURFACE_TABLE.get(surface_class, SURFACE_TABLE[0])
-    _name, sigma0_ref_db, gamma_k, clutter_scale, _atten = entry
-    theta = grazing_rad
-    if theta < MIN_GRAZING_RAD:
-        theta = MIN_GRAZING_RAD
-    if theta > math.pi * 0.5:
-        theta = math.pi * 0.5
-    ref_value = db_to_lin(sigma0_ref_db)
-    ratio = math.sin(theta) / math.sin(THETA_REF_RAD)
-    if ratio < 1e-6:
-        ratio = 1e-6
-    value = ref_value * (ratio**gamma_k) * clutter_scale
-    if value > MAX_SIGMA0:
-        value = MAX_SIGMA0
-    return value
-
-
-def get_surface_atten_db_per_km(surface_class: int) -> float:
-    entry = SURFACE_TABLE.get(surface_class, SURFACE_TABLE[0])
-    return float(entry[4])
-
-
 def estimate_range_resolution_m(hw: Hardware) -> float:
     # RDF_RadarPhysicalDetect.EstimateRangeResolutionM (min 0.5)
     by_bw = 0.0
@@ -691,7 +605,8 @@ def dem_clutter_processed_w(
     if settings.dem_clutter_scale <= 0.0 or range_m <= 0.001:
         return 0.0
     grazing = math.atan2(abs(radar_agl_m), max(1.0, range_m))
-    sigma0 = get_sigma0(surface_class, grazing) * settings.dem_clutter_scale
+    band = band_for_frequency(hw.frequency_hz)
+    sigma0 = sigma0_linear(surface_class, grazing, band) * settings.dem_clutter_scale
     if sigma0 <= 0.0:
         return 0.0
     cell = cell_size_m
@@ -706,7 +621,7 @@ def dem_clutter_processed_w(
     if area_m2 < min_area:
         area_m2 = min_area
     received = received_power_w(hw, sigma0 * area_m2, range_m, pattern_gain)
-    atten = get_surface_atten_db_per_km(surface_class)
+    atten = surface_atten_db_per_km(surface_class, band)
     if atten > 0.0:
         surface_loss = atmospheric_loss_linear(range_m, atten, 0.0)
         if surface_loss > 1.0:
@@ -1319,7 +1234,7 @@ def run_scenario_pd_dem(
         "hit_fraction": round(hit_u, 4),
         "max_h_obs_m": round(max_h, 2),
         "surface_class": int(surf),
-        "surface_name": SURFACE_TABLE.get(int(surf), SURFACE_TABLE[0])[0],
+        "surface_name": SURF_NAMES[int(surf)] if 0 <= int(surf) < len(SURF_NAMES) else "unknown",
         "slant_m": round(slant, 1),
         "target_xyz": [round(tx, 1), round(ty, 1), round(tz, 1)],
     }
