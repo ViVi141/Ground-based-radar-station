@@ -559,7 +559,11 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 4.0;
         if (settings.m_Hardware)
         {
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 25.0;
+            // Wide fan for the slow all-around rotation: a wider azimuth beam
+            // illuminates a broader band each sweep, so a shell accumulates
+            // enough detections to reach a fire solution. Boresight peak gain
+            // is unchanged (Gaussian pattern peaks at 1.0 at any width).
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 45.0;
             settings.m_Hardware.m_PeakPowerW = 500000.0;
         }
         ApplyWlrProductFlags(settings);
@@ -576,7 +580,7 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // USSR counter-battery WLR (~10 km parked search, wider beam).
+    // USSR counter-battery WLR (~10 km slow all-around rotation, wider beam).
     // VHF hardware (P-18-like) gives a large lambda^2 advantage at 10 km:
     // offline chain (no clutter) shows ~30 dB center SNR — far above the gate,
     // so peak power stays at the P-18 default (250 kW, CreateP18Like). The
@@ -594,7 +598,9 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
         {
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
+            // Wider fan than US for the slow all-around rotation (see US WLR
+            // note); boresight peak gain is unchanged by the wider beam.
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 55.0;
         }
         ApplyWlrProductFlags(settings);
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.
