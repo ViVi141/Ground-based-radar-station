@@ -2537,20 +2537,23 @@ class GBRS_RadarStationComponent : ScriptComponent
             return vel;
 
         // 1) Least-squares vacuum fit over the measured history (smooth 3D vel).
-        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 4)
+        // Low min-point/span so shells with sparse sweep samples still get a
+        // stable direction instead of falling back to the Doppler-radial path,
+        // which is ~90-157 deg wrong for crossing shells.
+        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 3)
         {
             RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
                 tr.m_Positions,
                 tr.m_Times,
                 RDF_RadarBallistics.GRAVITY_M_S2,
-                4,
-                0.4,
-                200.0,
+                3,
+                0.25,
+                250.0,
                 24);
             if (fit && fit.m_Valid)
             {
                 vector fv = fit.m_Velocity;
-                if (fv.Length() >= 3.0)
+                if (fv.Length() >= 2.0)
                     return fv;
             }
         }

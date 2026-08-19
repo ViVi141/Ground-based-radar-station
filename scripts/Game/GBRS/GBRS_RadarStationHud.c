@@ -1396,22 +1396,22 @@ class GBRS_RadarStationHud
 
         // Prefer a least-squares ballistic fit over the position history; a
         // single-LOS Doppler velocity is radial-only and gives a badly wrong
-        // heading for a shell crossing/toward the radar. Only use the filtered
-        // (or chord) velocity when the fit is unavailable or rejects.
-        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 4)
+        // heading for a shell crossing/toward the radar. Low min-point/span so
+        // sparse sweep samples still trigger a fit. Only fall back when absent.
+        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 3)
         {
             RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
                 tr.m_Positions,
                 tr.m_Times,
                 RDF_RadarBallistics.GRAVITY_M_S2,
-                4,
-                0.4,
-                200.0,
+                3,
+                0.25,
+                250.0,
                 24);
             if (fit && fit.m_Valid)
             {
                 vector fv = fit.m_Velocity;
-                if (fv[0] * fv[0] + fv[2] * fv[2] >= 9.0)
+                if (fv[0] * fv[0] + fv[2] * fv[2] >= 4.0)
                 {
                     dirX = fv[0];
                     dirZ = fv[2];
