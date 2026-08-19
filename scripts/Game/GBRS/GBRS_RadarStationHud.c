@@ -1653,7 +1653,10 @@ class GBRS_RadarStationHud
                     // could AV-crash the DEM/runtime solver right as a fresh fix
                     // became available (shells on the PPI, prediction not yet up).
                     entry.m_LivePos = tr.m_FilteredPosition;
-                    entry.m_LiveVel = tr.m_FilteredVelocity;
+                    // Use the fit/chord-backed velocity for the live shell
+                    // direction too - raw m_FilteredVelocity is Doppler-radial
+                    // only and can point 180 deg against the real motion.
+                    entry.m_LiveVel = GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
                     entry.m_HasLive = true;
                 }
             }

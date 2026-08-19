@@ -2524,13 +2524,13 @@ class GBRS_RadarStationComponent : ScriptComponent
     }
 
     //------------------------------------------------------------------------------------------------
-    //! Accuratre track velocity for heading / prediction. A single-LOS Doppler
+    //! Accurate track velocity for heading / prediction. A single-LOS Doppler
     //! measurement only resolves the radial component - for a shell crossing or
     //! heading toward the radar, los*(-radial) can be ~90-157 deg off the true
     //! heading. Prefer a least-squares ballistic fit over the track's position
     //! history (same fit RDF uses for the WLR solve), then the measured position
     //! chord, and only fall back to the filtered Doppler velocity.
-    protected static vector ReliableTrackVelocity(RDF_RadarTrack tr)
+    static vector ReliableTrackVelocity(RDF_RadarTrack tr)
     {
         vector vel = "0 0 0";
         if (!tr)
