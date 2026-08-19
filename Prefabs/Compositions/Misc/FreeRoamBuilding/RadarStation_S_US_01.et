@@ -27,6 +27,8 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
   }
   RDF_RadarNetworkComponent "{69FCEDCE10011005}" {
   }
+  RDF_RadarDatalinkComponent "{69FCEDCE10011016}" {
+  }
   SCR_ResourceComponent "{69FCEDCE10011040}" {
    m_aContainers {
     SCR_ResourceContainer "{69FCEDCE10011041}" {

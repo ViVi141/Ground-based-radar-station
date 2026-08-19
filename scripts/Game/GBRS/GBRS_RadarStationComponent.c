@@ -145,6 +145,15 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected bool m_bLockLayerEnabled;
     protected bool m_bIntelBriefingSent;
 
+    // Multi-radar datalink: each powered station publishes its confirmed tracks
+    // into the shared RDF_RadarDatalinkHub singleton; RDF_RadarFusionService
+    // fuses them across stations so any station (or the network overlay) can see
+    // the whole picture. m_DatalinkSourceId must be unique per station.
+    protected static const float DATALINK_PUBLISH_INTERVAL_S = 0.5;
+    protected static int s_NextDatalinkSourceId = 1;
+    protected int m_DatalinkSourceId;
+    protected float m_fNextDatalinkPublishS;
+
     override void OnPostInit(IEntity owner)
     {
         SetEventMask(owner, EntityEvent.INIT | EntityEvent.FRAME);
@@ -210,6 +219,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         TickScattererRegistry(owner);
         RenderScanVisuals(owner);
         UpdateContactEvents(owner);
+        PublishDatalink(owner);
         UpdateWlrEvents(owner);
         DebugScanTick(owner);
     }
@@ -2408,6 +2418,100 @@ class GBRS_RadarStationComponent : ScriptComponent
             if (GBRS_RadarStationEvents.OnWlrSolution)
                 GBRS_RadarStationEvents.OnWlrSolution.Invoke(this, fix);
         }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Multi-radar datalink: publish this station's confirmed tracks into the
+    //! shared RDF_RadarDatalinkHub. RDF_RadarFusionService (auto-fusion) merges
+    //! tracks from all stations, so the network overlay can show a fused picture.
+    protected void PublishDatalink(IEntity owner)
+    {
+        RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();
+        if (!hub || !hub.IsEnabled())
+            return;
+
+        if (m_DatalinkSourceId <= 0)
+        {
+            m_DatalinkSourceId = s_NextDatalinkSourceId;
+            s_NextDatalinkSourceId = s_NextDatalinkSourceId + 1;
+        }
+
+        float nowS = System.GetTickCount() * 0.001;
+        if (nowS < m_fNextDatalinkPublishS)
+            return;
+        m_fNextDatalinkPublishS = nowS + DATALINK_PUBLISH_INTERVAL_S;
+
+        float worldS = 0.0;
+        if (GetGame() && GetGame().GetWorld())
+            worldS = GetGame().GetWorld().GetWorldTime() * 0.001;
+
+        RDF_RadarSensor sensor = null;
+        if (m_Radar)
+            sensor = m_Radar.GetSensor();
+
+        vector radarOrigin = "0 0 0";
+        if (owner)
+            radarOrigin = owner.GetOrigin();
+
+        array<ref RDF_RadarTrack> srcTracks = null;
+        if (sensor)
+        {
+            RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+            if (tracker)
+                srcTracks = tracker.GetAllTracks();
+        }
+
+        if (!srcTracks || srcTracks.Count() < 1)
+        {
+            hub.RemoveSource(m_DatalinkSourceId);
+            RDF_RadarFusionService.Get().UpdateFromHub(hub, worldS);
+            return;
+        }
+
+        array<ref RDF_RadarDatalinkTrack> batch = new array<ref RDF_RadarDatalinkTrack>();
+        RDF_RadarIffResolver iff = hub.GetIffResolver();
+
+        foreach (RDF_RadarTrack src : srcTracks)
+        {
+            if (!src || !src.m_Confirmed)
+                continue;
+
+            RDF_RadarDatalinkTrack dt = new RDF_RadarDatalinkTrack();
+            dt.m_SourceRadarId = m_DatalinkSourceId;
+            dt.m_LocalTrackId = src.m_TrackId;
+            dt.m_WorldPos = src.m_FilteredPosition;
+            dt.m_Velocity = src.m_FilteredVelocity;
+            dt.m_RangeM = src.m_FilteredRangeM;
+            dt.m_AzimuthDeg = src.m_FilteredAzimuthDeg;
+            dt.m_ElevationDeg = src.m_FilteredElevationDeg;
+            dt.m_RangeRateMs = src.m_FilteredRangeRateMs;
+            dt.m_SnrDb = src.m_LastSnrDb;
+            dt.m_Type = src.m_Type;
+            dt.m_NctrClass = src.m_NctrClass;
+            dt.m_NctrConfidence = src.m_NctrConfidence;
+            dt.m_Confidence = src.m_Confidence;
+            dt.m_TimeS = worldS;
+            dt.m_RadarOrigin = radarOrigin;
+            if (iff)
+                dt.m_Iff = iff.Resolve(owner, src);
+            if (src.m_LastWlrFix)
+            {
+                dt.m_WlrLaunchValid = src.m_LastWlrFix.m_LaunchValid;
+                dt.m_WlrLaunchPos = src.m_LastWlrFix.m_LaunchPos;
+                dt.m_WlrImpactValid = src.m_LastWlrFix.m_ImpactValid;
+                dt.m_WlrImpactPos = src.m_LastWlrFix.m_ImpactPos;
+            }
+            batch.Insert(dt);
+        }
+
+        hub.PublishFromRadar(m_DatalinkSourceId, radarOrigin, worldS, batch);
+
+        // Push the hub state out to proxies/clients if a datalink component exists.
+        RDF_RadarDatalinkComponent dlNet = null;
+        if (owner)
+            dlNet = RDF_RadarDatalinkComponent.Cast(owner.FindComponent(RDF_RadarDatalinkComponent));
+        if (dlNet)
+            dlNet.BroadcastHubState();
     }
 
     //------------------------------------------------------------------------------------------------

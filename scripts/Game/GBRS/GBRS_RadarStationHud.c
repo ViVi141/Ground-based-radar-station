@@ -85,6 +85,8 @@ class GBRS_RadarStationHud
     static const int COL_WLR_REMAIN = ARGB(220, 255, 210, 80);
     static const int COL_WLR_TEXT = ARGB(255, 255, 235, 180);
     static const int COL_WLR_SHELL = ARGB(255, 255, 220, 70);
+    // Multi-radar network overlay: tracks fused across the GBRS net.
+    static const int COL_NET = ARGB(230, 120, 180, 255);
     static const int COL_LOCK = ARGB(255, 255, 70, 70);
     static const int COL_PLOT_GLOW = ARGB(110, 90, 180, 130);
     static const int COL_TRACK = ARGB(255, 90, 255, 150);
@@ -923,6 +925,9 @@ class GBRS_RadarStationHud
             DrawTwsTracks(origin, tracker);
         }
 
+        // Multi-radar network overlay: fused tracks shared by the whole GBRS net.
+        DrawNetworkFusedTracks(origin);
+
         m_Widgets.m_wPpiCanvas.SetDrawCommands(m_PpiAll);
     }
 
@@ -974,6 +979,57 @@ class GBRS_RadarStationHud
             // operator can read launch-side positions directly from the PPI.
             string id = "W" + PadNum(tr.m_TrackId, 2);
             DrawPpiLabel(bx, by, id + " " + GetPpiMapLabel(tr.m_FilteredPosition), COL_WLR_TEXT);
+
+            drawn = drawn + 1;
+        }
+    }
+
+    // Network overlay: draw fused tracks from the shared datalink hub. These are
+    // tracks confirmed by any powered GBRS station in the net, so a station can
+    // see contacts detected by its peers (multi-radar network picture).
+    protected void DrawNetworkFusedTracks(vector origin)
+    {
+        if (m_DisplayRange <= 0.0)
+            return;
+
+        RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();
+        if (!hub || !hub.IsEnabled())
+            return;
+
+        array<ref RDF_RadarFusedTrack> fused = hub.GetFusedTracks();
+        if (!fused || fused.Count() < 1)
+            return;
+
+        float rangeSq = m_DisplayRange * m_DisplayRange;
+        int drawn = 0;
+        foreach (RDF_RadarFusedTrack f : fused)
+        {
+            if (!f)
+                continue;
+            if (drawn >= MAX_DRAW_BLIPS)
+                break;
+
+            vector d = f.m_WorldPos - origin;
+            float distSq = d[0] * d[0] + d[2] * d[2];
+            if (distSq > rangeSq)
+                continue;
+
+            float bx;
+            float by;
+            if (!WorldToPpi(origin, f.m_WorldPos, bx, by))
+                continue;
+
+            DrawPpiSquare(bx, by, 6.0, COL_NET);
+
+            vector v = f.m_Velocity;
+            float vLen = Math.Sqrt(v[0] * v[0] + v[2] * v[2]);
+            if (vLen >= 3.0)
+                DrawPpiChevron(bx, by, v[0], v[2], COL_NET);
+
+            string tag = "NET";
+            if (f.m_ContributorCount > 1)
+                tag = "NET" + f.m_ContributorCount.ToString();
+            DrawPpiLabel(bx, by, tag + " " + GetPpiMapLabel(f.m_WorldPos), COL_NET);
 
             drawn = drawn + 1;
         }
