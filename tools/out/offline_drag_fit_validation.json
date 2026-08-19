@@ -1,0 +1,166 @@
+{
+  "script": "offline_validate_drag_fit.py",
+  "note": "Step-for-step Enforce NelderMeadDrag mirror; vacuum fit + prefab drag as baseline",
+  "cases": [
+    {
+      "faction": "US",
+      "elev_deg": 55.0,
+      "launch_range_m": 1200,
+      "flight_s": 24.6,
+      "densified": false,
+      "impact_err_m_median": {
+        "vacuum_fit": 338.6,
+        "full_drag_fit": 7.4
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 159.5,
+        "full_drag_fit": 2.8
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "US",
+      "elev_deg": 45.0,
+      "launch_range_m": 3000,
+      "flight_s": 21.7,
+      "densified": false,
+      "impact_err_m_median": {
+        "vacuum_fit": 351.2,
+        "full_drag_fit": 7.4
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 199.7,
+        "full_drag_fit": 3.6
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "US",
+      "elev_deg": 55.0,
+      "launch_range_m": 3000,
+      "flight_s": 24.6,
+      "densified": false,
+      "impact_err_m_median": {
+        "vacuum_fit": 338.6,
+        "full_drag_fit": 7.4
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 159.5,
+        "full_drag_fit": 2.8
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "US",
+      "elev_deg": 65.0,
+      "launch_range_m": 3000,
+      "flight_s": 27.0,
+      "densified": false,
+      "impact_err_m_median": {
+        "vacuum_fit": 288.9,
+        "full_drag_fit": 7.7
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 122.1,
+        "full_drag_fit": 2.4
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "USSR",
+      "elev_deg": 55.0,
+      "launch_range_m": 3000,
+      "flight_s": 24.6,
+      "densified": false,
+      "impact_err_m_median": {
+        "vacuum_fit": 345.4,
+        "full_drag_fit": 11.0
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 147.6,
+        "full_drag_fit": 4.2
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "US",
+      "elev_deg": 55.0,
+      "launch_range_m": 3000,
+      "flight_s": 24.6,
+      "densified": true,
+      "impact_err_m_median": {
+        "vacuum_fit": 344.1,
+        "full_drag_fit": 7.3
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 157.9,
+        "full_drag_fit": 2.7
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "USSR",
+      "elev_deg": 55.0,
+      "launch_range_m": 3000,
+      "flight_s": 24.6,
+      "densified": true,
+      "impact_err_m_median": {
+        "vacuum_fit": 351.0,
+        "full_drag_fit": 11.0
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 146.2,
+        "full_drag_fit": 4.0
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    },
+    {
+      "faction": "US",
+      "elev_deg": 45.0,
+      "launch_range_m": 6000,
+      "flight_s": 21.7,
+      "densified": false,
+      "impact_err_m_median": {
+        "vacuum_fit": 351.2,
+        "full_drag_fit": 7.4
+      },
+      "launch_err_m_median": {
+        "vacuum_fit": 199.7,
+        "full_drag_fit": 3.6
+      },
+      "drag_fit_acceptance": [
+        1.0,
+        60,
+        60
+      ]
+    }
+  ]
+}

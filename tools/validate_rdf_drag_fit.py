@@ -13,9 +13,17 @@ from quantify_wlr_realism import (
 
 
 # --- replica of Enforce DragFitResidual / IntegrateDragFrom ---
+_INTEG_MEM = {}
 def integrate_drag_from(anchor, vel, dur, drag, dt=0.05):
     if dur <= 0.0:
         return anchor, vel
+    # Memoize by rounded params: many Nelder-Mead iterations share the same
+    # anchor + durations (only vel/drag change), so this is a large speedup.
+    key = (tuple(round(x, 3) for x in anchor),
+           tuple(round(x, 2) for x in vel),
+           round(dur, 2), round(drag, 6))
+    if key in _INTEG_MEM:
+        return _INTEG_MEM[key]
     t = 0.0; p = list(anchor); v = list(vel)
     def accel(ve):
         sp = math.sqrt(ve[0]**2+ve[1]**2+ve[2]**2)
@@ -28,7 +36,8 @@ def integrate_drag_from(anchor, vel, dur, drag, dt=0.05):
         p = (p[0]+vmid[0]*step, p[1]+vmid[1]*step, p[2]+vmid[2]*step)
         v = (v[0]+amid[0]*step, v[1]+amid[1]*step, v[2]+amid[2]*step)
         t += step
-    return p, v
+    _INTEG_MEM[key] = (p, v)
+    return _INTEG_MEM[key]
 
 
 def dragfit_resid(positions, times, anchor, vel, drag):
@@ -105,23 +114,23 @@ def nelder_mead_drag(positions, times, anchor, vel_init, drag_lo, drag_hi, wind=
     return simplex_vel[bi], min(max(simplex_drag[bi],drag_lo),drag_hi)
 
 
-def find_ground_intersection_py(pos, vel, drag, ground_y=0.0, max_t=90.0, dt=0.02):
+def find_ground_intersection_py(pos, vel, drag, ground_y=0.0, max_t=90.0, dt=0.02, backward=False):
     p=list(pos); v=list(vel); t=0.0
+    direction = -1.0 if backward else 1.0
     prev_p=list(p); prev_y=p[1]
     def accel(ve):
         sp=math.sqrt(ve[0]**2+ve[1]**2+ve[2]**2)
         return (-drag*sp*ve[0], -9.81-drag*sp*ve[1], -drag*sp*ve[2])
-    while t < max_t:
-        sp=math.sqrt(v[0]**2+v[1]**2+v[2]**2)
+    while abs(t) < max_t:
         a=accel(v)
-        vmid=(v[0]+a[0]*dt*0.5,v[1]+a[1]*dt*0.5,v[2]+a[2]*dt*0.5)
+        vmid=(v[0]+a[0]*dt*0.5*direction, v[1]+a[1]*dt*0.5*direction, v[2]+a[2]*dt*0.5*direction)
         amid=accel(vmid)
-        np=[p[0]+vmid[0]*dt,p[1]+vmid[1]*dt,p[2]+vmid[2]*dt]
-        v=[v[0]+amid[0]*dt,v[1]+amid[1]*dt,v[2]+amid[2]*dt]
+        np=[p[0]+vmid[0]*dt*direction, p[1]+vmid[1]*dt*direction, p[2]+vmid[2]*dt*direction]
+        v=[v[0]+amid[0]*dt*direction, v[1]+amid[1]*dt*direction, v[2]+amid[2]*dt*direction]
         if (prev_y-ground_y)>=0 and (np[1]-ground_y)<=0:
             frac=(prev_y-ground_y)/max(prev_y-np[1],1e-9)
             return (prev_p[0]+(np[0]-prev_p[0])*frac, ground_y, prev_p[2]+(np[2]-prev_p[2])*frac)
-        prev_p=p=list(np); prev_y=np[1]; t+=dt
+        prev_p=p=list(np); prev_y=np[1]; t+=dt*direction
     return None
 
 
