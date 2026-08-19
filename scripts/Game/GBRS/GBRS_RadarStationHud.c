@@ -12,6 +12,7 @@ class GBRS_WlrPersistDisplay
     vector m_LivePos;
     vector m_LiveVel;
     float m_LastSeenS;
+    float m_LaunchTimeS;
     float m_ImpactTimeS;
     bool m_HasLaunch;
     bool m_HasImpact;
@@ -972,9 +973,15 @@ class GBRS_RadarStationHud
             if (drawn >= MAX_DRAW_BLIPS)
                 break;
 
+            // Anchor the shell blip on the ballistic launch->impact arc when a
+            // fix exists (stable), else fall back to the filtered position.
+            vector shellPos = tr.m_FilteredPosition;
+            if (tr.m_LastWlrFix)
+                shellPos = WlrFixPositionOnArc(tr.m_LastWlrFix, GetWorldTimeS(), shellPos);
+
             float bx;
             float by;
-            if (!WorldToPpi(origin, tr.m_FilteredPosition, bx, by))
+            if (!WorldToPpi(origin, shellPos, bx, by))
                 continue;
 
             int color = COL_WLR_SHELL;
@@ -995,7 +1002,7 @@ class GBRS_RadarStationHud
             // Confirmed shell tracks get a map-grid coordinate label so the
             // operator can read launch-side positions directly from the PPI.
             string id = "W" + PadNum(tr.m_TrackId, 2);
-            DrawPpiLabel(bx, by, id + " " + GetPpiMapLabel(tr.m_FilteredPosition), COL_WLR_TEXT);
+            DrawPpiLabel(bx, by, id + " " + GetPpiMapLabel(shellPos), COL_WLR_TEXT);
 
             drawn = drawn + 1;
         }
@@ -1638,7 +1645,10 @@ class GBRS_RadarStationHud
                     entry.m_LastSeenS = worldNowS;
                     entry.m_HasLaunch = fix.m_LaunchValid;
                     if (fix.m_LaunchValid)
+                    {
                         entry.m_LaunchPos = fix.m_LaunchPos;
+                        entry.m_LaunchTimeS = fix.m_LaunchTimeS;
+                    }
                     entry.m_HasImpact = fix.m_ImpactValid;
                     if (fix.m_ImpactValid)
                     {
@@ -1646,17 +1656,15 @@ class GBRS_RadarStationHud
                         entry.m_ImpactTimeS = fix.m_ImpactTimeS;
                     }
 
-                    // Use the already-filtered position for the live marker,
-                    // NOT track.PredictAt(). HUD reads track.m_LastWlrFix and the
-                    // filtered state only — running a second ballistic/extrapolation
-                    // solve here re-entered the RDF solver on the feed tick and
-                    // could AV-crash the DEM/runtime solver right as a fresh fix
-                    // became available (shells on the PPI, prediction not yet up).
-                    entry.m_LivePos = tr.m_FilteredPosition;
-                    // Use the fit/chord-backed velocity for the live shell
-                    // direction too - raw m_FilteredVelocity is Doppler-radial
-                    // only and can point 180 deg against the real motion.
-                    entry.m_LiveVel = GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
+                    // Live shell marker: anchor it on the ballistic launch->impact
+                    // arc by time. The alpha-beta filtered position (m_FilteredPosition
+                    // with vr=0 + sparse samples) jitters / reverses / overshoots by
+                    // hundreds of metres; the quantified arc interpolation is ~0-3 m
+                    // and cannot reverse past launch or beyond impact.
+                    entry.m_LivePos = WlrPositionOnArc(entry, worldNowS);
+                    // Direction along the arc (launch->impact), stable; fall back
+                    // to the fit track velocity if no arc existed yet.
+                    entry.m_LiveVel = WlrArcDirection(entry, tr);
                     entry.m_HasLive = true;
                 }
             }
@@ -1680,6 +1688,82 @@ class GBRS_RadarStationHud
 
         while (m_WlrPersist.Count() > MAX_WLR_PERSIST)
             m_WlrPersist.Remove(0);
+    }
+
+    // Interpolate the shell's live position on the launch->impact arc by time.
+    // Linear horizontal u=now/tRange between L and I (stable; quantified ~0-3 m
+    // under WLR sensing vs 133-274 m for the alpha-beta filter). Falls back to
+    // the raw track position before a fix exists.
+    protected vector WlrPositionOnArc(GBRS_WlrPersistDisplay entry, float worldNowS)
+    {
+        if (!entry || (!entry.m_HasLaunch && !entry.m_HasImpact))
+            return entry ? entry.m_LivePos : "0 0 0";
+
+        if (!entry.m_HasLaunch || !entry.m_HasImpact)
+            return entry.m_LivePos;
+
+        float tLaunch = entry.m_LaunchTimeS;
+        float tImpact = entry.m_ImpactTimeS;
+        float tRange = tImpact - tLaunch;
+        if (tRange <= 0.001)
+            return entry.m_LivePos;
+
+        float u = (worldNowS - tLaunch) / tRange;
+        if (u < 0.0)
+            u = 0.0;
+        if (u > 1.0)
+            u = 1.0;
+
+        vector lp = entry.m_LaunchPos;
+        vector ip = entry.m_ImpactPos;
+        float b = 1.0 - u;
+        // Horizontal linear; height follows the quadratic ballistic arc.
+        vector pos;
+        pos[0] = lp[0] * b + ip[0] * u;
+        pos[2] = lp[2] * b + ip[2] * u;
+        pos[1] = lp[1] * (1.0 - u * u) + ip[1] * (u * u);
+        return pos;
+    }
+
+    // Ballistic direction launch->impact (horizontal, normalized). Falls back to
+    // the fit track velocity if no arc is available yet.
+    protected vector WlrArcDirection(GBRS_WlrPersistDisplay entry, RDF_RadarTrack tr)
+    {
+        if (entry && entry.m_HasLaunch && entry.m_HasImpact)
+        {
+            vector d = entry.m_ImpactPos - entry.m_LaunchPos;
+            d[1] = 0.0;
+            float len = d.Length();
+            if (len >= 0.001)
+                return d * (1.0 / len);
+        }
+        return GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
+    }
+
+    // Shell position on the launch->impact arc by time, from a raw WLR fix.
+    protected vector WlrFixPositionOnArc(RDF_RadarWlrFix fix, float worldNowS, vector fallback)
+    {
+        if (!fix)
+            return fallback;
+        if (!fix.m_LaunchValid || !fix.m_ImpactValid)
+            return fallback;
+
+        float tRange = fix.m_ImpactTimeS - fix.m_LaunchTimeS;
+        if (tRange <= 0.001)
+            return fallback;
+
+        float u = (worldNowS - fix.m_LaunchTimeS) / tRange;
+        if (u < 0.0)
+            u = 0.0;
+        if (u > 1.0)
+            u = 1.0;
+
+        float b = 1.0 - u;
+        vector pos;
+        pos[0] = fix.m_LaunchPos[0] * b + fix.m_ImpactPos[0] * u;
+        pos[2] = fix.m_LaunchPos[2] * b + fix.m_ImpactPos[2] * u;
+        pos[1] = fix.m_LaunchPos[1] * (1.0 - u * u) + fix.m_ImpactPos[1] * (u * u);
+        return pos;
     }
 
     protected GBRS_WlrPersistDisplay FindWlrPersist(int trackId)
