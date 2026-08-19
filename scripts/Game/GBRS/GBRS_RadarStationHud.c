@@ -1199,6 +1199,16 @@ class GBRS_RadarStationHud
                 DrawPpiHeadingStick(bx, by, dirX, dirZ, color);
             }
 
+            // Mark emitting contacts (other radars / jammers) plainly so the
+            // operator can see where an interference source is.
+            if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
+            {
+                DrawPpiAlertRing(origin, tr.m_FilteredPosition, WLR_ALERT_RADIUS_M * 1.2, COL_EMITTER);
+                DrawPpiLabel(bx, by, "JAM " + GetPpiMapLabel(tr.m_FilteredPosition), COL_EMITTER);
+                drawn = drawn + 1;
+                continue;
+            }
+
             // TWS tracks show map-grid coordinates directly on the PPI.
             DrawPpiLabel(bx, by, GetPpiMapLabel(tr.m_FilteredPosition), COL_TRACK_LABEL);
 
@@ -2005,6 +2015,10 @@ class GBRS_RadarStationHud
         ring.m_bShouldEnclose = true;
         ring.m_Vertices = ringVerts;
         m_PpiAll.Insert(ring);
+
+        // Label the interference fight on the PPI itself (the ring alone is
+        // cryptic). Shown while ECCM is actively resisting a jammer.
+        DrawPpiLabel(m_PpiCx, m_PpiCy - m_PpiR + 18.0, "JAMMING  " + EccmStatusString(), COL_LOCK);
     }
 
     protected bool IsLockMatchedBlip(RDF_RadarTarget t, vector lockPos)
