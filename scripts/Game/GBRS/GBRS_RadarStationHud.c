@@ -26,6 +26,9 @@ class GBRS_RadarStationHud
     static const ResourceName PPI_FACE_TEXTURE =
         "{F2196E35CB708A41}UI/Textures/GBRS/GBRS_PpiFace.edds";
 
+    // Dedicated world camera slot for the workstation PIP (vanilla sights default to 1).
+    // Index 0 is the live player camera — never bind the RT to GetCameraIndex() before
+    // SetCameraIndex, and never put "camera N" in the layout file.
     static const int OPTICS_CAMERA_INDEX = 16;
     static const float OPTICS_FOV_DEG = 32.0;
     static const float OPTICS_NEAR_M = 0.25;
@@ -202,6 +205,11 @@ class GBRS_RadarStationHud
         else if (mode == GBRS_RadarStationConstants.MODE_WLR)
             showTable = false;
         inst.SetContactsTableVisible(showTable);
+
+        // Keep the external optics PIP in every workstation mode (incl. WLR) so
+        // the optical sight does not go dark when the radar station is open.
+        if (inst.m_OpticsParent && !inst.m_OpticsCamera)
+            inst.CreateOpticsCamera(inst.m_OpticsParent);
     }
 
     protected void SetContactsTableVisible(bool contacts)
@@ -352,6 +360,8 @@ class GBRS_RadarStationHud
 
         CenterRoot();
         InitCanvases();
+        SyncPpiSquare();
+        SyncAzElSize();
 
         if (m_Widgets.m_wListBody)
         {
@@ -400,8 +410,6 @@ class GBRS_RadarStationHud
         FrameSlot.SetOffsets(m_wRoot, 0.0, 0.0, 0.0, 0.0);
     }
 
-    // Size the PPI canvas to the largest square inside its host. Drawing stays
-    // in 640-unit space so the face texture and sweep stay aligned.
     protected void SyncPpiSquare()
     {
         if (!m_wRoot || !m_Widgets || !m_Widgets.m_wPpiCanvas)
@@ -743,15 +751,16 @@ class GBRS_RadarStationHud
         // persist used to each walk GetAllTracks independently.
         m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
 
-        // Keep the station panel centered: the layout root is authored in
-        // 1920x1080 absolute coordinates and MenuManager may re-place it.
-        // Re-assert centering every update tick (cheap FrameSlot writes).
+        // Keep the station panel centered/covering the screen: the layout root is
+        // authored at 1920x1080 absolute and MenuManager may re-place it, so
+        // re-assert its stretch + canvas geometry every tick.
         CenterRoot();
         SyncPpiSquare();
         SyncAzElSize();
 
         UpdateOpticsCamera(origin, forward);
-        UpdateWlrPersist(origin, tracker);
+        if (m_Mode == MODE_WLR)
+            UpdateWlrPersist(origin, tracker);
         UpdatePpi(targets, origin, forward, tracker);
         UpdateAzEl(targets, origin, tracker);
         UpdateList(targets, origin, tracker);
@@ -827,6 +836,12 @@ class GBRS_RadarStationHud
 
     protected void AppendUnitPoint(array<float> pixels, float unitX, float unitY)
     {
+        if (unitX != unitX || unitY != unitY)
+            return;
+        if (unitX > float.INFINITY || unitX < -float.INFINITY)
+            return;
+        if (unitY > float.INFINITY || unitY < -float.INFINITY)
+            return;
         vector p = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(unitX, unitY, 0.0));
         pixels.Insert(p[0]);
         pixels.Insert(p[1]);
@@ -1341,13 +1356,39 @@ class GBRS_RadarStationHud
         m_PpiAll.Insert(poly);
     }
 
-    // Returns false when the plot is outside the current display range.
+    // True when every component is a real, finite number. Guards the PPI draw
+    // path against NaN/Inf positions leaking in from an RDF ballistic fix or a
+    // track extrapolation — a non-finite pixel coordinate reaching
+    // TessellateCircle / LineDrawCommand vertices is what produced the
+    // UpdateEntities access-violation during counter-battery WLR tests when the
+    // PPI had drawn shell blips but before the launch/impact prediction markers
+    // could render.
+    protected bool VecFinite(vector v)
+    {
+        float a = v[0];
+        float b = v[1];
+        float c = v[2];
+        if (a != a || b != b || c != c)
+            return false;
+        if (a > float.INFINITY || a < -float.INFINITY)
+            return false;
+        if (b > float.INFINITY || b < -float.INFINITY)
+            return false;
+        if (c > float.INFINITY || c < -float.INFINITY)
+            return false;
+        return true;
+    }
+
+    // Returns false when the plot is outside the current display range or the
+    // position is not finite.
     protected bool WorldToPpi(vector origin, vector worldPos, out float outX, out float outY)
     {
         outX = m_PpiCx;
         outY = m_PpiCy;
 
         if (m_DisplayRange <= 0.0)
+            return false;
+        if (!VecFinite(worldPos) || !VecFinite(origin))
             return false;
 
         vector delta = worldPos - origin;
@@ -1362,13 +1403,16 @@ class GBRS_RadarStationHud
         return true;
     }
 
-    // Clamp to PPI rim so WLR launch/impact outside range still draw.
+    // Clamp to PPI rim so WLR launch/impact outside range still draw. Rejects
+    // non-finite positions so a bad ballistic fix can never feed the draw path.
     protected bool WorldToPpiClamped(vector origin, vector worldPos, out float outX, out float outY)
     {
         outX = m_PpiCx;
         outY = m_PpiCy;
 
         if (m_DisplayRange <= 0.0)
+            return false;
+        if (!VecFinite(worldPos) || !VecFinite(origin))
             return false;
 
         vector delta = worldPos - origin;
@@ -1440,8 +1484,13 @@ class GBRS_RadarStationHud
                         entry.m_ImpactTimeS = fix.m_ImpactTimeS;
                     }
 
-                    vector live = GBRS_RadarWlrBallisticSolver.PredictLive(tr, GetWorldTimeS());
-                    entry.m_LivePos = live;
+                    // Use the already-filtered position for the live marker,
+                    // NOT track.PredictAt(). HUD reads track.m_LastWlrFix and the
+                    // filtered state only — running a second ballistic/extrapolation
+                    // solve here re-entered the RDF solver on the feed tick and
+                    // could AV-crash the DEM/runtime solver right as a fresh fix
+                    // became available (shells on the PPI, prediction not yet up).
+                    entry.m_LivePos = tr.m_FilteredPosition;
                     entry.m_LiveVel = tr.m_FilteredVelocity;
                     entry.m_HasLive = true;
                 }
@@ -1579,6 +1628,17 @@ class GBRS_RadarStationHud
 
     protected void DrawSolidPpiLine(float x0, float y0, float x1, float y1, int color, float widthUnit)
     {
+        if (x0 != x0 || y0 != y0 || x1 != x1 || y1 != y1)
+            return;
+        if (x0 > float.INFINITY || x0 < -float.INFINITY)
+            return;
+        if (y0 > float.INFINITY || y0 < -float.INFINITY)
+            return;
+        if (x1 > float.INFINITY || x1 < -float.INFINITY)
+            return;
+        if (y1 > float.INFINITY || y1 < -float.INFINITY)
+            return;
+
         array<float> verts = new array<float>();
         AppendUnitPoint(verts, x0, y0);
         AppendUnitPoint(verts, x1, y1);
@@ -1724,9 +1784,16 @@ class GBRS_RadarStationHud
             return;
 
         vector centerPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(bx, by, 0.0));
+        if (!VecFinite(centerPx))
+            return;
         float ringPx = UnitSizeToPixels(radiusUnit);
-        if (ringPx < 3.0)
-            ringPx = 3.0;
+        if (ringPx <= 0.0 || ringPx != ringPx || ringPx > float.INFINITY)
+            return;
+        if (centerPx[0] > 20000.0 || centerPx[1] > 20000.0)
+            return;
+        if (centerPx[0] < -20000.0 || centerPx[1] < -20000.0)
+            return;
+        ringPx = Math.Clamp(ringPx, 3.0, 200.0);
 
         array<float> ringVerts = new array<float>();
         m_Widgets.m_wPpiCanvas.TessellateCircle(centerPx, ringPx, 20, ringVerts);
@@ -1740,8 +1807,9 @@ class GBRS_RadarStationHud
         m_PpiAll.Insert(ring);
 
         float corePx = UnitSizeToPixels(2.5);
-        if (corePx < 1.5)
+        if (corePx <= 0.0 || corePx != corePx || corePx > float.INFINITY)
             corePx = 1.5;
+        corePx = Math.Clamp(corePx, 1.5, 60.0);
         array<float> coreVerts = new array<float>();
         m_Widgets.m_wPpiCanvas.TessellateCircle(centerPx, corePx, 8, coreVerts);
         PolygonDrawCommand core = new PolygonDrawCommand();

@@ -211,8 +211,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		Widget root = GetRootWidget();
 		IEntity opticsParent = station.GetOwner();
-		GBRS_RadarStationHud.Attach(root, opticsParent);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
+		GBRS_RadarStationHud.Attach(root, opticsParent);
 		m_iFocusedModeTab = 0;
 		if (m_ActiveMode == MODE_WLR)
 			m_iFocusedModeTab = 1;

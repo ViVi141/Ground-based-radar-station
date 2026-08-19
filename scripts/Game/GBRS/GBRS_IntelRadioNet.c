@@ -667,118 +667,82 @@ class GBRS_IntelRadioNet
         IEntity owner = station.GetOwner();
         if (!owner)
             return;
-
-        ChimeraWorld world = ChimeraWorld.CastFrom(GetGame().GetWorld());
-        if (!world)
-            return;
-
-        RadioManagerEntity radioManager = world.GetRadioManager();
-        if (!radioManager)
+        if (owner.IsDeleted())
             return;
 
         string factionEncryption = "";
         if (faction)
             factionEncryption = faction.GetFactionRadioEncryptionKey();
+        if (factionEncryption.IsEmpty())
+            return;
 
-        array<vector> queuePos = {};
-        array<float> queueRange = {};
         array<BaseRadioComponent> visited = {};
-        queuePos.Insert(owner.GetOrigin());
-        queueRange.Insert(GBRS_RadarStationConstants.INTEL_RADIO_RANGE_M);
+        // Relay candidates are gathered from owned / campaign radios only, using
+        // per-radio TransceiversCount/GetTransceiver iteration (safe native). The
+        // former world-wide spatial scan used RadioManagerEntity.GetTransceiversInRange
+        // (out array fill); on this engine build that native calls AV-crashes with an
+        // illegal write regardless of input, so it must not be called here.
+        array<BaseRadioComponent> radios = {};
+        AddSourceRadios(station, faction, radios);
 
-        int cursor = 0;
-        while (cursor < queuePos.Count())
+        int ri = 0;
+        while (ri < radios.Count())
         {
             if (s_aRelayMesh.Count() >= GBRS_RadarStationConstants.INTEL_RELAY_MESH_MAX)
                 break;
 
-            vector searchPos = queuePos[cursor];
-            float searchRange = queueRange[cursor];
-            cursor = cursor + 1;
-
-            if (searchRange <= 0.0)
+            BaseRadioComponent radio = radios.Get(ri);
+            ri = ri + 1;
+            if (!radio)
                 continue;
-
-            array<BaseTransceiver> found = {};
-            radioManager.GetTransceiversInRange(searchPos, searchRange, found);
-            if (found.IsEmpty())
+            if (!radio.IsPowered())
                 continue;
+            if (visited.Contains(radio))
+                continue;
+            if (!RelayAcceptsFactionEncryption(radio, factionEncryption))
+                continue;
+            visited.Insert(radio);
 
-            foreach (BaseTransceiver transceiver : found)
+            int tc = radio.TransceiversCount();
+            int ti;
+            for (ti = 0; ti < tc; ti++)
             {
                 if (s_aRelayMesh.Count() >= GBRS_RadarStationConstants.INTEL_RELAY_MESH_MAX)
                     break;
 
-                if (!IsWorldRelayTransceiver(transceiver, station))
+                BaseTransceiver transceiver = radio.GetTransceiver(ti);
+                if (!transceiver)
                     continue;
 
-                BaseRadioComponent radio = transceiver.GetRadio();
-                if (!radio)
-                    continue;
-                if (visited.Contains(radio))
-                    continue;
-                if (!RelayAcceptsFactionEncryption(radio, factionEncryption))
+                RelayTransceiver relay = RelayTransceiver.Cast(transceiver);
+                if (!relay)
                     continue;
 
-                visited.Insert(radio);
+                IEntity tsvOwner = radio.GetOwner();
+                if (!tsvOwner || tsvOwner.IsDeleted())
+                    continue;
+                if (tsvOwner == owner)
+                    continue;
+
                 s_aRelayMesh.Insert(transceiver);
-
-                IEntity radioOwner = radio.GetOwner();
-                if (!radioOwner)
-                    continue;
-
-                float hopRange = transceiver.GetRange();
-                if (hopRange <= 0.0)
-                    continue;
-
-                queuePos.Insert(radioOwner.GetOrigin());
-                queueRange.Insert(hopRange);
             }
         }
     }
 
-    //------------------------------------------------------------------------------------------------
-    protected static bool IsWorldRelayTransceiver(
-        BaseTransceiver transceiver,
-        GBRS_RadarStationComponent station)
+    // Safe relay sources: the station's own covering campaign base (if any) plus
+    // the station owner's override base relay. No world-wide spatial query.
+    protected static void AddSourceRadios(
+        GBRS_RadarStationComponent station,
+        Faction faction,
+        notnull array<BaseRadioComponent> radios)
     {
-        if (!transceiver)
-            return false;
-
-        RelayTransceiver relay = RelayTransceiver.Cast(transceiver);
-        if (!relay)
-            return false;
-
-        BaseRadioComponent radio = transceiver.GetRadio();
-        if (!radio)
-            return false;
-        if (!radio.IsPowered())
-            return false;
-
-        IEntity owner = radio.GetOwner();
-        while (owner)
+        BaseTransceiver hqRelay = GetFactionIntelRelayTransceiver(station, faction);
+        if (hqRelay)
         {
-            if (station)
-            {
-                GBRS_RadarStationComponent otherStation =
-                    GBRS_RadarStationComponent.Cast(owner.FindComponent(GBRS_RadarStationComponent));
-                if (otherStation)
-                {
-                    if (otherStation == station)
-                        return false;
-                }
-            }
-
-            if (ChimeraCharacter.Cast(owner))
-                return false;
-
-            if (SCR_EditorManagerEntity.Cast(owner))
-                return false;
-
-            owner = owner.GetParent();
+            BaseRadioComponent r = hqRelay.GetRadio();
+            if (r && !radios.Contains(r))
+                radios.Insert(r);
         }
-
-        return true;
     }
 
     //------------------------------------------------------------------------------------------------

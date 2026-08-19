@@ -7,7 +7,7 @@
 //
 // Balance intent:
 //   US  = precise SHORAD (7 km PD / 8 km WLR, 10 RPM search, 2.5 deg beam).
-//   USSR = early-warning (10 km PD/WLR, 6 RPM search, 6 deg beam, VHF DEM 0.25).
+//   USSR = early-warning (10 km PD/WLR, 6 RPM search, 6 deg beam, VHF DEM 0.50).
 class GBRS_RadarStationConfig
 {
     protected static const float MTI_DISPLAY_MIN_RADIAL_SPEED_MS = 3.0;
@@ -255,8 +255,8 @@ class GBRS_RadarStationConfig
     // clutter-limited) so nothing is ever detected. Real counter-battery radars
     // look up at the ballistic mid-course with high elevation beams - the
     // main-beam ground return is negligible there, so thermal-noise-limited
-    // detection is the correct model. Launch/impact solving still uses DEM
-    // ground (m_EnableDemGroundForWlr) for the surface intersection fit.
+    // detection is the correct model. Launch/impact solving uses DEM ground
+    // (m_EnableDemGroundForWlr) for the terrain surface-intersection fit.
     //
     // RDF_RadarScanner drops a candidate when LOS is blocked and NLOS is off.
     // Scatterer-table hits (GetStatsLine hit=) are signature lookups, not
@@ -299,6 +299,8 @@ class GBRS_RadarStationConfig
         settings.m_EnableWeatherDrivenRainLoss = false;
         settings.m_EnableBallisticPrediction = true;
         settings.m_EnableWeaponLocate = true;
+        // DEM ground fit for WLR launch/impact stays ON (high-fidelity terrain
+        // impact). RDF's weapon-locate DEM sampling is left at its stock behavior.
         settings.m_EnableDemGroundForWlr = true;
         // GBRS PPI draws launch/impact; RDF's own WLR HUD overlay is extra work.
         settings.m_EnableWlrHudAlerts = false;
@@ -312,9 +314,10 @@ class GBRS_RadarStationConfig
         ApplySystemLayers(settings);
         ApplyMechanicalScanBudget(settings);
         ApplyScattererDiscoveryBudget(settings);
-        // RDF 1.0.2 default is 2 solves/scan (queue the rest). GBRS PPI launch
+        // RDF 1.0.2+ default is 2 solves/scan (queue the rest). GBRS PPI launch
         // / impact / ETA need the fix in the same barrage, so take the governor
-        // max and keep the overflow queue.
+        // max and keep the overflow queue. HUD reads track.m_LastWlrFix only —
+        // do not run a second ballistic solver on the feed tick.
         settings.m_WeaponLocateSolvesPerScan = 6;
         settings.m_WeaponLocateQueueMax = 16;
 
@@ -481,12 +484,9 @@ class GBRS_RadarStationConfig
         settings.m_Hardware = hw;
 
         ApplyFullFidelity(settings);
-        // VHF surface returns are weaker than X-band SHORAD clutter cells.
-        // Offline-tuned (tools/simulate_pd_search.py): at 0.25 the DEM clutter
-        // floor dominates thermal noise and limits UH-1 Pd at 10 km to ~59%.
-        // 0.10 restores thermal-noise-limited operation (Pd ~80%, median
-        // SNR 10.3 dB) while keeping a live clutter channel.
-        settings.m_DemClutterScale = 0.10;
+        // RDF 1.1.0 per-band sigma0: VHF vegetation is stronger than legacy X-table.
+        // Offline recal (calib_pd_full.py) -> 0.50 for R50 >= 10 km UH-1 (MTD_BANK).
+        settings.m_DemClutterScale = 0.50;
         // Greater-of CFAR for clutter-edge VHF EW scenes.
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_GO;
         ApplyWorkstationReadout(settings, false);
