@@ -1,0 +1,100 @@
+{
+  "script": "ab_doppler_wlr.py",
+  "note": "position-only (A) vs position+Doppler (B) on the full-drag solve",
+  "cases": [
+    {
+      "faction": "US",
+      "elev_deg": 55,
+      "launch_range_m": 3000,
+      "vel_noise_ms": 3.0,
+      "impact_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 7.5,
+        "B_pos+dop(w_vel=0.5)": 7.5,
+        "B_pos+dop(w_vel=2.0)": 7.4,
+        "B_pos+dop(w_vel=8.0)": 7.4,
+        "A_pos_only": 7.5
+      },
+      "launch_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 2.6,
+        "B_pos+dop(w_vel=0.5)": 2.6,
+        "B_pos+dop(w_vel=2.0)": 2.6,
+        "B_pos+dop(w_vel=8.0)": 2.6,
+        "A_pos_only": 2.6
+      }
+    },
+    {
+      "faction": "US",
+      "elev_deg": 55,
+      "launch_range_m": 3000,
+      "vel_noise_ms": 3.0,
+      "impact_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 7.5,
+        "B_pos+dop(w_vel=0.5)": 7.5,
+        "B_pos+dop(w_vel=2.0)": 7.4,
+        "B_pos+dop(w_vel=8.0)": 7.4,
+        "A_pos_only": 7.5
+      },
+      "launch_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 2.6,
+        "B_pos+dop(w_vel=0.5)": 2.6,
+        "B_pos+dop(w_vel=2.0)": 2.6,
+        "B_pos+dop(w_vel=8.0)": 2.6,
+        "A_pos_only": 2.6
+      }
+    },
+    {
+      "faction": "USSR",
+      "elev_deg": 55,
+      "launch_range_m": 3000,
+      "vel_noise_ms": 3.5,
+      "impact_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 10.9,
+        "B_pos+dop(w_vel=0.5)": 10.9,
+        "B_pos+dop(w_vel=2.0)": 10.9,
+        "B_pos+dop(w_vel=8.0)": 11.1,
+        "A_pos_only": 10.9
+      },
+      "launch_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 3.9,
+        "B_pos+dop(w_vel=0.5)": 3.9,
+        "B_pos+dop(w_vel=2.0)": 3.9,
+        "B_pos+dop(w_vel=8.0)": 3.8,
+        "A_pos_only": 3.9
+      }
+    },
+    {
+      "faction": "US",
+      "elev_deg": 45,
+      "launch_range_m": 3000,
+      "vel_noise_ms": 3.0,
+      "impact_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 7.5,
+        "B_pos+dop(w_vel=0.5)": 7.5,
+        "B_pos+dop(w_vel=2.0)": 7.6,
+        "B_pos+dop(w_vel=8.0)": 7.6,
+        "A_pos_only": 7.5
+      },
+      "launch_err_m_median": {
+        "B_pos+dop(w_vel=0.0)": 3.2,
+        "B_pos+dop(w_vel=0.5)": 3.2,
+        "B_pos+dop(w_vel=2.0)": 3.2,
+        "B_pos+dop(w_vel=8.0)": 2.9,
+        "A_pos_only": 3.2
+      }
+    }
+  ],
+  "early_flight_heading_deg_median": {
+    "US_55": {
+      "pos_only_deg": 0.3,
+      "pos+doppler_deg": 0.3
+    },
+    "USSR_55": {
+      "pos_only_deg": 3.6,
+      "pos+doppler_deg": 3.6
+    },
+    "US_45": {
+      "pos_only_deg": 0.3,
+      "pos+doppler_deg": 0.3
+    }
+  }
+}
