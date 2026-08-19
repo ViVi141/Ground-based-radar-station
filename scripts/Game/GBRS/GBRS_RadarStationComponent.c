@@ -1780,6 +1780,24 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         m_fProductUpdateIntervalS = settings.m_UpdateInterval;
+
+        // Capture the antenna's current physical bearing BEFORE changing product
+        // rpm, so a mode switch that parks the antenna (WLR rpm=0) then returns
+        // to a spinning mode resumes from where it physically is instead of
+        // snapping to the world-clock scan angle.
+        float prevRpm = m_fScanRpm;
+        float currentAngleRad = m_fAntennaFrozenAngleRad;
+        if (prevRpm > 0.0)
+        {
+            BaseWorld phaseWorld = GetGame().GetWorld();
+            float phaseTimeS = 0.0;
+            if (phaseWorld)
+                phaseTimeS = phaseWorld.GetWorldTime() * 0.001;
+            currentAngleRad = phaseTimeS * prevRpm * Math.PI * 2.0 / 60.0
+                + m_fScanPhaseOffsetRad;
+        }
+        m_fAntennaFrozenAngleRad = currentAngleRad;
+
         StampScanPhaseOnSettings(settings);
         sensor.SetForceLocalScan(true);
         m_Radar.SetMode(mode);
@@ -1795,6 +1813,26 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_fScanRpm = 0.0;
         if (settings.m_Hardware)
             m_fScanRpm = settings.m_Hardware.m_ScanRpm;
+
+        // If the new product spins and we are coming out of a parked mode (the
+        // previous rpm was <= 0, or we were in an antenna stare), re-base the
+        // scan phase so the antenna resumes from its current physical bearing.
+        if (m_fScanRpm > 0.0 && (prevRpm <= 0.0 || m_bAntennaStare))
+        {
+            BaseWorld world2 = GetGame().GetWorld();
+            float timeS = 0.0;
+            if (world2)
+                timeS = world2.GetWorldTime() * 0.001;
+            m_fScanPhaseOffsetRad = currentAngleRad
+                - timeS * m_fScanRpm * Math.PI * 2.0 / 60.0;
+            m_bAntennaFrozen = false;
+            if (m_bAntennaStare)
+            {
+                m_bAntennaStare = false;
+                m_bStarePhaseCleared = true;
+            }
+            StampScanPhaseOnSettings(settings);
+        }
 
         if (m_bPowered)
             SetAntennaSpinning(true);
