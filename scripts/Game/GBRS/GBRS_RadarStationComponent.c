@@ -2524,15 +2524,38 @@ class GBRS_RadarStationComponent : ScriptComponent
     }
 
     //------------------------------------------------------------------------------------------------
-    //! Chord-backed track velocity: prefer the measured position chord (true
-    //! motion direction). The filtered Doppler-radial velocity can reverse near
-    //! closest approach; only trust it when it clearly agrees with the chord.
+    //! Accuratre track velocity for heading / prediction. A single-LOS Doppler
+    //! measurement only resolves the radial component - for a shell crossing or
+    //! heading toward the radar, los*(-radial) can be ~90-157 deg off the true
+    //! heading. Prefer a least-squares ballistic fit over the track's position
+    //! history (same fit RDF uses for the WLR solve), then the measured position
+    //! chord, and only fall back to the filtered Doppler velocity.
     protected static vector ReliableTrackVelocity(RDF_RadarTrack tr)
     {
         vector vel = "0 0 0";
         if (!tr)
             return vel;
 
+        // 1) Least-squares vacuum fit over the measured history (smooth 3D vel).
+        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 4)
+        {
+            RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
+                tr.m_Positions,
+                tr.m_Times,
+                RDF_RadarBallistics.GRAVITY_M_S2,
+                4,
+                0.4,
+                200.0,
+                24);
+            if (fit && fit.m_Valid)
+            {
+                vector fv = fit.m_Velocity;
+                if (fv.Length() >= 3.0)
+                    return fv;
+            }
+        }
+
+        // 2) Position chord over ~1 s (true motion direction).
         if (tr.m_Positions && tr.m_Times)
         {
             int n = tr.m_Positions.Count();
@@ -2556,23 +2579,7 @@ class GBRS_RadarStationComponent : ScriptComponent
                     vector chord = newest - older;
                     float cmag = chord.Length();
                     if (cmag >= 3.0)
-                    {
-                        vector fv = tr.m_FilteredVelocity;
-                        float vMag = fv.Length();
-                        // Use filtered velocity only if it agrees (<= 60 deg).
-                        if (vMag >= 3.0)
-                        {
-                            float dot = fv[0] * chord[0] + fv[1] * chord[1] + fv[2] * chord[2];
-                            if (dot > 0.0 && cmag > 0.001)
-                            {
-                                float cosA = dot / (vMag * cmag);
-                                if (cosA >= 0.5)
-                                    return fv;
-                            }
-                        }
-                        // Chord is authoritative.
                         vel = chord * (1.0 / dt);
-                    }
                 }
             }
         }

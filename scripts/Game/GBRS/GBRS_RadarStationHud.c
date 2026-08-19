@@ -1394,39 +1394,36 @@ class GBRS_RadarStationHud
         float vz = tr.m_FilteredVelocity[2];
         float vH = Math.Sqrt(vx * vx + vz * vz);
 
-        // The Doppler-reconstructed filtered velocity is reliable only for the
-        // radial component; its heading can be badly wrong (even reversed) for
-        // targets near or past their closest approach. Trust the measured
-        // position chord (true motion) whenever available, and only use the
-        // filtered velocity when it clearly agrees with that chord.
-        if (haveChord)
+        // Prefer a least-squares ballistic fit over the position history; a
+        // single-LOS Doppler velocity is radial-only and gives a badly wrong
+        // heading for a shell crossing/toward the radar. Only use the filtered
+        // (or chord) velocity when the fit is unavailable or rejects.
+        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 4)
         {
-            bool agree = false;
-            if (vH >= 3.0)
+            RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
+                tr.m_Positions,
+                tr.m_Times,
+                RDF_RadarBallistics.GRAVITY_M_S2,
+                4,
+                0.4,
+                200.0,
+                24);
+            if (fit && fit.m_Valid)
             {
-                float dot = vx * chordX + vz * chordZ;
-                if (dot > 0.0)
+                vector fv = fit.m_Velocity;
+                if (fv[0] * fv[0] + fv[2] * fv[2] >= 9.0)
                 {
-                    float cmag = Math.Sqrt(chordX * chordX + chordZ * chordZ);
-                    if (cmag > 0.001)
-                    {
-                        // Cosine agreement: >= 0.5 -> <= 60 deg between them.
-                        float cosA = dot / (vH * cmag);
-                        if (cosA >= 0.5)
-                            agree = true;
-                    }
+                    dirX = fv[0];
+                    dirZ = fv[2];
+                    speed = Math.Sqrt(fv[0] * fv[0] + fv[2] * fv[2]);
+                    return;
                 }
             }
+        }
 
-            if (agree)
-            {
-                dirX = vx;
-                dirZ = vz;
-                speed = vH;
-                return;
-            }
-
-            // Chord is the authoritative motion direction.
+        // Otherwise trust the measured position chord (true motion).
+        if (haveChord)
+        {
             dirX = chordX;
             dirZ = chordZ;
             speed = chordSpeed;
