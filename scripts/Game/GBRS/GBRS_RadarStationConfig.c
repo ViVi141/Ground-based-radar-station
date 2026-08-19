@@ -516,7 +516,7 @@ class GBRS_RadarStationConfig
         settings.m_SectorSweepEnabled = true;
         settings.m_SectorSweepCenterRad = 0.0;                  // default aim = east
         settings.m_SectorSweepHalfWidthRad = 0.785398;          // ±45° corridor
-        settings.m_SectorSweepRateRadS = 0.6;                   // ~ a few s per sweep
+        settings.m_SectorSweepRateRadS = 1.2;                   // fast enough passes
         settings.m_WeaponLocateMinHits = 3;
         settings.m_WeaponLocateMinSpanS = 0.8;
         settings.m_TrackConfirmHits = 2;
