@@ -89,6 +89,13 @@ class GBRS_RadarStationDemo
     protected int m_RespawnCount;
     protected float m_MaxSnrDb;
     protected float m_AirRangeRateMs;
+    // Latest detected projectile (shell) plot's measurement Doppler / radial
+    // speed. Reported as trackVr=/doppler= so the debugger can audit RDF's real
+    // per-scan measurement chain (distinct from the air-target fallback rate).
+    protected float m_ShellRangeRateMs;
+    protected float m_ShellDopplerHz;
+    protected int m_ShellLastScanSerial = -1;
+    protected float m_ShellLastPlotTime = -1.0;
 
     protected ref array<IEntity> m_LiveShells;
 
@@ -230,6 +237,10 @@ class GBRS_RadarStationDemo
         m_RespawnCount = 0;
         m_MaxSnrDb = -300.0;
         m_AirRangeRateMs = 0.0;
+        m_ShellRangeRateMs = 0.0;
+        m_ShellDopplerHz = 0.0;
+        m_ShellLastScanSerial = -1;
+        m_ShellLastPlotTime = -1.0;
         m_LastScanSerial = -1;
 
         if (!ResolveOrSpawnStation())
@@ -475,6 +486,22 @@ class GBRS_RadarStationDemo
                     m_IntervalPpiEligible = m_IntervalPpiEligible + 1;
                 if (m_AirTarget && IsPlotNearEntity(t, m_AirTarget, m_RadarOrigin, 350.0))
                     m_IntervalAirHits = m_IntervalAirHits + 1;
+
+                // Audit the REAL per-scan measurement Doppler / radial speed for
+                // the latest projectile (shell) plot. RDF_RadarTrack does not
+                // retain m_DopplerHz, so we sample it here from the scan's plots
+                // (distinct from the air-target fallback `airVr`).
+                if (t.m_Detected
+                    && t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+                {
+                    if (m_ShellLastScanSerial != serial || t.m_Time > m_ShellLastPlotTime)
+                    {
+                        m_ShellLastScanSerial = serial;
+                        m_ShellLastPlotTime = t.m_Time;
+                        m_ShellRangeRateMs = t.m_RadialSpeedMs;
+                        m_ShellDopplerHz = t.m_DopplerHz;
+                    }
+                }
             }
 
             if (m_DetectedCount > m_IntervalPeakDet)
@@ -552,7 +579,9 @@ class GBRS_RadarStationDemo
             + " airHits=" + m_IntervalAirHits.ToString()
             + " maxSnr=" + m_MaxSnrDb.ToString()
             + " airRange=" + airLabel
-            + " vr=" + m_AirRangeRateMs.ToString()
+            + " airVr=" + m_AirRangeRateMs.ToString()
+            + " trackVr=" + m_ShellRangeRateMs.ToString()
+            + " doppler=" + m_ShellDopplerHz.ToString()
             + " scanAz=" + scanAz.ToString()
             + " heliAz=" + heliAz.ToString()
             + " dAz=" + dAz.ToString()
