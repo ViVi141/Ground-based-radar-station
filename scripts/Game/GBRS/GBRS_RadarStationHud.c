@@ -107,6 +107,8 @@ class GBRS_RadarStationHud
     protected static bool s_NetworkOverlay = true;
     protected static int s_NetFusedCount;
     protected static int s_NetStationCount;
+    // Fused tracks that exist in the hub but lie outside the current PPI range.
+    protected static int s_NetOutRangeCount;
 
     static void SetNetworkOverlayEnabled(bool enabled)
     {
@@ -1006,6 +1008,7 @@ class GBRS_RadarStationHud
     {
         s_NetFusedCount = 0;
         s_NetStationCount = 0;
+        s_NetOutRangeCount = 0;
         if (m_DisplayRange <= 0.0)
             return;
 
@@ -1030,11 +1033,14 @@ class GBRS_RadarStationHud
             vector d = f.m_WorldPos - origin;
             float distSq = d[0] * d[0] + d[2] * d[2];
             if (distSq > rangeSq)
+            {
+                // Fused track exists but is outside the current display range.
+                s_NetOutRangeCount = s_NetOutRangeCount + 1;
                 continue;
+            }
 
-            // Only count sources for fused tracks actually within the PPI range,
-            // so 's' stays consistent with 'f' (a far/out-of-range fused track
-            // does not make the readout claim a network station is present).
+            // Count each contributing station only for tracks actually on the
+            // PPI, so "stations" reflects the visible networked picture.
             int c0 = f.m_ContributorRadarId0;
             if (c0 > 0 && !sourceIds.Contains(c0))
                 sourceIds.Insert(c0);
@@ -1080,13 +1086,20 @@ class GBRS_RadarStationHud
         return COL_NET;
     }
 
-    // "NET" status line for the footer: fused count + contributing stations.
+    // "NET" status line for the footer: visible fused tracks, contributing
+    // stations, and how many fused tracks lie beyond the current PPI range.
     protected string NetworkStatusString()
     {
-        if (s_NetFusedCount <= 0 && s_NetStationCount <= 0)
-            return "NET --";
-        return "NET f=" + s_NetFusedCount.ToString()
-            + " s=" + s_NetStationCount.ToString();
+        if (s_NetFusedCount <= 0 && s_NetStationCount <= 0 && s_NetOutRangeCount <= 0)
+            return "NET: off-line";
+
+        string s = "NET: " + s_NetFusedCount.ToString() + " tracks in view"
+            + " / " + s_NetStationCount.ToString() + " station";
+        if (s_NetStationCount != 1)
+            s = s + "s";
+        if (s_NetOutRangeCount > 0)
+            s = s + "  (+" + s_NetOutRangeCount.ToString() + " beyond range)";
+        return s;
     }
 
     protected void DrawPlotAfterglow(float bx, float by, RDF_RadarTarget t)
@@ -2479,31 +2492,88 @@ class GBRS_RadarStationHud
         if (detected < row)
             detected = row;
 
-        string footer = "DET " + detected.ToString()
-            + "   TRK " + tracks.ToString()
-            + "   RNG " + RangeLabel(m_DisplayRange);
+        // Readable two-line footer: line 1 = scan summary; line 2 = mode /
+        // ECCM / network status.
+        string line1 = "Detected: " + detected.ToString()
+            + "    Tracks: " + tracks.ToString()
+            + "    Range: " + RangeLabel(m_DisplayRange);
 
+        string line2 = "";
         if (m_Mode == MODE_WLR)
         {
-            footer = footer + "   WLR " + wlrFixes.ToString();
+            line2 = "WLR fire-solutions: " + wlrFixes.ToString();
         }
         else if (m_Mode == MODE_LOCK)
         {
             string lockStatus = "SEARCH";
             if (m_LockManager)
                 lockStatus = m_LockManager.GetStatusShort();
-            footer = footer + "   " + lockStatus;
-
+            line2 = "Lock: " + lockStatus;
             if (m_LockManager && m_LockManager.IsLocked())
-                footer = footer + "   FIRE";
+                line2 = line2 + "  FIRE AUTHORIZED";
+        }
+        else
+        {
+            line2 = "";
         }
 
-        if (m_EccmStatus != "eccm=0")
-            footer = footer + "   " + m_EccmStatus;
+        string eccm = EccmStatusString();
+        if (eccm != "")
+        {
+            if (line2 != "")
+                line2 = line2 + "    ";
+            line2 = line2 + eccm;
+        }
 
-        footer = footer + "   " + NetworkStatusString();
+        if (line2 != "")
+            line2 = line2 + "    ";
+        line2 = line2 + NetworkStatusString();
 
-        m_Widgets.m_wListFooter.SetText(footer);
+        m_Widgets.m_wListFooter.SetText(line1 + "\n" + line2);
+    }
+
+    // Translate the RDF ECCM status ("eccm=0" | "eccm slb/prf/freq/burn") into a
+    // readable line. Empty when the decision layer is idle.
+    protected string EccmStatusString()
+    {
+        if (m_EccmStatus == "eccm=0")
+            return "";
+        if (m_EccmStatus == "eccm")
+            return "ECCM active";
+
+        array<string> tokens = new array<string>();
+        m_EccmStatus.Split(" ", tokens, true);
+
+        array<string> outTok = new array<string>();
+        int i = 0;
+        while (i < tokens.Count())
+        {
+            string t = tokens.Get(i);
+            i = i + 1;
+            if (t == "slb")
+                outTok.Insert("SLB");
+            else if (t == "prf")
+                outTok.Insert("PRF agility");
+            else if (t == "freq")
+                outTok.Insert("freq agility");
+            else if (t == "burn")
+                outTok.Insert("burn-through");
+            else if (t == "jam")
+                outTok.Insert("jamming");
+        }
+
+        string s = "ECCM: ";
+        int n = 0;
+        while (n < outTok.Count())
+        {
+            if (n > 0)
+                s = s + " + ";
+            s = s + outTok.Get(n);
+            n = n + 1;
+        }
+        if (outTok.Count() <= 0)
+            s = s + "active";
+        return s;
     }
 
     protected string BuildWlrSolutionBody(vector origin, RDF_RadarProjectileTracker tracker)
