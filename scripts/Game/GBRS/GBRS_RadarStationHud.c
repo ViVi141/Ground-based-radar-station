@@ -1393,14 +1393,29 @@ class GBRS_RadarStationHud
         float vx = tr.m_FilteredVelocity[0];
         float vz = tr.m_FilteredVelocity[2];
         float vH = Math.Sqrt(vx * vx + vz * vz);
-        if (vH >= 3.0)
+
+        // The Doppler-reconstructed filtered velocity is reliable only for the
+        // radial component; its heading can be badly wrong (even reversed) for
+        // targets near or past their closest approach. Trust the measured
+        // position chord (true motion) whenever available, and only use the
+        // filtered velocity when it clearly agrees with that chord.
+        if (haveChord)
         {
-            bool agree = true;
-            if (haveChord)
+            bool agree = false;
+            if (vH >= 3.0)
             {
                 float dot = vx * chordX + vz * chordZ;
-                if (dot <= 0.0)
-                    agree = false;
+                if (dot > 0.0)
+                {
+                    float cmag = Math.Sqrt(chordX * chordX + chordZ * chordZ);
+                    if (cmag > 0.001)
+                    {
+                        // Cosine agreement: >= 0.5 -> <= 60 deg between them.
+                        float cosA = dot / (vH * cmag);
+                        if (cosA >= 0.5)
+                            agree = true;
+                    }
+                }
             }
 
             if (agree)
@@ -1410,13 +1425,19 @@ class GBRS_RadarStationHud
                 speed = vH;
                 return;
             }
-        }
 
-        if (haveChord)
-        {
+            // Chord is the authoritative motion direction.
             dirX = chordX;
             dirZ = chordZ;
             speed = chordSpeed;
+            return;
+        }
+
+        if (vH >= 3.0)
+        {
+            dirX = vx;
+            dirZ = vz;
+            speed = vH;
             return;
         }
 
