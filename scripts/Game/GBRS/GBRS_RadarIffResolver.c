@@ -22,8 +22,6 @@ class GBRS_RadarIffResolver : RDF_RadarIffResolver
 
         if (!track)
             return ERDF_RadarIff.RDF_IFF_NEUTRAL;
-        if (track.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
-            return ERDF_RadarIff.RDF_IFF_FOE; // inbound ballistic = hostile
 
         IEntity target = track.m_Entity;
         if (!target && track.m_ScattererId > 0)
@@ -34,6 +32,28 @@ class GBRS_RadarIffResolver : RDF_RadarIffResolver
             if (scat)
                 target = scat.m_Entity;
         }
+
+        // Projectiles: the old code hard-coded every projectile as hostile (FOE),
+        // which mis-colored a friendly / own-side shell fired by an allied mortar
+        // it could actually identify. When the firing entity's faction is
+        // recoverable, classify it like any other track; only fall back to
+        // "hostile" when the projectile's origin cannot be identified (inbound
+        // ballistic with no transponder is the safe default for weapon-locating).
+        if (track.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+        {
+            if (target)
+            {
+                Faction pf = SCR_Faction.GetEntityFaction(target);
+                if (pf)
+                {
+                    if (pf.GetFactionKey() == ownKey)
+                        return ERDF_RadarIff.RDF_IFF_FRIEND;
+                    return ERDF_RadarIff.RDF_IFF_FOE;
+                }
+            }
+            return ERDF_RadarIff.RDF_IFF_FOE;
+        }
+
         if (!target)
             return ERDF_RadarIff.RDF_IFF_NEUTRAL;
 

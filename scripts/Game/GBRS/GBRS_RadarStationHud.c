@@ -1064,7 +1064,7 @@ class GBRS_RadarStationHud
             int color = NetworkColor(f.m_Iff);
             DrawPpiSquare(bx, by, 6.0, color);
 
-            vector v = f.m_Velocity;
+            vector v = FusedReliableVelocity(f);
             float vLen = Math.Sqrt(v[0] * v[0] + v[2] * v[2]);
             if (vLen >= 3.0)
                 DrawPpiChevron(bx, by, v[0], v[2], color);
@@ -1091,6 +1091,37 @@ class GBRS_RadarStationHud
         if (iff == ERDF_RadarIff.RDF_IFF_NEUTRAL)
             return ARGB(230, 255, 200, 80);
         return COL_NET;
+    }
+
+    // Reliable motion direction for a fused/net track's chevron. A net track's
+    // m_Velocity can still be a Doppler-radial reconstruction in early flight
+    // (falls out of the publish fit prior to enough samples), which reverses
+    // ~180 deg when a shell crosses closest approach or near apogee. For a
+    // projectile with a WLR launch->impact fix, use the launch->impact vector
+    // instead - it is the true motion heading and never reverses. Returns the
+    // raw (unnormalized) delta so the caller's magnitude gate passes and the
+    // chevron helper (which normalizes internally) still renders at fixed size.
+    protected vector FusedReliableVelocity(RDF_RadarFusedTrack f)
+    {
+        if (f)
+        {
+            if (f.m_WlrImpactValid && f.m_WlrLaunchValid)
+            {
+                vector d = f.m_WlrImpactPos - f.m_WlrLaunchPos;
+                d[1] = 0.0;
+                if (d.Length() >= 3.0)
+                    return d;
+            }
+            if (f.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE && f.m_WlrImpactValid)
+            {
+                vector d = f.m_WlrImpactPos - f.m_WorldPos;
+                d[1] = 0.0;
+                if (d.Length() >= 3.0)
+                    return d;
+            }
+            return f.m_Velocity;
+        }
+        return "0 0 0";
     }
 
     // "NET" status line for the footer: powered stations on the datalink net,
