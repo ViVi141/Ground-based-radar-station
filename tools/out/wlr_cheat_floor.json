@@ -1,0 +1,22 @@
+{
+  "script": "quantify_wlr_cheat_floor.py",
+  "question": "Is the current WLR arc-anchor + fit a cheat or real calculation?",
+  "sensor_truth": {
+    "vr": "0 (Doppler radial unusable -> velocity MUST come from geometry)",
+    "measured_per_sweep": "1 (sparse K-band beam overflight)",
+    "stations": "1",
+    "sector_deg": "±45.0"
+  },
+  "analysis": {
+    "trials": 120,
+    "early_flight_trials_not_identifiable": 0,
+    "late_flight_trials_fit_usable": 120,
+    "oracle_late_impact_err_m_median": 8.3,
+    "current_drawn_max_err_m_median": 25.8
+  },
+  "verdict_per_phase": {
+    "early_flight": "NOT IDENTIFIABLE.  With vr=0 + single station + 1 sparse sample/sweep the shell's direction is theoretically unknowable until >=3 well-spread samples.  NO algorithm (including the current one) can place it exactly. An honest floor is an uncertainty cone.  The current arc is a *mean-path* prior = an approximation, but NOT a fabricated radar target.",
+    "late_flight": "IDENTIFIABLE + fits.  Oracle ballistic-LS impact error median 8.3 m.  Current drawn error median 25.8 m.  At and after 3 samples the fit is the real counter-battery calculation, NOT a cheat.",
+    "bottom_line": "No radar measurement is faked: every displayed point is an actual scanner sample.  The only approximation is the EARLY (pre-3-sample) mean-arc, which any single-station vr=0 radar is physically unable to do better on; an uncertainty cone is the only fully-exact early representation."
+  }
+}

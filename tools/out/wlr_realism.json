@@ -1,0 +1,20 @@
+{
+  "script": "quantify_wlr_realism.py",
+  "sensor_truth": {
+    "A_current": "ClearMeasurementNoise() + m_KeepEntityTruth=true -> engine-exact positions, zero noise",
+    "B_realistic": "CRLB range/az/el noise + range quantization (US mesh noise_scale=2.5, bias 3/0.12/0.1)"
+  },
+  "note": "Both run the SAME ballistic-fix pipeline; only the sensor feeding differs.",
+  "trials_used": 150,
+  "impact_err_m_median": {
+    "A_current_engine_truth_zero_noise_vacuum": 341.0,
+    "B_realistic_radar_noise_vacuum": 338.6,
+    "A_plus_drag_fit": 10.2,
+    "B_plus_drag_fit": 11.9
+  },
+  "heading_err_deg_median": {
+    "A_current_engine_truth_zero_noise": 0.0,
+    "B_realistic_radar_noise": 0.1
+  },
+  "verdict": "KEY FINDING: the current 340m vacuum-fit impact error is NOT inflated accuracy - it is UNDER-accurate vs real counter-battery radar. Adding a full-drag ballistic fit (joint {initial velocity, drag}, Nelder-Mead, rooted at first sample) collapses the impact error to ~10-12m at the same measurement noise. The zero-noise/engine-truth setting gives no accuracy advantage on the SOLVE path (341 vs 338.6m) - the bottleneck is the vacuum-vs-drag model mismatch, not sensor noise. So the real 'made more realistic' upgrade is the drag fit (RDF_RadarBallistics), not toggling noise flags."
+}
