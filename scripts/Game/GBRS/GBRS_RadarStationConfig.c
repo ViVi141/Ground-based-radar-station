@@ -495,10 +495,9 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // Shared WLR geometry: parked projectile search with mortar elevation beams.
-    // RDF CreateWlrSettings is stare (mechanical scan off, ScanRpm=0). Keep that
-    // contract; Demo/operator stare aims the beam. Infantry must never enter
-    // WLR discovery/display — only shells/rockets.
+    // Shared WLR geometry: projectile-only counter-battery search on a slow
+    // all-around mechanical rotation (see WLR_SCAN_RPM). Infantry must never
+    // enter WLR discovery/display — only shells/rockets.
     static void ApplyWlrProductFlags(RDF_RadarSettings settings)
     {
         if (!settings)
@@ -509,8 +508,10 @@ class GBRS_RadarStationConfig
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
-        settings.m_EnableMechanicalScan = false;
-        settings.m_WeaponLocateMinHits = 3;
+        // Counter-battery WLR sweeps all-around on a slow mechanical rotation
+        // (not a parked stare), so it does not need the operator/Demo to aim it.
+        settings.m_EnableMechanicalScan = true;
+        settings.m_WeaponLocateMinHits = 2;
         settings.m_WeaponLocateMinSpanS = 0.8;
         settings.m_TrackConfirmHits = 2;
         // Slightly wider association gates than RDF defaults so measurement
@@ -527,7 +528,7 @@ class GBRS_RadarStationConfig
         {
             // No MTI: ballistic Doppler is not a slow-clutter notch problem.
             settings.m_Hardware.m_EnableMti = false;
-            settings.m_Hardware.m_ScanRpm = 0.0;
+            settings.m_Hardware.m_ScanRpm = GBRS_RadarStationConstants.WLR_SCAN_RPM;
             settings.m_Hardware.ClearElevationBeams();
             settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 30.0, 0.0);
@@ -539,7 +540,7 @@ class GBRS_RadarStationConfig
         SyncMinDistanceToPulseBlind(settings);
     }
 
-    // US counter-battery WLR (~8 km parked search; operator/Demo stare aims).
+    // US counter-battery WLR (~8 km slow all-around rotation).
     // Offline-tuned (tools/simulate_wlr_projectile.py + WLR_VALIDATION.md):
     // 500 kW gives ~8.6 dB at beam center and ~3.0 dB at 12 deg offset.
     // Gate 4 dB keeps center detections and drops the cheap offset lobe,

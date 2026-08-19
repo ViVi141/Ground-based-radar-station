@@ -50,6 +50,11 @@ class GBRS_RadarStationConstants
     // kinematics and keeps ScanOnce off the 60 fps cadence.
     static const float STARE_UPDATE_INTERVAL_S = 0.12;
 
+    // Counter-battery WLR slow all-around mechanical rotation. Slow enough that
+    // an 82 mm shell flight sees 1-2 beam passes (wide mortar beams), fast
+    // enough to cover the full circle. Min-hits / span are tuned for this.
+    static const float WLR_SCAN_RPM = 6.0;
+
     // RDF clamps classify to 256. Eden sphere discovery queues ~15k DYNAMIC
     // entities; infantry fail IsRadarCandidate only after that queue drains.
     static const int SCATTERER_CLASSIFY_PER_TICK = 256;
