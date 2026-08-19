@@ -1,14 +1,17 @@
 // GBRS IFF resolver for the multi-station datalink/fusion net.
 //
-// GM contract (per user): the station's own side is its preset faction — US
-// station = friendly US; EVERYTHING else (other faction OR unaffiliated/unknown
-// targets) is treated as FOE. There is no "neutral/unknown" gray for GM IFF.
+// The station's own side is the *current camp/base-affiliated faction* of the
+// station owner (SCR_Faction.GetEntityFaction). Conflict keeps this up to date:
+// when a camp is seized, GBRS_RadarStationComponent.AdoptOccupyingFaction
+// rewrites the owner's FactionAffiliationComponent to the occupying faction, so
+// a USSR-seized US camp's radar treats US as FOE. In GM (no camp) the owner's
+// default affiliation ("US"/"USSR" per prefab) drives it.
 //
-// Own side: read from the station component's m_eFactionPreset (US/USSR) so the
-// result does not depend on whether the owner entity's FactionAffiliationComponent
-// was initialized in the GM scene.
-// Target side: the detected vehicle/unit (track.m_Entity, or the scatterer-
-// recovered entity when the workstation feed anonymized the plot).
+// Target side: the detected vehicle/unit's faction (track.m_Entity, or the
+// scatterer-recovered entity when the feed anonymously strips identity). If a
+// target's faction equals the station's own side it is FRIEND; EVERYTHING else
+// (other faction, unaffiliated, unrecoverable, projectile) is FOE. There is no
+// neutral/unknown gray.
 class GBRS_RadarIffResolver : RDF_RadarIffResolver
 {
     override ERDF_RadarIff Resolve(IEntity radarSubject, RDF_RadarTrack track)
@@ -44,12 +47,19 @@ class GBRS_RadarIffResolver : RDF_RadarIffResolver
         return ERDF_RadarIff.RDF_IFF_FOE;
     }
 
-    // The station's own side, from the GBRS preset (independent of the owner's
-    // FactionAffiliationComponent, which a GM scene may not have initialized).
+    // The station's own side: the owner's current FactionAffiliationComponent
+    // faction (Conflict: follows camp occupation via AdoptOccupyingFaction;
+    // GM: falls back to the prefab default "US"/"USSR"). If the owner has no
+    // affiliation component at all, fall back to the GBRS preset so IFF still
+    // has an own-side to compare against.
     protected string ResolveOwnFactionKey(IEntity radarSubject)
     {
         if (radarSubject)
         {
+            Faction entityFaction = SCR_Faction.GetEntityFaction(radarSubject);
+            if (entityFaction)
+                return entityFaction.GetFactionKey();
+
             GBRS_RadarStationComponent station =
                 GBRS_RadarStationComponent.Cast(radarSubject.FindComponent(GBRS_RadarStationComponent));
             if (station)
@@ -59,10 +69,6 @@ class GBRS_RadarIffResolver : RDF_RadarIffResolver
                 return "US";
             }
         }
-
-        Faction entityFaction = SCR_Faction.GetEntityFaction(radarSubject);
-        if (entityFaction)
-            return entityFaction.GetFactionKey();
 
         return "";
     }
