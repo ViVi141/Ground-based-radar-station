@@ -1073,6 +1073,22 @@ class GBRS_RadarStationComponent : ScriptComponent
         return m_bAntennaStare;
     }
 
+    // Re-centre the WLR sector-sweep on a world azimuth (degrees, 0=east,
+    // 90=north). Applies to the live RDF settings so the beam sweeps the
+    // operator-selected threat corridor.
+    bool SetWlrSectorCenterDeg(float azDeg)
+    {
+        if (!m_Radar)
+            return false;
+
+        RDF_RadarSettings st = m_Radar.GetSettings();
+        if (!st)
+            return false;
+
+        st.m_SectorSweepCenterRad = azDeg * 0.017453292519943295;
+        return true;
+    }
+
     float GetAntennaStareAzDeg()
     {
         return m_fAntennaStareAzDeg;
@@ -2154,15 +2170,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         else
         {
             float rpm = GetLiveScanRpm();
-            if (rpm <= 0.0)
+            if (rpm <= 0.0 && !IsSectorSweepActive())
                 return;
 
-            BaseWorld world = GetGame().GetWorld();
-            if (!world)
-                return;
-
-            float worldTimeS = world.GetWorldTime() * 0.001;
-            float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
+            float angleRad = CurrentScanAngleRad();
             m_fAntennaFrozenAngleRad = angleRad;
             float worldYawDeg = 90.0 - (angleRad * Math.RAD2DEG);
             vector antYpr = m_AntennaEntity.GetYawPitchRoll();
@@ -2190,6 +2201,44 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
 
         return m_fScanRpm;
+    }
+
+    // Mirror RDF_RadarScanner.GetScanForward exactly so the mesh, HUD sweep and
+    // the RDF scan beam always point the same way. Returns the current world
+    // azimuth (rad, 0 = +X east, pi/2 = +Z north).
+    protected float CurrentScanAngleRad()
+    {
+        BaseWorld world = GetGame().GetWorld();
+        float worldTimeS = 0.0;
+        if (world)
+            worldTimeS = world.GetWorldTime() * 0.001;
+
+        if (m_bAntennaStare)
+            return m_fAntennaStareAzDeg * 0.017453292519943295;
+
+        // Sector-sweep (cold-war counter-battery): back and forth within the
+        // configured sector center ± half-width.
+        if (m_Radar)
+        {
+            RDF_RadarSettings st = m_Radar.GetSettings();
+            if (st && st.m_SectorSweepEnabled)
+            {
+                float halfWidth = st.m_SectorSweepHalfWidthRad;
+                if (halfWidth < 0.0)
+                    halfWidth = 0.0;
+                float rate = st.m_SectorSweepRateRadS;
+                if (rate <= 0.0)
+                    rate = 0.6;
+                float osc = Math.Sin(worldTimeS * rate);
+                return st.m_SectorSweepCenterRad + halfWidth * osc;
+            }
+        }
+
+        float rpm = GetLiveScanRpm();
+        if (rpm > 0.0)
+            return worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
+
+        return m_fScanPhaseOffsetRad;
     }
 
     // Tesla RPL-5: never yaw/pitch the whole ProcAnim entity — that rotates the pedestal.
@@ -2241,18 +2290,11 @@ class GBRS_RadarStationComponent : ScriptComponent
             return Vector(Math.Cos(stareRad), 0.0, Math.Sin(stareRad));
         }
 
-        float rpm = GetLiveScanRpm();
-        if (rpm > 0.0)
+        // Sector-sweep or spinning: the live scan azimuth drives the forward.
+        if (IsSectorSweepActive() || GetLiveScanRpm() > 0.0)
         {
-            BaseWorld world = GetGame().GetWorld();
-            if (world)
-            {
-                // Must match RDF_RadarScanner.GetScanForward exactly (plus the
-                // pause/resume phase offset so HUD sweep tracks the antenna).
-                float worldTimeS = world.GetWorldTime() * 0.001;
-                float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
-                return Vector(Math.Cos(angleRad), 0.0, Math.Sin(angleRad));
-            }
+            float angleRad = CurrentScanAngleRad();
+            return Vector(Math.Cos(angleRad), 0.0, Math.Sin(angleRad));
         }
 
         if (m_AntennaEntity)
@@ -2276,6 +2318,17 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
 
         return Vector(1.0, 0.0, 0.0);
+    }
+
+    // True when the live RDF settings run a sector (back-and-forth) sweep.
+    protected bool IsSectorSweepActive()
+    {
+        if (!m_Radar)
+            return false;
+        RDF_RadarSettings st = m_Radar.GetSettings();
+        if (!st)
+            return false;
+        return st.m_SectorSweepEnabled;
     }
 
     protected void RenderScanVisuals(IEntity owner)
@@ -3182,15 +3235,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         else
         {
             float rpm = GetLiveScanRpm();
-            if (rpm <= 0.0)
+            if (rpm <= 0.0 && !IsSectorSweepActive())
                 return;
 
-            BaseWorld world = GetGame().GetWorld();
-            if (!world)
-                return;
-
-            float worldTimeS = world.GetWorldTime() * 0.001;
-            float angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
+            float angleRad = CurrentScanAngleRad();
             m_fAntennaFrozenAngleRad = angleRad;
             float worldYawDeg = 90.0 - (angleRad * Math.RAD2DEG);
             vector ownerYpr = owner.GetYawPitchRoll();

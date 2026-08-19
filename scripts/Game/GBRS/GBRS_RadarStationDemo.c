@@ -294,11 +294,13 @@ class GBRS_RadarStationDemo
         }
         else if (m_WantShells)
         {
-            // WLR now sweeps all-around on its own slow mechanical rotation; do
-            // not pin the beam so the antenna keeps turning through the circle.
-            Print("[GBRS Demo] WLR sweeps all-around at "
-                + GBRS_RadarStationConstants.WLR_SCAN_RPM.ToString()
-                + " RPM on the mortar line.");
+            // WLR sweeps back and forth within a narrow sector (cold-war
+            // counter-battery behavior). Centre that sector on the mortar line.
+            float fireAz = FireAzimuthDeg();
+            m_Station.SetWlrSectorCenterDeg(fireAz);
+            Print("[GBRS Demo] WLR sector-sweep centred at az="
+                + fireAz.ToString()
+                + " deg (0=east, 90=north) on the mortar line.");
         }
 
         m_Running = true;

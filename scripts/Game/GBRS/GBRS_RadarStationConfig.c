@@ -508,10 +508,16 @@ class GBRS_RadarStationConfig
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
-        // Counter-battery WLR sweeps all-around on a slow mechanical rotation
-        // (not a parked stare), so it does not need the operator/Demo to aim it.
+        // Counter-battery WLR sweeps back and forth within a narrow threat
+        // sector (cold-war sector-scan behavior) instead of a full 360° rotation
+        // or a parked stare. The operator can re-centre the sector; the defaults
+        // cover a ±45° corridor around the radar's default aim.
         settings.m_EnableMechanicalScan = true;
-        settings.m_WeaponLocateMinHits = 2;
+        settings.m_SectorSweepEnabled = true;
+        settings.m_SectorSweepCenterRad = 0.0;                  // default aim = east
+        settings.m_SectorSweepHalfWidthRad = 0.785398;          // ±45° corridor
+        settings.m_SectorSweepRateRadS = 0.6;                   // ~ a few s per sweep
+        settings.m_WeaponLocateMinHits = 3;
         settings.m_WeaponLocateMinSpanS = 0.8;
         settings.m_TrackConfirmHits = 2;
         // Slightly wider association gates than RDF defaults so measurement
@@ -528,6 +534,8 @@ class GBRS_RadarStationConfig
         {
             // No MTI: ballistic Doppler is not a slow-clutter notch problem.
             settings.m_Hardware.m_EnableMti = false;
+            // rpm is used as a general spin gate; the actual beam direction in
+            // sector-sweep is driven by the sweep parameters above.
             settings.m_Hardware.m_ScanRpm = GBRS_RadarStationConstants.WLR_SCAN_RPM;
             settings.m_Hardware.ClearElevationBeams();
             settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
@@ -559,11 +567,11 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 4.0;
         if (settings.m_Hardware)
         {
-            // Wide fan for the slow all-around rotation: a wider azimuth beam
-            // illuminates a broader band each sweep, so a shell accumulates
-            // enough detections to reach a fire solution. Boresight peak gain
-            // is unchanged (Gaussian pattern peaks at 1.0 at any width).
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 45.0;
+            // Narrow azimuth beam: the sector-sweep scans the corridor rapidly,
+            // so a narrow beam (cold-war counter-battery) keeps angular quality
+            // while still catching each shell across the sweep. Boresight peak
+            // gain is unaffected by beam width (Gaussian peaks at 1.0).
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 12.0;
             settings.m_Hardware.m_PeakPowerW = 500000.0;
         }
         ApplyWlrProductFlags(settings);
@@ -598,9 +606,9 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
         {
-            // Wider fan than US for the slow all-around rotation (see US WLR
-            // note); boresight peak gain is unchanged by the wider beam.
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 55.0;
+            // Slightly wider than US for VHF; still a narrow azimuth beam for
+            // the fast sector-sweep (see US WLR note).
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 15.0;
         }
         ApplyWlrProductFlags(settings);
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.
