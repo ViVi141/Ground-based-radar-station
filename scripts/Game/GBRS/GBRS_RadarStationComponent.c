@@ -150,7 +150,13 @@ class GBRS_RadarStationComponent : ScriptComponent
     // fuses them across stations so any station (or the network overlay) can see
     // the whole picture. m_DatalinkSourceId must be unique per station.
     protected static const float DATALINK_PUBLISH_INTERVAL_S = 0.5;
+    protected static const float DATALINK_ONLINE_TTL_S = 3.0;
     protected static int s_NextDatalinkSourceId = 1;
+    // source id -> last publish time (s). Tracks which powered stations are
+    // actually on the datalink net, independent of whether they currently have a
+    // confirmed track to publish (the hub only holds tracks, so an online-but-
+    // idle station would otherwise read as "off-line").
+    protected static ref map<int, float> s_DatalinkOnline;
     protected int m_DatalinkSourceId;
     protected float m_fNextDatalinkPublishS;
     protected bool m_bDatalinkIffSet;
@@ -2450,6 +2456,12 @@ class GBRS_RadarStationComponent : ScriptComponent
         }
 
         float nowS = System.GetTickCount() * 0.001;
+        // Heartbeat: this powered station is on the datalink net this cycle.
+        if (!s_DatalinkOnline)
+            s_DatalinkOnline = new map<int, float>();
+        s_DatalinkOnline.Set(m_DatalinkSourceId, nowS);
+        MarkOnlineNow(nowS);
+
         if (nowS < m_fNextDatalinkPublishS)
             return;
         m_fNextDatalinkPublishS = nowS + DATALINK_PUBLISH_INTERVAL_S;
@@ -2525,6 +2537,36 @@ class GBRS_RadarStationComponent : ScriptComponent
             dlNet = RDF_RadarDatalinkComponent.Cast(owner.FindComponent(RDF_RadarDatalinkComponent));
         if (dlNet)
             dlNet.BroadcastHubState();
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! How many powered stations are currently on the datalink net (heartbeat
+    //! within DATALINK_ONLINE_TTL_S). Independent of whether they have a fused
+    //! track right now, so an online-but-idle net does not read as "off-line".
+    static int GetOnlineDatalinkStationCount()
+    {
+        MarkOnlineNow(-1.0);
+        if (!s_DatalinkOnline)
+            return 0;
+        return s_DatalinkOnline.Count();
+    }
+
+    // Reap stale heartbeats (nowS<=0 means "use the same uptime clock as the
+    // publish heartbeat"; otherwise an explicit wall clock).
+    protected static void MarkOnlineNow(float nowS)
+    {
+        if (!s_DatalinkOnline)
+            return;
+        if (nowS < 0.0)
+            nowS = System.GetTickCount() * 0.001;
+        array<int> stale = new array<int>();
+        foreach (int id, float t : s_DatalinkOnline)
+        {
+            if (nowS - t > DATALINK_ONLINE_TTL_S)
+                stale.Insert(id);
+        }
+        for (int i = 0; i < stale.Count(); i++)
+            s_DatalinkOnline.Remove(stale.Get(i));
     }
 
     //------------------------------------------------------------------------------------------------

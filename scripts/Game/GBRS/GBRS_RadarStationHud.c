@@ -1086,19 +1086,30 @@ class GBRS_RadarStationHud
         return COL_NET;
     }
 
-    // "NET" status line for the footer: visible fused tracks, contributing
-    // stations, and how many fused tracks lie beyond the current PPI range.
+    // "NET" status line for the footer: powered stations on the datalink net,
+    // visible fused tracks, and how many fused tracks lie beyond the current
+    // PPI range. "Stations online" is tracked independent of tracks, so an
+    // online net with no target does not read as off-line.
     protected string NetworkStatusString()
     {
-        if (s_NetFusedCount <= 0 && s_NetStationCount <= 0 && s_NetOutRangeCount <= 0)
+        int online = GBRS_RadarStationComponent.GetOnlineDatalinkStationCount();
+
+        bool anyFused = (s_NetFusedCount > 0 || s_NetOutRangeCount > 0);
+        if (online <= 0 && !anyFused)
             return "NET: off-line";
 
-        string s = "NET: " + s_NetFusedCount.ToString() + " tracks in view"
-            + " / " + s_NetStationCount.ToString() + " station";
-        if (s_NetStationCount != 1)
+        string s = "NET: " + online.ToString() + " station";
+        if (online != 1)
             s = s + "s";
-        if (s_NetOutRangeCount > 0)
-            s = s + "  (+" + s_NetOutRangeCount.ToString() + " beyond range)";
+        s = s + " online";
+
+        if (anyFused)
+        {
+            s = s + "  " + s_NetFusedCount.ToString() + " in view / "
+                + s_NetStationCount.ToString() + " src";
+            if (s_NetOutRangeCount > 0)
+                s = s + "  (+" + s_NetOutRangeCount.ToString() + " beyond range)";
+        }
         return s;
     }
 
