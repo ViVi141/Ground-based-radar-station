@@ -1027,15 +1027,17 @@ class GBRS_RadarStationHud
             if (drawn >= MAX_DRAW_BLIPS)
                 break;
 
-            // Track unique contributing stations for the status readout.
-            int c0 = f.m_ContributorRadarId0;
-            if (c0 > 0 && !sourceIds.Contains(c0))
-                sourceIds.Insert(c0);
-
             vector d = f.m_WorldPos - origin;
             float distSq = d[0] * d[0] + d[2] * d[2];
             if (distSq > rangeSq)
                 continue;
+
+            // Only count sources for fused tracks actually within the PPI range,
+            // so 's' stays consistent with 'f' (a far/out-of-range fused track
+            // does not make the readout claim a network station is present).
+            int c0 = f.m_ContributorRadarId0;
+            if (c0 > 0 && !sourceIds.Contains(c0))
+                sourceIds.Insert(c0);
 
             s_NetFusedCount = s_NetFusedCount + 1;
             if (!s_NetworkOverlay)
