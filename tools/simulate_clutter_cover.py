@@ -120,6 +120,10 @@ class Hardware:
     scan_rpm: float
     elevation_beams: list[ElevationBeam] = field(default_factory=list)
     receiver_recovery_s: float = 0.0
+    # "two_pulse" matches legacy PhysicalDetect; "mtd_bank" matches
+    # GBRS ApplyPulseDopplerHardware (RDF_MTI_MTD_BANK).
+    mti_mode: str = "two_pulse"
+    mtd_clutter_leakage: float = 1.0e-6
 
     def wavelength_m(self) -> float:
         if self.frequency_hz <= 0.0:
@@ -565,6 +569,24 @@ def mti_two_pulse_gain(doppler_hz: float, prf_hz: float) -> float:
     return s * s
 
 
+def mtd_bank_gains(hw: Hardware, radial_ms: float) -> tuple[float, float]:
+    """MTD_BANK target / clutter gains used by GBRS PD SEARCH.
+
+    Moving body (>= 3 m/s radial) sits in a clear Doppler bin: mti_gain 1,
+    clutter is leakage. Hover / slow body keeps a rotor-sideband fraction
+    so VHF EW still paints a helicopter, matching calib_pd_full.py.
+    """
+    leak = hw.mtd_clutter_leakage
+    if leak < 1e-9:
+        leak = 1e-9
+    abs_vr = radial_ms
+    if abs_vr < 0.0:
+        abs_vr = -abs_vr
+    if abs_vr >= 3.0:
+        return 1.0, leak
+    return 0.09, leak
+
+
 def doppler_hz(radial_ms: float, wavelength_m: float) -> float:
     if wavelength_m <= 0.0:
         return 0.0
@@ -599,6 +621,7 @@ def dem_clutter_processed_w(
     radar_agl_m: float,
     surface_class: int,
     cell_size_m: float,
+    clutter_mti_override: float = -1.0,
 ) -> float:
     if not settings.enable_dem_clutter:
         return 0.0
@@ -628,9 +651,12 @@ def dem_clutter_processed_w(
             received = received / surface_loss
     if received <= 0.0:
         return 0.0
-    clutter_mti = 1.0
-    if hw.enable_mti:
-        clutter_mti = hw.mti_clutter_floor
+    if clutter_mti_override >= 0.0:
+        clutter_mti = clutter_mti_override
+    else:
+        clutter_mti = 1.0
+        if hw.enable_mti:
+            clutter_mti = hw.mti_clutter_floor
     if clutter_mti < 1e-6:
         clutter_mti = 1e-6
     return received * processing_gain * clutter_mti
@@ -985,13 +1011,23 @@ def physical_detect(
 
     fd = doppler_hz(radial_ms, hw.wavelength_m())
     mti_gain = 1.0
+    clutter_mti = 1.0
     if hw.enable_mti:
-        mti_gain = mti_two_pulse_gain(fd, hw.prf_hz)
-        if mti_gain < 1e-6:
-            mti_gain = 1e-6
+        if hw.mti_mode == "mtd_bank":
+            mti_gain, clutter_mti = mtd_bank_gains(hw, radial_ms)
+        else:
+            mti_gain = mti_two_pulse_gain(fd, hw.prf_hz)
+            if mti_gain < 1e-6:
+                mti_gain = 1e-6
+            clutter_mti = hw.mti_clutter_floor
+            if clutter_mti < 1e-6:
+                clutter_mti = 1e-6
 
     gproc = hw.processing_gain()
     processed = pr * gproc * mti_gain
+    clutter_override = -1.0
+    if hw.enable_mti:
+        clutter_override = clutter_mti
     clutter = dem_clutter_processed_w(
         hw,
         settings,
@@ -1001,6 +1037,7 @@ def physical_detect(
         radar_agl_m,
         surface_class,
         cell_size_m,
+        clutter_override,
     )
     thermal = hw.noise_power_w() * gproc
     noise = thermal + settings.additional_noise_power_w + clutter

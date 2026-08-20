@@ -18,6 +18,7 @@
 8. 伤害调试 Print/Shape 默认关闭（组件 Attribute `m_bDebugDraw`）。
 9. PD 关联门是共享 **8° / 600 m**（旧美军 14° / 900 m 会把编队合成一条）。PPI 显示聚类 8° / 700 m。
 10. 多站 datalink：开机站每 0.5 s 向 `RDF_RadarDatalinkHub` 发布确认航迹；融合 overlay 走 `GBRS_RadarIffResolver`；新网航迹发 `OnNetworkContact`。
+11. 苏军 PD tracker 离线链改为 MTD_BANK（与局内 `ApplyPulseDopplerHardware` 一致）。TwoPulse × VHF floor 0.01 会把 UH-1 点迹淹成 0 条；对齐后 1 条航迹/架 PASS。
 
 ---
 

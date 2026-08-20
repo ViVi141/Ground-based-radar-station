@@ -46,10 +46,21 @@ PD_MIN_HITS = 2
 PD_MIN_SPAN_S = 1.0
 
 # Current GBRS PD presets from simulate_clutter_cover.
+# USSR in-game is MTD_BANK (ApplyPulseDopplerHardware), not TwoPulse.
+# TwoPulse × VHF DEM floor 0.01 drowns UH-1 plots; PD search validation
+# already uses calib_pd_full.make_full_pd_hw for that reason.
 def make_pd(faction: str):
     if faction == "US":
         return s.make_us()
-    return s.make_ussr()
+
+    from calib_pd_full import make_full_pd_hw
+
+    hw, settings, meta = make_full_pd_hw(False)
+    hw.mti_mode = "mtd_bank"
+    hw.mtd_clutter_leakage = meta["mtd_clutter_leakage"]
+    settings.cfar_mode = "go"
+    settings.enable_atmospheric_loss = False
+    return hw, settings
 
 # ---------------------------------------------------------------------------
 # Data structures
@@ -458,6 +469,8 @@ def simulate(
         "update_interval_s": update_interval_s,
         "scan_rpm": scan_rpm,
         "beamwidth_deg": beamwidth_deg,
+        "mti_mode": hw.mti_mode,
+        "mtd_clutter_leakage": hw.mtd_clutter_leakage,
         "noise_scale": noise_scale,
         "gate_az_deg": gate_az_deg,
         "gate_range_m": gate_range_m,
@@ -543,11 +556,12 @@ def main() -> int:
         }
 
         for name, r in (
-            ("CURRENT (8/600, US coast 16s, USSR coast 12s, maxMiss 600)", current),
+            ("CURRENT (8/600, US TwoPulse, USSR MTD_BANK, maxMiss 600)", current),
             ("LEGACY (noise 3.5, gates 4/400, maxMiss 6)", legacy),
         ):
             print(f"\n[{faction}] {name}")
-            print(f"  aircraft={r['total_aircraft']} tracksEver={r['total_tracks_ever']}")
+            print(f"  mti_mode={r.get('mti_mode')} leak={r.get('mtd_clutter_leakage')} "
+                  f"aircraft={r['total_aircraft']} tracksEver={r['total_tracks_ever']}")
             print(f"  tracks_per_aircraft={r['tracks_per_aircraft']}")
             print(f"  fragmented_aircraft={r['fragmented_aircraft']} stable_aircraft={r['stable_aircraft']}")
             print(f"  max_alive={r['max_alive']} mean_alive={r['mean_alive']} "

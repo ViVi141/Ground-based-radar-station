@@ -32,19 +32,21 @@
 
 局内 `ApplyFullFidelity` 关联门是共享 **8° / 600 m**（美军只把 coast 加到 16 s）。
 
+苏军探测链对齐局内 `ApplyPulseDopplerHardware`：**MTD_BANK** + CFAR-GO + DEM 0.50。此前 tracker 走 TwoPulse，VHF 地杂波乘 `mti_clutter_floor=0.01`，UH-1 点迹被淹成 0 条。
+
 | 阵营 | 配置 | 每架飞机航迹数 | 判定 |
 |---|---|---|---|
-| US | 2026-08-20（关噪声、8°/600m、maxMiss 600、coast 16s） | 4 / 4 / 4 | FAIL |
+| US | 2026-08-20（TwoPulse、关噪声、8°/600m、maxMiss 600、coast 16s） | 4 / 4 / 4 | FAIL |
 | US | 历史（关噪声、14°/900m、maxMiss 600、coast 16s） | 4 / 4 / 4 | FAIL |
 | US | 旧（噪声 3.5、4°/400m、maxMiss 6） | 7 / 7 / 7 | FAIL |
-| USSR | 历史（关噪声、8°/600m、maxMiss 600） | 1 / 1 / 1 | PASS |
-| USSR | 旧（噪声 3.5、4°/400m、maxMiss 6） | 11 / 14 / 10 | FAIL |
+| USSR | 2026-08-20（MTD_BANK、关噪声、8°/600m、maxMiss 600） | 1 / 1 / 1 | PASS |
+| USSR | 旧 tracker（MTD_BANK RF、噪声 3.5、4°/400m、maxMiss 6） | 6 / 9 / 4 | FAIL |
 
 说明：
 
-- 苏军宽波束 + 慢扫描在历史离线模型下能稳定保持 1 条航迹/架
-- 美军窄波束 + 快扫描把门从 14°/900 m 收回 8°/600 m 后仍是 4 条/架；PPI 8°/700 m 显示聚类只治画面。RDF tracker 需 `AirborneAutoTest` 对照
-- 2026-08-20 用当前 `make_ussr()` 重跑时苏军 0 条点迹（探测链与 tracker 脚本未对齐），**不覆盖** 上表历史 PASS，也不代表局内苏军搜不到机
+- 苏军 6° 波束 + 6 RPM + MTD 动目标泄漏后，简化 GNN 能稳定保持 1 条航迹/架
+- 美军仍走 TwoPulse 离线链（与 `simulate_pd_search.py` 美军段一致）；窄波束 10 RPM 仍 4 条/架。PPI 8°/700 m 显示聚类只治画面。RDF tracker 需 `AirborneAutoTest` 对照
+
 
 ## 运行方法
 
@@ -55,5 +57,5 @@ python tools/simulate_pd_tracker.py
 ## 局限
 
 - 简化 GNN tracker，不是 RDF 1:1
-- 没有模拟 JPDA、PRF 盲速、旋翼边带等全部细节
+- 没有模拟 JPDA、PRF 盲速等全部细节；苏军 hover 边带用 calib 的 0.09 分数，不是 RDF 频谱 1:1
 - 主要用于快速暴露轨道碎片化和 PPI 航迹数量异常
