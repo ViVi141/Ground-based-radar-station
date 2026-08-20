@@ -835,6 +835,9 @@ class GBRS_RadarStationComponent : ScriptComponent
     // that receives the broadcast UserAction (and on RplLoad).
     void ToggleScanVisual(bool enabled)
     {
+        // World-space scan frustum / detect rays are disabled.
+        enabled = false;
+
         if (enabled == m_bScanVisualEnabled)
             return;
 
@@ -2613,70 +2616,7 @@ class GBRS_RadarStationComponent : ScriptComponent
 
     protected void RenderScanVisuals(IEntity owner)
     {
-        if (!m_bScanVisualEnabled)
-            return;
-
-        if (!m_Radar)
-            return;
-
-        RDF_RadarSensor sensor = m_Radar.GetSensor();
-        if (!sensor || !sensor.IsEnabled())
-            return;
-
-        vector origin = GetAntennaBindOrigin(owner);
-        // Prefer continuous ScanRpm forward — sensor context only updates on dwell ticks.
-        vector forward = ComputeScanForward(owner);
-
-        RDF_RadarScanContext ctx = sensor.GetScanContext();
-        if (ctx)
-        {
-            if (ctx.m_Origin.LengthSq() > 0.0001)
-                origin = ctx.m_Origin;
-        }
-
-        float rangeM = 2000.0;
-        RDF_RadarSettings cfg = sensor.GetSettings();
-        if (cfg && cfg.m_Range > 0.0)
-            rangeM = cfg.m_Range;
-
-        float scale = m_fVisualRangeScale;
-        if (scale < 0.1)
-            scale = 0.1;
-        if (scale > 1.0)
-            scale = 1.0;
-        rangeM = rangeM * scale;
-
-        int edgeA = Math.Round(m_fVisualEdgeAlpha * 255.0);
-        if (edgeA < 20)
-            edgeA = 20;
-        if (edgeA > 255)
-            edgeA = 255;
-
-        int coreA = Math.Round(m_fVisualCoreAlpha * 255.0);
-        if (coreA < 20)
-            coreA = 20;
-        if (coreA > 255)
-            coreA = 255;
-
-        int colourEdge = ARGB(edgeA, 80, 255, 140);
-        int colourCore = ARGB(coreA, 180, 255, 80);
-
-        GBRS_RadarScanFrustumVisual.Draw(
-            origin,
-            forward,
-            rangeM,
-            m_fVisualAzHalfDeg,
-            m_fElevationBoresightDeg,
-            m_fVisualElHalfDeg,
-            colourEdge,
-            colourCore);
-
-        if (!m_DetectVisual)
-            m_DetectVisual = new GBRS_RadarDetectVisual();
-
-        float nowS = System.GetTickCount() * 0.001;
-        m_DetectVisual.Ingest(sensor.GetPlots(), cfg, origin, nowS);
-        m_DetectVisual.Draw(origin, GetLiveScanRpm(), nowS);
+        // Scan frustum and world-space detect rays are disabled.
     }
 
     //------------------------------------------------------------------------------------------------

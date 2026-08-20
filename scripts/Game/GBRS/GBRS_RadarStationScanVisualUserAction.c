@@ -44,42 +44,12 @@ class GBRS_RadarStationScanVisualUserAction : ScriptedUserAction
 
     override bool CanBeShownScript(IEntity user)
     {
-        if (!m_RadarStation)
-            m_RadarStation = FindRadarStation(GetOwner());
-
-        if (!m_RadarStation)
-            return false;
-
-        if (!m_RadarStation.IsConfigured())
-            return false;
-
-        if (m_RadarStation.IsDestroyed())
-            return false;
-
-        if (!m_RadarStation.IsCompositionReady())
-            return false;
-
-        if (!m_RadarStation.IsFriendlyUser(user))
-            return false;
-
-        return m_RadarStation.IsPowered();
+        return false;
     }
 
     override bool CanBePerformedScript(IEntity user)
     {
-        if (!m_RadarStation)
-            return false;
-
-        if (m_RadarStation.IsDestroyed())
-            return false;
-
-        if (!m_RadarStation.IsCompositionReady())
-            return false;
-
-        if (!m_RadarStation.IsFriendlyUser(user))
-            return false;
-
-        return m_RadarStation.IsPowered();
+        return false;
     }
 
     override string GetCannotPerformReason()
