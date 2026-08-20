@@ -17,6 +17,8 @@ class GBRS_WlrPersistDisplay
     bool m_HasLaunch;
     bool m_HasImpact;
     bool m_HasLive;
+    float m_AirDrag;
+    bool m_DragEstimated;
 }
 
 class GBRS_RadarStationHud
@@ -352,7 +354,8 @@ class GBRS_RadarStationHud
         RDF_RadarLockManager lockMgr,
         array<ref RDF_RadarTrack> replicatedTracks,
         array<ref RDF_RadarFusedTrack> replicatedFused,
-        int replicatedNetOnline)
+        int replicatedNetOnline,
+        array<ref GBRS_WlrPersistDisplay> replicatedWlr)
     {
         GetInstance().Update(
             targets,
@@ -364,7 +367,8 @@ class GBRS_RadarStationHud
             lockMgr,
             replicatedTracks,
             replicatedFused,
-            replicatedNetOnline);
+            replicatedNetOnline,
+            replicatedWlr);
     }
 
     protected void AttachInternal(Widget root, IEntity opticsParent)
@@ -770,7 +774,8 @@ class GBRS_RadarStationHud
         RDF_RadarLockManager lockMgr,
         array<ref RDF_RadarTrack> replicatedTracks,
         array<ref RDF_RadarFusedTrack> replicatedFused,
-        int replicatedNetOnline)
+        int replicatedNetOnline,
+        array<ref GBRS_WlrPersistDisplay> replicatedWlr)
     {
         if (!m_wRoot)
             return;
@@ -790,23 +795,24 @@ class GBRS_RadarStationHud
             return;
         m_LastUpdateS = now;
 
-        // One clustered track pass per HUD tick. PPI, AZ/EL, list, and WLR
-        // persist used to each walk GetAllTracks independently.
         if (replicatedTracks)
             m_CachedDisplayTracks = replicatedTracks;
         else
             m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
 
-        // Keep the station panel centered/covering the screen: the layout root is
-        // authored at 1920x1080 absolute and MenuManager may re-place it, so
-        // re-assert its stretch + canvas geometry every tick.
+        if (replicatedWlr)
+            m_WlrPersist = replicatedWlr;
+
         CenterRoot();
         SyncPpiSquare();
         SyncAzElSize();
 
         UpdateOpticsCamera(origin, forward);
         if (m_Mode == MODE_WLR)
-            UpdateWlrPersist(origin, tracker);
+        {
+            if (!replicatedWlr)
+                UpdateWlrPersist(origin, tracker);
+        }
         UpdatePpi(targets, origin, forward, tracker);
         UpdateAzEl(targets, origin, tracker);
         UpdateList(targets, origin, tracker);
@@ -979,11 +985,6 @@ class GBRS_RadarStationHud
     // need a ballistic fit; without this the PPI only shows 0.45 s pin-pricks.
     protected void DrawWlrShellTracks(vector origin, RDF_RadarProjectileTracker tracker)
     {
-        if (!tracker)
-            return;
-
-        // Use the same confirmed-track clustering as PD/LOCK TWS so duplicate
-        // tracker files for one physical shell do not flood the PPI.
         array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
         if (!tracks)
             return;
@@ -1002,8 +1003,9 @@ class GBRS_RadarStationHud
             // Anchor the shell blip on the ballistic launch->impact arc when a
             // fix exists (stable), else fall back to the filtered position.
             vector shellPos = tr.m_FilteredPosition;
-            if (tr.m_LastWlrFix)
-                shellPos = WlrFixPositionOnArc(tr.m_LastWlrFix, GetWorldTimeS(), shellPos);
+            GBRS_WlrPersistDisplay persist = FindWlrPersist(tr.m_TrackId);
+            if (persist && persist.m_HasLive)
+                shellPos = persist.m_LivePos;
 
             float bx;
             float by;
@@ -2481,7 +2483,7 @@ class GBRS_RadarStationHud
         string colType = "";
         string colSnr = "";
         int row = 0;
-        if (tracker)
+        if (m_CachedDisplayTracks)
         {
             row = AppendTrackListRows(
                 tracker,
@@ -2494,21 +2496,18 @@ class GBRS_RadarStationHud
                 colType,
                 colSnr);
         }
-        else
+        else if (targets)
         {
-            if (targets)
-            {
-                row = AppendPlotListRows(
-                    targets,
-                    origin,
-                    colNr,
-                    colAz,
-                    colRng,
-                    colAlt,
-                    colSpd,
-                    colType,
-                    colSnr);
-            }
+            row = AppendPlotListRows(
+                targets,
+                origin,
+                colNr,
+                colAz,
+                colRng,
+                colAlt,
+                colSpd,
+                colType,
+                colSnr);
         }
 
         if (row == 0)
@@ -2774,29 +2773,21 @@ class GBRS_RadarStationHud
 
     protected string BuildWlrSolutionBody(vector origin, RDF_RadarProjectileTracker tracker)
     {
-        if (!tracker)
-            return "(no fire solutions)\nwaiting for ballistic fit";
-
-        array<ref RDF_RadarTrack> all = GetCachedDisplayTracks(tracker, origin);
-        if (!all)
+        if (!m_WlrPersist || m_WlrPersist.Count() < 1)
             return "(no fire solutions)\nwaiting for ballistic fit";
 
         float nowS = GetWorldTimeS();
         string body = "";
         int shown = 0;
 
-        foreach (RDF_RadarTrack tr : all)
+        int i = 0;
+        while (i < m_WlrPersist.Count())
         {
-            if (!tr)
+            GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(i);
+            i = i + 1;
+            if (!entry)
                 continue;
-
-            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-            RDF_RadarWlrFix fix = null;
-            if (sol)
-                fix = sol.m_Fix;
-            if (!fix)
-                continue;
-            if (!fix.m_LaunchValid && !fix.m_ImpactValid)
+            if (!entry.m_HasLaunch && !entry.m_HasImpact)
                 continue;
             if (shown >= 8)
                 break;
@@ -2804,15 +2795,18 @@ class GBRS_RadarStationHud
             if (body != "")
                 body = body + "\n";
 
-            string id = "W" + PadNum(tr.m_TrackId, 2);
+            string id = entry.m_Id;
+            if (id == "")
+                id = "W" + PadNum(entry.m_TrackId, 2);
+
             string eta = "--";
             string tof = "--";
-            if (fix.m_ImpactValid)
+            if (entry.m_HasImpact)
             {
-                eta = FormatEtaS(fix.m_ImpactTimeS - nowS);
-                if (fix.m_LaunchValid)
+                eta = FormatEtaS(entry.m_ImpactTimeS - nowS);
+                if (entry.m_HasLaunch)
                 {
-                    float tofS = fix.m_ImpactTimeS - fix.m_LaunchTimeS;
+                    float tofS = entry.m_ImpactTimeS - entry.m_LaunchTimeS;
                     if (tofS < 0.0)
                         tofS = 0.0;
                     tof = Fmt1(tofS) + "s";
@@ -2820,33 +2814,31 @@ class GBRS_RadarStationHud
             }
 
             string dragTag = "PRI";
-            float dragK = GBRS_RadarWlrBallisticSolver.K_PRIOR;
-            if (sol)
-            {
-                dragK = sol.m_AirDrag;
-                if (sol.m_DragEstimated)
-                    dragTag = "EST";
-            }
+            float dragK = entry.m_AirDrag;
+            if (dragK <= 0.0)
+                dragK = GBRS_RadarWlrBallisticSolver.K_PRIOR;
+            if (entry.m_DragEstimated)
+                dragTag = "EST";
 
             body = body + id + "  ETA " + eta + "  TOF " + tof
                 + "  " + dragTag + " " + FormatDrag(dragK);
 
-            if (fix.m_LaunchValid)
+            if (entry.m_HasLaunch)
             {
-                body = body + "\n LCH  " + FormatWorldXZ(fix.m_LaunchPos)
-                    + "  " + FormatWorldGrid(fix.m_LaunchPos)
-                    + "  " + FormatAzRng(origin, fix.m_LaunchPos);
+                body = body + "\n LCH  " + FormatWorldXZ(entry.m_LaunchPos)
+                    + "  " + FormatWorldGrid(entry.m_LaunchPos)
+                    + "  " + FormatAzRng(origin, entry.m_LaunchPos);
             }
             else
             {
                 body = body + "\n LCH  --";
             }
 
-            if (fix.m_ImpactValid)
+            if (entry.m_HasImpact)
             {
-                body = body + "\n IMP  " + FormatWorldXZ(fix.m_ImpactPos)
-                    + "  " + FormatWorldGrid(fix.m_ImpactPos)
-                    + "  " + FormatAzRng(origin, fix.m_ImpactPos);
+                body = body + "\n IMP  " + FormatWorldXZ(entry.m_ImpactPos)
+                    + "  " + FormatWorldGrid(entry.m_ImpactPos)
+                    + "  " + FormatAzRng(origin, entry.m_ImpactPos);
             }
             else
             {

@@ -8,14 +8,17 @@ class GBRS_PpiSnapshot
     static const int MAX_PLOTS = 48;
     static const int MAX_TRACKS = 16;
     static const int MAX_FUSED = 16;
+    static const int MAX_WLR = 16;
 
-    protected static const int HEADER_INTS = 5;
+    protected static const int HEADER_INTS = 6;
     protected static const int PLOT_INTS = 2;
     protected static const int PLOT_FLOATS = 10;
     protected static const int TRACK_INTS = 3;
     protected static const int TRACK_FLOATS = 18;
     protected static const int FUSED_INTS = 3;
     protected static const int FUSED_FLOATS = 12;
+    protected static const int WLR_INTS = 2;
+    protected static const int WLR_FLOATS = 15;
 
     protected static const int TYPE_MASK = 255;
     protected static const int FLAG_DETECTED = 256;
@@ -32,13 +35,18 @@ class GBRS_PpiSnapshot
     protected static const int FUSED_CONTRIB_SHIFT = 16;
     protected static const int FUSED_FLAG_LAUNCH = 16777216;
     protected static const int FUSED_FLAG_IMPACT = 33554432;
+    protected static const int WLR_FLAG_LAUNCH = 1;
+    protected static const int WLR_FLAG_IMPACT = 2;
+    protected static const int WLR_FLAG_LIVE = 4;
+    protected static const int WLR_FLAG_DRAG_EST = 8;
 
     //------------------------------------------------------------------------------------------------
     static void Pack(
-        array<ref RDF_RadarTarget> livePlots,
-        RDF_RadarSettings settings,
-        RDF_RadarProjectileTracker tracker,
+        array<ref RDF_RadarTarget> plotsSrc,
+        array<ref RDF_RadarTrack> tracksSrc,
         array<ref RDF_RadarFusedTrack> fusedSrc,
+        array<ref GBRS_WlrPersistDisplay> wlrSrc,
+        int detectedTotal,
         int netOnline,
         notnull array<int> ints,
         notnull array<float> floats)
@@ -46,57 +54,62 @@ class GBRS_PpiSnapshot
         ints.Clear();
         floats.Clear();
 
-        array<ref RDF_RadarTarget> plots = new array<ref RDF_RadarTarget>();
-        CollectDisplayPlots(livePlots, settings, plots);
+        int plotCount = 0;
+        if (plotsSrc)
+            plotCount = plotsSrc.Count();
+        if (plotCount > MAX_PLOTS)
+            plotCount = MAX_PLOTS;
 
-        array<ref RDF_RadarTrack> tracks = new array<ref RDF_RadarTrack>();
-        CollectDisplayTracks(tracker, tracks);
+        int trackCount = 0;
+        if (tracksSrc)
+            trackCount = tracksSrc.Count();
+        if (trackCount > MAX_TRACKS)
+            trackCount = MAX_TRACKS;
 
-        array<ref RDF_RadarFusedTrack> fused = new array<ref RDF_RadarFusedTrack>();
-        CollectFused(fusedSrc, fused);
+        int fusedCount = 0;
+        if (fusedSrc)
+            fusedCount = fusedSrc.Count();
+        if (fusedCount > MAX_FUSED)
+            fusedCount = MAX_FUSED;
 
-        int plotCount = plots.Count();
-        int trackCount = tracks.Count();
-        int fusedCount = fused.Count();
-        int detectedTotal = plotCount;
-        if (livePlots)
-        {
-            int raw = 0;
-            int iRaw = 0;
-            while (iRaw < livePlots.Count())
-            {
-                RDF_RadarTarget t = livePlots.Get(iRaw);
-                iRaw = iRaw + 1;
-                if (GBRS_RadarStationConfig.ShouldDisplayPlot(t, settings))
-                    raw = raw + 1;
-            }
-            detectedTotal = raw;
-        }
+        int wlrCount = 0;
+        if (wlrSrc)
+            wlrCount = wlrSrc.Count();
+        if (wlrCount > MAX_WLR)
+            wlrCount = MAX_WLR;
 
         ints.Insert(plotCount);
         ints.Insert(trackCount);
         ints.Insert(fusedCount);
         ints.Insert(detectedTotal);
         ints.Insert(netOnline);
+        ints.Insert(wlrCount);
 
         int i = 0;
         while (i < plotCount)
         {
-            AppendPlot(plots.Get(i), ints, floats);
+            AppendPlot(plotsSrc.Get(i), ints, floats);
             i = i + 1;
         }
 
         i = 0;
         while (i < trackCount)
         {
-            AppendTrack(tracks.Get(i), ints, floats);
+            AppendTrack(tracksSrc.Get(i), ints, floats);
             i = i + 1;
         }
 
         i = 0;
         while (i < fusedCount)
         {
-            AppendFused(fused.Get(i), ints, floats);
+            AppendFused(fusedSrc.Get(i), ints, floats);
+            i = i + 1;
+        }
+
+        i = 0;
+        while (i < wlrCount)
+        {
+            AppendWlr(wlrSrc.Get(i), ints, floats);
             i = i + 1;
         }
     }
@@ -108,12 +121,14 @@ class GBRS_PpiSnapshot
         out array<ref RDF_RadarTarget> plots,
         out array<ref RDF_RadarTrack> tracks,
         out array<ref RDF_RadarFusedTrack> fused,
+        out array<ref GBRS_WlrPersistDisplay> wlr,
         out int detectedTotal,
         out int netOnline)
     {
         plots = new array<ref RDF_RadarTarget>();
         tracks = new array<ref RDF_RadarTrack>();
         fused = new array<ref RDF_RadarFusedTrack>();
+        wlr = new array<ref GBRS_WlrPersistDisplay>();
         detectedTotal = 0;
         netOnline = 0;
 
@@ -127,6 +142,7 @@ class GBRS_PpiSnapshot
         int fusedCount = ints.Get(2);
         detectedTotal = ints.Get(3);
         netOnline = ints.Get(4);
+        int wlrCount = ints.Get(5);
 
         if (plotCount < 0)
             plotCount = 0;
@@ -134,20 +150,26 @@ class GBRS_PpiSnapshot
             trackCount = 0;
         if (fusedCount < 0)
             fusedCount = 0;
+        if (wlrCount < 0)
+            wlrCount = 0;
         if (plotCount > MAX_PLOTS)
             plotCount = MAX_PLOTS;
         if (trackCount > MAX_TRACKS)
             trackCount = MAX_TRACKS;
         if (fusedCount > MAX_FUSED)
             fusedCount = MAX_FUSED;
+        if (wlrCount > MAX_WLR)
+            wlrCount = MAX_WLR;
 
         int needInts = HEADER_INTS
             + plotCount * PLOT_INTS
             + trackCount * TRACK_INTS
-            + fusedCount * FUSED_INTS;
+            + fusedCount * FUSED_INTS
+            + wlrCount * WLR_INTS;
         int needFloats = plotCount * PLOT_FLOATS
             + trackCount * TRACK_FLOATS
-            + fusedCount * FUSED_FLOATS;
+            + fusedCount * FUSED_FLOATS
+            + wlrCount * WLR_FLOATS;
         if (ints.Count() < needInts)
             return false;
         if (floats.Count() < needFloats)
@@ -189,140 +211,18 @@ class GBRS_PpiSnapshot
             i = i + 1;
         }
 
+        i = 0;
+        while (i < wlrCount)
+        {
+            GBRS_WlrPersistDisplay row = ReadWlr(ints, floats, intCursor, floatCursor);
+            intCursor = intCursor + WLR_INTS;
+            floatCursor = floatCursor + WLR_FLOATS;
+            if (row)
+                wlr.Insert(row);
+            i = i + 1;
+        }
+
         return true;
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected static void CollectDisplayPlots(
-        array<ref RDF_RadarTarget> live,
-        RDF_RadarSettings settings,
-        notnull array<ref RDF_RadarTarget> dst)
-    {
-        if (!live)
-            return;
-
-        int i = 0;
-        while (i < live.Count())
-        {
-            RDF_RadarTarget src = live.Get(i);
-            i = i + 1;
-            if (!GBRS_RadarStationConfig.ShouldDisplayPlot(src, settings))
-                continue;
-            InsertBySnr(dst, src, MAX_PLOTS);
-        }
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected static void CollectDisplayTracks(
-        RDF_RadarProjectileTracker tracker,
-        notnull array<ref RDF_RadarTrack> dst)
-    {
-        if (!tracker)
-            return;
-
-        array<ref RDF_RadarTrack> all = tracker.GetAllTracks();
-        if (!all)
-            return;
-
-        int i = 0;
-        while (i < all.Count())
-        {
-            RDF_RadarTrack src = all.Get(i);
-            i = i + 1;
-            if (!src)
-                continue;
-            if (!src.m_Confirmed)
-                continue;
-            InsertTrackBySnr(dst, src, MAX_TRACKS);
-        }
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected static void CollectFused(
-        array<ref RDF_RadarFusedTrack> src,
-        notnull array<ref RDF_RadarFusedTrack> dst)
-    {
-        if (!src)
-            return;
-
-        int i = 0;
-        while (i < src.Count())
-        {
-            if (dst.Count() >= MAX_FUSED)
-                return;
-
-            RDF_RadarFusedTrack row = src.Get(i);
-            i = i + 1;
-            if (!row)
-                continue;
-            dst.Insert(row);
-        }
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected static void InsertBySnr(
-        notnull array<ref RDF_RadarTarget> dst,
-        RDF_RadarTarget src,
-        int maxCount)
-    {
-        if (!src)
-            return;
-
-        if (dst.Count() < maxCount)
-        {
-            dst.Insert(src);
-            return;
-        }
-
-        int worst = 0;
-        float worstSnr = 1.0e30;
-        int i = 0;
-        while (i < dst.Count())
-        {
-            RDF_RadarTarget held = dst.Get(i);
-            if (held && held.m_SnrDb < worstSnr)
-            {
-                worstSnr = held.m_SnrDb;
-                worst = i;
-            }
-            i = i + 1;
-        }
-
-        if (src.m_SnrDb > worstSnr)
-            dst.Set(worst, src);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected static void InsertTrackBySnr(
-        notnull array<ref RDF_RadarTrack> dst,
-        RDF_RadarTrack src,
-        int maxCount)
-    {
-        if (!src)
-            return;
-
-        if (dst.Count() < maxCount)
-        {
-            dst.Insert(src);
-            return;
-        }
-
-        int worst = 0;
-        float worstSnr = 1.0e30;
-        int i = 0;
-        while (i < dst.Count())
-        {
-            RDF_RadarTrack held = dst.Get(i);
-            if (held && held.m_LastSnrDb < worstSnr)
-            {
-                worstSnr = held.m_LastSnrDb;
-                worst = i;
-            }
-            i = i + 1;
-        }
-
-        if (src.m_LastSnrDb > worstSnr)
-            dst.Set(worst, src);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -401,15 +301,6 @@ class GBRS_PpiSnapshot
         vector impactPos = "0 0 0";
         float impactTime = 0.0;
         RDF_RadarWlrFix fix = tr.m_LastWlrFix;
-        if (!fix)
-        {
-            if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
-            {
-                GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-                if (sol)
-                    fix = sol.m_Fix;
-            }
-        }
         if (fix)
         {
             if (fix.m_LaunchValid)
@@ -426,15 +317,16 @@ class GBRS_PpiSnapshot
             }
         }
 
+        vector vel = GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
         ints.Insert(tr.m_TrackId);
         ints.Insert(tr.m_ScattererId);
         ints.Insert(packed);
         floats.Insert(tr.m_FilteredPosition[0]);
         floats.Insert(tr.m_FilteredPosition[1]);
         floats.Insert(tr.m_FilteredPosition[2]);
-        floats.Insert(tr.m_FilteredVelocity[0]);
-        floats.Insert(tr.m_FilteredVelocity[1]);
-        floats.Insert(tr.m_FilteredVelocity[2]);
+        floats.Insert(vel[0]);
+        floats.Insert(vel[1]);
+        floats.Insert(vel[2]);
         floats.Insert(tr.m_FilteredAzimuthDeg);
         floats.Insert(tr.m_FilteredRangeM);
         floats.Insert(tr.m_FilteredRangeRateMs);
@@ -622,5 +514,95 @@ class GBRS_PpiSnapshot
         impactPos[2] = floats.Get(floatCursor + 11);
         f.m_WlrImpactPos = impactPos;
         return f;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static void AppendWlr(
+        GBRS_WlrPersistDisplay entry,
+        notnull array<int> ints,
+        notnull array<float> floats)
+    {
+        if (!entry)
+        {
+            ints.Insert(0);
+            ints.Insert(0);
+            int z = 0;
+            while (z < WLR_FLOATS)
+            {
+                floats.Insert(0.0);
+                z = z + 1;
+            }
+            return;
+        }
+
+        int packed = 0;
+        if (entry.m_HasLaunch)
+            packed = packed | WLR_FLAG_LAUNCH;
+        if (entry.m_HasImpact)
+            packed = packed | WLR_FLAG_IMPACT;
+        if (entry.m_HasLive)
+            packed = packed | WLR_FLAG_LIVE;
+        if (entry.m_DragEstimated)
+            packed = packed | WLR_FLAG_DRAG_EST;
+
+        ints.Insert(entry.m_TrackId);
+        ints.Insert(packed);
+        floats.Insert(entry.m_LaunchPos[0]);
+        floats.Insert(entry.m_LaunchPos[1]);
+        floats.Insert(entry.m_LaunchPos[2]);
+        floats.Insert(entry.m_LaunchTimeS);
+        floats.Insert(entry.m_ImpactPos[0]);
+        floats.Insert(entry.m_ImpactPos[1]);
+        floats.Insert(entry.m_ImpactPos[2]);
+        floats.Insert(entry.m_ImpactTimeS);
+        floats.Insert(entry.m_LivePos[0]);
+        floats.Insert(entry.m_LivePos[1]);
+        floats.Insert(entry.m_LivePos[2]);
+        floats.Insert(entry.m_LiveVel[0]);
+        floats.Insert(entry.m_LiveVel[1]);
+        floats.Insert(entry.m_LiveVel[2]);
+        floats.Insert(entry.m_AirDrag);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static GBRS_WlrPersistDisplay ReadWlr(
+        notnull array<int> ints,
+        notnull array<float> floats,
+        int intCursor,
+        int floatCursor)
+    {
+        GBRS_WlrPersistDisplay entry = new GBRS_WlrPersistDisplay();
+        entry.m_TrackId = ints.Get(intCursor);
+        int packed = ints.Get(intCursor + 1);
+        entry.m_HasLaunch = (packed & WLR_FLAG_LAUNCH) != 0;
+        entry.m_HasImpact = (packed & WLR_FLAG_IMPACT) != 0;
+        entry.m_HasLive = (packed & WLR_FLAG_LIVE) != 0;
+        entry.m_DragEstimated = (packed & WLR_FLAG_DRAG_EST) != 0;
+        entry.m_Id = "W" + entry.m_TrackId.ToString();
+
+        vector launchPos;
+        launchPos[0] = floats.Get(floatCursor);
+        launchPos[1] = floats.Get(floatCursor + 1);
+        launchPos[2] = floats.Get(floatCursor + 2);
+        entry.m_LaunchPos = launchPos;
+        entry.m_LaunchTimeS = floats.Get(floatCursor + 3);
+        vector impactPos;
+        impactPos[0] = floats.Get(floatCursor + 4);
+        impactPos[1] = floats.Get(floatCursor + 5);
+        impactPos[2] = floats.Get(floatCursor + 6);
+        entry.m_ImpactPos = impactPos;
+        entry.m_ImpactTimeS = floats.Get(floatCursor + 7);
+        vector livePos;
+        livePos[0] = floats.Get(floatCursor + 8);
+        livePos[1] = floats.Get(floatCursor + 9);
+        livePos[2] = floats.Get(floatCursor + 10);
+        entry.m_LivePos = livePos;
+        vector liveVel;
+        liveVel[0] = floats.Get(floatCursor + 11);
+        liveVel[1] = floats.Get(floatCursor + 12);
+        liveVel[2] = floats.Get(floatCursor + 13);
+        entry.m_LiveVel = liveVel;
+        entry.m_AirDrag = floats.Get(floatCursor + 14);
+        return entry;
     }
 }

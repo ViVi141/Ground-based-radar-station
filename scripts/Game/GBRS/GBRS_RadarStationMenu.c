@@ -89,6 +89,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected ref array<ref RDF_RadarTarget> m_PpiSnapPlots;
 	protected ref array<ref RDF_RadarTrack> m_PpiSnapTracks;
 	protected ref array<ref RDF_RadarFusedTrack> m_PpiSnapFused;
+	protected ref array<ref GBRS_WlrPersistDisplay> m_PpiSnapWlr;
 	protected ref GBRS_PpiZoomWheelHandler m_PpiWheelHandler;
 	protected Widget m_wPpiWheelHost;
 
@@ -1871,10 +1872,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		array<ref RDF_RadarTarget> plots;
 		array<ref RDF_RadarTrack> tracks;
 		array<ref RDF_RadarFusedTrack> fused;
+		array<ref GBRS_WlrPersistDisplay> wlr;
 		int detectedTotal;
 		int netOnline;
 		if (!GBRS_PpiSnapshot.Unpack(
-			packedInts, packedFloats, plots, tracks, fused, detectedTotal, netOnline))
+			packedInts, packedFloats, plots, tracks, fused, wlr, detectedTotal, netOnline))
 			return;
 
 		m_PpiSnapOrigin = origin;
@@ -1886,6 +1888,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_PpiSnapPlots = plots;
 		m_PpiSnapTracks = tracks;
 		m_PpiSnapFused = fused;
+		m_PpiSnapWlr = wlr;
 		m_bHasPpiSnapshot = true;
 	}
 
@@ -1905,6 +1908,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_PpiSnapTracks.Clear();
 		if (m_PpiSnapFused)
 			m_PpiSnapFused.Clear();
+		if (m_PpiSnapWlr)
+			m_PpiSnapWlr.Clear();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1919,9 +1924,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!GBRS_RadarStationHud.IsVisible())
 			GBRS_RadarStationHud.Attach(GetRootWidget(), m_Station.GetOwner());
 
-		float nowS = System.GetTickCount() * 0.001;
-		float lifeS = GetPersistLifeS();
-
 		vector hudOrigin = m_Station.GetScanOriginWorld();
 		vector hudForward = m_Station.GetScanForwardWorld();
 		float rfRange = 2000.0;
@@ -1929,7 +1931,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		array<ref RDF_RadarTarget> livePlots = null;
 		array<ref RDF_RadarTrack> replicatedTracks = null;
 		array<ref RDF_RadarFusedTrack> replicatedFused = null;
+		array<ref GBRS_WlrPersistDisplay> replicatedWlr = null;
 		int netOnline = -1;
+		int detectedTotal = 0;
 
 		if (m_bHasPpiSnapshot)
 		{
@@ -1942,31 +1946,14 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			livePlots = m_PpiSnapPlots;
 			replicatedTracks = m_PpiSnapTracks;
 			replicatedFused = m_PpiSnapFused;
+			replicatedWlr = m_PpiSnapWlr;
 			netOnline = m_PpiSnapNetOnline;
+			detectedTotal = m_PpiSnapDetectedTotal;
 		}
 
 		float viewRange = ResolvePpiViewRange(rfRange);
-
-		IngestLivePlots(livePlots, null, nowS);
-		CoastPersist(nowS);
-		PrunePersist(nowS, lifeS);
-
-		float clusterIntervalS = CLUSTER_INTERVAL_MS * 0.001;
-		bool needCluster = false;
-		if (!m_DisplayPlots || m_DisplayPlots.Count() == 0)
-			needCluster = true;
-		if ((nowS - m_LastClusterS) >= clusterIntervalS)
-			needCluster = true;
-
-		if (needCluster)
-		{
-			BuildClusteredDisplayPlots(hudOrigin, viewRange);
-			m_LastClusterS = nowS;
-		}
-
-		int detectedTotal = m_DetectedInRange;
-		if (m_bHasPpiSnapshot)
-			detectedTotal = m_PpiSnapDetectedTotal;
+		m_DisplayPlots = livePlots;
+		m_DetectedInRange = detectedTotal;
 
 		GBRS_RadarStationHud.SetDisplayRange(viewRange);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
@@ -1981,6 +1968,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			null,
 			replicatedTracks,
 			replicatedFused,
-			netOnline);
+			netOnline,
+			replicatedWlr);
 	}
 }

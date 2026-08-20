@@ -167,6 +167,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     // operators who opened the workstation. Proxies never run RDF ScanOnce.
     protected ref array<int> m_PpiSubscriberPlayerIds;
     protected float m_fNextPpiSnapshotS;
+    protected ref GBRS_PpiDisplayBaker m_PpiBaker;
 
     override void OnPostInit(IEntity owner)
     {
@@ -196,6 +197,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_NetworkContactSeen = new map<int, float>();
         if (!m_PpiSubscriberPlayerIds)
             m_PpiSubscriberPlayerIds = new array<int>();
+        if (!m_PpiBaker)
+            m_PpiBaker = new GBRS_PpiDisplayBaker();
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
         if (IsCompositionReady())
@@ -957,6 +960,8 @@ class GBRS_RadarStationComponent : ScriptComponent
     {
         if (m_PpiSubscriberPlayerIds)
             m_PpiSubscriberPlayerIds.Clear();
+        if (m_PpiBaker)
+            m_PpiBaker.Clear();
         m_fNextPpiSnapshotS = 0.0;
     }
 
@@ -1065,15 +1070,11 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         RDF_RadarSensor sensor = null;
         RDF_RadarSettings settings = null;
-        RDF_RadarProjectileTracker tracker = null;
-        array<ref RDF_RadarTarget> plots = null;
         if (m_Radar)
             sensor = m_Radar.GetSensor();
         if (sensor)
         {
             settings = sensor.GetSettings();
-            plots = sensor.GetPlots();
-            tracker = sensor.GetTracker();
             eccm = sensor.GetEccmStatusShort();
         }
         if (settings && settings.m_Range > 0.0)
@@ -1090,6 +1091,22 @@ class GBRS_RadarStationComponent : ScriptComponent
             }
         }
 
+        if (!m_PpiBaker)
+            m_PpiBaker = new GBRS_PpiDisplayBaker();
+
+        float nowS = System.GetTickCount() * 0.001;
+        float worldNowS = 0.0;
+        if (GetGame() && GetGame().GetWorld())
+            worldNowS = GetGame().GetWorld().GetWorldTime() * 0.001;
+        m_PpiBaker.Tick(
+            sensor,
+            settings,
+            origin,
+            rangeM,
+            m_WorkstationMode,
+            nowS,
+            worldNowS);
+
         array<ref RDF_RadarFusedTrack> fused = null;
         RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();
         if (hub && hub.IsEnabled())
@@ -1097,10 +1114,11 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         int netOnline = GetOnlineDatalinkStationCount();
         GBRS_PpiSnapshot.Pack(
-            plots,
-            settings,
-            tracker,
+            m_PpiBaker.GetDisplayPlots(),
+            m_PpiBaker.GetDisplayTracks(),
             fused,
+            m_PpiBaker.GetWlrPersist(),
+            m_PpiBaker.GetDetectedTotal(),
             netOnline,
             packedInts,
             packedFloats);
@@ -1771,6 +1789,11 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!ApplyWorkstationModeEffects(mode))
             return;
 
+        if (m_WorkstationMode != mode)
+        {
+            if (m_PpiBaker)
+                m_PpiBaker.Clear();
+        }
         m_WorkstationMode = mode;
     }
 
