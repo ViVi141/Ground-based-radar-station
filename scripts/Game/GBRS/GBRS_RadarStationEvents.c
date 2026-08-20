@@ -6,7 +6,9 @@
 //! Conflict-base early-warning integration.
 //!
 //! GBRS ships `GBRS_CampaignRadarWarning` as the stock Conflict consumer:
-//! locked intel-net radio for tuned players, faction popups for the rest.
+//! locked intel-net radio (OnDelivery) for players tuned to RADAR NET.
+//! Untuned players do not get contact popups. A one-shot briefing popup
+//! fires when the station finishes building.
 //!
 //! Example:
 //!   GBRS_RadarStationEvents.OnRadarContact.Insert(MyContactHandler);

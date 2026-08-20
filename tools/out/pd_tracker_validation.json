@@ -10,8 +10,8 @@
         "scan_rpm": 10.0,
         "beamwidth_deg": 2.5,
         "noise_scale": 0.0,
-        "gate_az_deg": 14.0,
-        "gate_range_m": 900.0,
+        "gate_az_deg": 8.0,
+        "gate_range_m": 600.0,
         "max_misses": 600,
         "coast_max_s": 16.0,
         "total_aircraft": 3,
@@ -85,20 +85,20 @@
         "max_misses": 600,
         "coast_max_s": 12.0,
         "total_aircraft": 3,
-        "total_tracks_ever": 3,
+        "total_tracks_ever": 0,
         "tracks_per_aircraft": {
-          "1": 1,
-          "2": 1,
-          "3": 1
+          "1": 0,
+          "2": 0,
+          "3": 0
         },
         "fragmented_aircraft": 0,
-        "stable_aircraft": 3,
-        "max_alive": 3,
-        "mean_alive": 2.98,
-        "max_confirmed_alive": 3,
-        "mean_confirmed_alive": 2.98,
-        "fragmentation_ratio": 1.0,
-        "verdict": "PASS"
+        "stable_aircraft": 0,
+        "max_alive": 0,
+        "mean_alive": 0.0,
+        "max_confirmed_alive": 0,
+        "mean_confirmed_alive": 0.0,
+        "fragmentation_ratio": 0.0,
+        "verdict": "FAIL"
       },
       "legacy": {
         "faction": "USSR",
@@ -112,33 +112,33 @@
         "max_misses": 6,
         "coast_max_s": 8.0,
         "total_aircraft": 3,
-        "total_tracks_ever": 35,
+        "total_tracks_ever": 0,
         "tracks_per_aircraft": {
-          "1": 11,
-          "2": 14,
-          "3": 10
+          "1": 0,
+          "2": 0,
+          "3": 0
         },
-        "fragmented_aircraft": 3,
+        "fragmented_aircraft": 0,
         "stable_aircraft": 0,
-        "max_alive": 5,
-        "mean_alive": 0.41,
-        "max_confirmed_alive": 4,
-        "mean_confirmed_alive": 0.29,
-        "fragmentation_ratio": 11.67,
+        "max_alive": 0,
+        "mean_alive": 0.0,
+        "max_confirmed_alive": 0,
+        "mean_confirmed_alive": 0.0,
+        "fragmentation_ratio": 0.0,
         "verdict": "FAIL"
       },
       "summary": {
-        "current_verdict": "PASS",
+        "current_verdict": "FAIL",
         "legacy_verdict": "FAIL",
         "current_tracks_per_aircraft": {
-          "1": 1,
-          "2": 1,
-          "3": 1
+          "1": 0,
+          "2": 0,
+          "3": 0
         },
         "legacy_tracks_per_aircraft": {
-          "1": 11,
-          "2": 14,
-          "3": 10
+          "1": 0,
+          "2": 0,
+          "3": 0
         }
       }
     }

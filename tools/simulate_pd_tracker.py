@@ -497,12 +497,12 @@ def main() -> int:
     print("=" * 72)
 
     for faction in factions:
+        # In-game ApplyFullFidelity uses shared 8 deg / 600 m gates.
+        # US search only lengthens coast (16 s vs 12 s).
         gate_range_m = 600.0
         gate_az_deg = 8.0
         coast_max_s = 12.0
         if faction == "US":
-            gate_range_m = 900.0
-            gate_az_deg = 14.0
             coast_max_s = 16.0
 
         # Current GBRS PD: mechanical scan with high miss allowance.
@@ -543,7 +543,7 @@ def main() -> int:
         }
 
         for name, r in (
-            ("CURRENT (US 14/900 16s, USSR 8/600 12s, maxMiss 600)", current),
+            ("CURRENT (8/600, US coast 16s, USSR coast 12s, maxMiss 600)", current),
             ("LEGACY (noise 3.5, gates 4/400, maxMiss 6)", legacy),
         ):
             print(f"\n[{faction}] {name}")

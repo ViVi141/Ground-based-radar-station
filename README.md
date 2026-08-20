@@ -37,7 +37,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 | 美军 | **45.6 MHz**（45600 kHz） | `RADAR NET` |
 | 苏军 | **39.6 MHz**（39600 kHz） | `RADAR NET` |
 
-开机才发射，用阵营加密，距离约 25 km。调到该频会听到原版电台人声（空情：发现目标；炮击：基地遇袭，美/俄语）再加弹窗。没调频的己方玩家仍只弹 `RADAR CONTACT` / `INCOMING FIRE`。CHANNEL 按键被拒。不会改原版 `EvaluateEnemyPresence`。不要调到排级网（美 48.0 / 苏 42.0）。音频设置里关掉 HQ Announcer 则只留弹窗。
+开机才发射，用阵营加密。本机 TX 半径 **2 km**（AN/PRC-77）；更远靠己方 Conflict HQ 电台覆盖，或对开机的 `RelayTransceiver`（GM 塔、天线、指挥车）做中继跳转（最多 24）。手台本身不跳转。调到该频才会经电台 `OnDelivery` 播放自定义 ACP 语音（空情：网格 / 航向 / 高度；炮击：发射网格 / 落点网格 / ETA，美/俄语切片）。没调频的己方玩家**不收空情**，也不弹 `RADAR CONTACT`。施工完成会给同阵营发一次调频说明弹窗。CHANNEL 按键被拒。不会改原版 `EvaluateEnemyPresence`。不要调到排级网（美 48.0 / 苏 42.0）。
 
 ## 外形与射频
 
@@ -45,8 +45,8 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 | 阵营 | 外形（史实） | 天线 | 探测（玩法，不是进近雷达手册） |
 |---|---|---|---|
-| 美军 | **AN/TPN-19**（美空军野战着陆管制中心 / RAPCON） | 整面天线偏航 | 7 km 脉冲多普勒空搜，8 km WLR，10 RPM，约 2.5° 波束 |
-| 苏军 | **Tesla RPL-5**（捷克联合无线电定位 / 进近雷达） | `antenna_rotation` 骨 | 10 km VHF 预警（P-18 式前端），10 km WLR，6 RPM，约 6° 波束 |
+| 美军 | **AN/TPN-19**（美空军野战着陆管制中心 / RAPCON） | 整面天线偏航 | 7 km 脉冲多普勒空搜（10 RPM，约 2.5°）；8 km WLR（±45° 扇扫，12°，6 RPM） |
+| 苏军 | **Tesla RPL-5**（捷克联合无线电定位 / 进近雷达） | `antenna_rotation` 骨 | 10 km VHF 预警（P-18 式前端，6 RPM，约 6°）；10 km WLR（±45° 扇扫，15°，6 RPM） |
 
 真实的 RPL-5 与 AN/TPN-19 都是机场进近 / 空管系统。本模组只用它们的外观，射频按 Conflict 空搜平衡，没有改成进近雷达量程。
 
@@ -75,9 +75,11 @@ GBRS_RadarStationDemo.Stop();
 
 ### 搜索画面看到什么
 
-主雷达是皮回波，**没有 IFF**，也**不会报载具型号**。
+主雷达搜索画面是皮回波：**没有二次雷达询问**，也**不会报载具型号**。
 
 搜索模式会剥掉实体身份。列表里是匿名点迹的运动学：方位、距离、高度、速度、信噪比。类型栏多为 `ANON`。例外：正在辐射的雷达标 `EMIT`；WLR 把弹丸标成 `SHELL` 并估发射点 / 落点，不识别哪门炮。步兵不上屏。
+
+多站 datalink overlay 另走 `GBRS_RadarIffResolver`（友绿 / 敌红 / 中立），按站点当前阵营上色。这不改变本地搜索点迹的匿名读出。
 
 ## 物资
 
@@ -107,16 +109,18 @@ GBRS_RadarStationDemo.Stop();
 其它模组可订阅 `GBRS_RadarStationEvents`：
 
 - `OnRadarContact` / `OnRadarContactLost`
+- `OnNetworkContact`（融合网里的新航迹，不是本站本地点迹）
 - `OnWlrSolution`
 - `OnLockChanged`
 - `OnRadarDestroyed`
 
 ## 已知限制
 
-- 没有 IFF / 二次雷达询问；RDF 默认 IFF 解析器一律 `UNKNOWN`，PPI 也不读该字段
+- 本地 PPI 没有二次雷达询问；搜索点迹保持匿名。融合 overlay 才读 IFF
 - 射频不是 RPL-5 / AN/TPN-19 的进近手册数据
 - 对调模型后，编辑器缩略图可能仍是旧外观，需在 Workbench 重新生成预览
-- WLR 与切向悬停直升机建议局内实测
+- WLR 扇扫解算与切向悬停直升机建议局内实测
+- 情报网本机 2 km；HQ / 中继跳转需局内核对
 
 ## 文档
 

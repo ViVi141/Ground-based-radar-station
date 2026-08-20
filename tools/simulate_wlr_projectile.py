@@ -4,9 +4,9 @@
 Validates the two things the GBRS WLR config depends on:
   1. SNR feasibility: can a 0.01 m2 projectile be detected at 8 km (US) /
      10 km (USSR) with the configured hardware + elevation beams + SNR gate?
-  2. Rotating-scan hit budget: with mechanical scan at 10/6 RPM and a
-     25/30 deg azimuth beam, how many illumination windows (>= the
-     WeaponLocateMinHits=3 gate) fit inside a mortar shell flight?
+  2. Sector-sweep hit budget: with a ±45 deg corridor at 1.2 rad/s and a
+     12/15 deg azimuth beam (6 RPM spin gate), how many illumination
+     windows (>= WeaponLocateMinHits=3) fit inside a mortar shell flight?
 
 Then sweeps beamwidth / RPM / SNR gate to recommend tuning if the current
 config cannot meet both goals.
@@ -151,6 +151,16 @@ def _flight_time_exact(
     return best_t
 
 
+# In-game WLR product (GBRS_RadarStationConfig.ApplyWlrProductFlags).
+WLR_SECTOR_HALF_WIDTH_DEG = 45.0
+WLR_SECTOR_RATE_RAD_S = 1.2
+WLR_ELEVATION_BEAMS = [
+    ("mortar_low", 15.0, 28.0, 0.0),
+    ("mortar_mid", 35.0, 30.0, 0.0),
+    ("mortar_high", 55.0, 28.0, -0.5),
+]
+
+
 @dataclass
 class ScanConfig:
     beamwidth_deg: float
@@ -160,6 +170,9 @@ class ScanConfig:
     elevation_beams: list[tuple[str, float, float, float]] = field(
         default_factory=list
     )
+    sector_sweep: bool = False
+    sector_half_width_deg: float = WLR_SECTOR_HALF_WIDTH_DEG
+    sector_rate_rad_s: float = WLR_SECTOR_RATE_RAD_S
 
 
 def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
@@ -263,18 +276,55 @@ def illumination_windows(
     update_interval_s: float,
     start_phase_deg: float = 0.0,
 ) -> int:
-    """Count how many dwell updates a projectile gets while the rotating beam
-    points at its azimuth (worst case: it sits at one bearing)."""
+    """Count dwells while a 360 deg rotating beam points at one bearing."""
     period_s = 60.0 / rpm if rpm > 0 else 1e9
     beam_half = beamwidth_deg * 0.5
-    # The projectile flies along a bearing that sweeps in azimuth too; worst
-    # case for a counter-battery solve is it stays near one bearing (mortar
-    # lobbed at the radar). Count dwells where |scan_az - target_az| < half.
     hits = 0
     t = 0.0
     while t <= flight_time_s:
         scan_deg = (start_phase_deg + t * 360.0 / period_s) % 360.0
         delta = abs(scan_deg - 0.0)
+        if delta > 180.0:
+            delta = 360.0 - delta
+        if delta <= beam_half:
+            hits += 1
+        t += update_interval_s
+    return hits
+
+
+def sector_sweep_illumination_windows(
+    beamwidth_deg: float,
+    flight_time_s: float,
+    update_interval_s: float,
+    half_width_deg: float,
+    rate_rad_s: float,
+    target_az_deg: float = 0.0,
+    center_az_deg: float = 0.0,
+) -> int:
+    """Count dwells while a ±half_width corridor sweep illuminates one bearing.
+
+    Mirrors RDF sector sweep: triangle wave between center-half and
+    center+half at rate_rad_s. Target at corridor center is the intended
+    counter-battery case.
+    """
+    rate_deg_s = rate_rad_s * (180.0 / math.pi)
+    span = 2.0 * half_width_deg
+    if rate_deg_s <= 1e-9:
+        period_s = 1e9
+    else:
+        period_s = (2.0 * span) / rate_deg_s
+    beam_half = beamwidth_deg * 0.5
+    hits = 0
+    t = 0.0
+    while t <= flight_time_s:
+        phase = (t / period_s) % 1.0
+        if phase < 0.5:
+            frac = phase * 2.0
+            scan_deg = center_az_deg - half_width_deg + frac * span
+        else:
+            frac = (phase - 0.5) * 2.0
+            scan_deg = center_az_deg + half_width_deg - frac * span
+        delta = abs(scan_deg - target_az_deg)
         if delta > 180.0:
             delta = 360.0 - delta
         if delta <= beam_half:
@@ -318,10 +368,18 @@ def validate_faction(
         )
     max_snr = max(x["snr_db"] for x in snr_samples)
 
-    # Rotating-scan hit budget at the projectile's bearing.
-    windows = illumination_windows(
-        cfg.rpm, cfg.beamwidth_deg, flight_s, cfg.update_interval_s
-    )
+    if cfg.sector_sweep:
+        windows = sector_sweep_illumination_windows(
+            cfg.beamwidth_deg,
+            flight_s,
+            cfg.update_interval_s,
+            cfg.sector_half_width_deg,
+            cfg.sector_rate_rad_s,
+        )
+    else:
+        windows = illumination_windows(
+            cfg.rpm, cfg.beamwidth_deg, flight_s, cfg.update_interval_s
+        )
     hit_ok = windows >= WLR_MIN_HITS
     snr_ok = max_snr >= cfg.snr_gate_db
 
@@ -349,30 +407,22 @@ def main() -> None:
     print("GBRS WLR offline validation (projectile counter-battery)")
     print("=" * 72)
 
-    # Current GBRS config.
+    # Current in-game GBRS WLR (CreateUsWlr / CreateUssrWlr).
     us_cfg = ScanConfig(
-        beamwidth_deg=25.0,
-        rpm=10.0,
+        beamwidth_deg=12.0,
+        rpm=6.0,
         snr_gate_db=4.0,
-        update_interval_s=0.05,
-        elevation_beams=[
-            ("mortar_horizon", 8.0, 16.0, 0.0),
-            ("mortar_low", 18.0, 22.0, 0.0),
-            ("mortar_mid", 35.0, 26.0, 0.0),
-            ("mortar_high", 55.0, 26.0, -0.5),
-        ],
+        update_interval_s=0.15,
+        elevation_beams=list(WLR_ELEVATION_BEAMS),
+        sector_sweep=True,
     )
     ussr_cfg = ScanConfig(
-        beamwidth_deg=30.0,
+        beamwidth_deg=15.0,
         rpm=6.0,
         snr_gate_db=5.0,
-        update_interval_s=0.05,
-        elevation_beams=[
-            ("mortar_horizon", 8.0, 16.0, 0.0),
-            ("mortar_low", 18.0, 22.0, 0.0),
-            ("mortar_mid", 35.0, 26.0, 0.0),
-            ("mortar_high", 55.0, 26.0, -0.5),
-        ],
+        update_interval_s=0.15,
+        elevation_beams=list(WLR_ELEVATION_BEAMS),
+        sector_sweep=True,
     )
 
     print("\n--- Current config ---")
