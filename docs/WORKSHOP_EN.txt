@@ -1,0 +1,75 @@
+SUMMARY (178 / 200)
+Buildable US and USSR Conflict radar stations (AN/TPN-19 / Tesla RPL-5). Pulse-Doppler air search, WLR counter-battery PPI, RADAR NET voice, server-computed tracks. Requires RDF.
+
+DESCRIPTION
+Ground-based radar station (GBRS) turns Bohemia Interactive approach-radar meshes into playable Conflict and Game Master ground stations. Detection, tracking, and the PPI picture are computed on the server through Radar Development Framework (RDF). Clients only power the set, change mode, and draw the replicated scope.
+
+REQUIRED
+This addon will not load without Radar Development Framework (GUID 6892AB0669DF29AA). Subscribe to RDF first.
+
+WHAT YOU GET
+Two faction stations with historically matched visuals and Conflict-scaled RF, not airport-handbook ranges:
+
+US Ground Radar Station (AN/TPN-19)
+- 7 km pulse-Doppler air search, about 10 RPM, 2.5 deg beam
+- 8 km weapon-locating radar (WLR), plus/minus 45 deg sector, 12 deg beam, 6 RPM
+- Whole-mesh antenna yaw
+
+USSR Ground Radar Station (Tesla RPL-5)
+- 10 km VHF early warning (P-18-style front end), about 6 RPM, 6 deg beam
+- 10 km WLR, plus/minus 45 deg sector, 15 deg beam, 6 RPM
+- Antenna spin on the antenna_rotation bone
+
+RPL-5 and AN/TPN-19 were approach / RAPCON systems in real life. GBRS keeps those models and retunes the radio for battlefield air search and counter-battery play.
+
+HOW TO PLACE
+Conflict / FreeRoam: construction truck or base build menu. A work pad appears first. Finish shoveling (build value 250) before the finished radar spawns.
+Game Master: composition browser.
+Forward placement is allowed (military theme). The set does not have to sit inside a base.
+
+Campaign cost is 450 supply per faction, sergeant rank. From a base construction terminal you also spend 100 HQ composition points (same band as a medium vehicle repair station). A truck-placed pad does not check HQ points, matching vanilla fieldworks.
+
+WORKSTATION
+Friendly operators at a powered, finished station can:
+- Toggle power (refused if you cannot afford the first drain tick)
+- Open the PPI: PD SEARCH (air) or WLR (shells)
+- Zoom PPI range with Up/Down or mouse wheel
+
+PD SEARCH is skin-return only. No IFF interrogation, no vehicle type names. The list is anonymous kinematics: azimuth, range, altitude, speed, SNR. Radiating radars show as EMIT. Infantry never paints. WLR marks shells, then estimates launch and impact grids with ETA. It does not name the gun.
+
+Multi-station datalink is separate. Powered stations publish confirmed tracks into a shared hub. The PPI network overlay colors fused tracks by IFF (friend / foe / neutral) against the station faction. Local search plots stay anonymous.
+
+SERVER-AUTHORITATIVE RADAR
+Scan, CFAR/MTI, track files, WLR ballistic fixes, plot afterglow, display clustering, and the PPI snapshot all run on the machine that owns the simulation. Clients subscribe when they open the workstation and only render that stream. Listen-server hosts use the same snapshot so everyone sees one picture.
+
+RADAR NET
+A covering friendly Conflict base gets air contacts and in-radius WLR impacts as scripted radio, not map pings and not EvaluateEnemyPresence.
+
+US 45.6 MHz (45600 kHz), channel name RADAR NET
+USSR 39.6 MHz (39600 kHz), channel name RADAR NET
+
+Transmit only while powered, with faction crypto. Local radio range is 2 km (AN/PRC-77). Farther coverage uses friendly Conflict HQ radios or a hop chain of powered RelayTransceiver assets (GM towers, antennas, command vehicles; max 24). Handhelds do not hop. Tune the net or you hear nothing: no ACP voice, no RADAR CONTACT popup. After construction, same-faction players get a one-shot tune briefing. Do not use platoon nets (US 48.0 / USSR 42.0). Voice is sliced ACP: air (grid / heading / altitude) and WLR (launch grid / impact grid / ETA) in English or Russian.
+
+SUPPLY
+While powered, the station drains 15 supply every 25 seconds (about 0.6/s), in order: covering friendly Conflict base stockpile, local bunker (400), then a still-linked construction truck.
+
+CAPTURE
+When the covering base flag actually changes hands (not merely contested):
+1. The station powers off and the PPI closes
+2. Affiliation follows the occupier; they may power it from their stockpile
+3. The previous faction loses power and PPI
+4. Hardware mesh does not swap (a US pad stays AN/TPN-19)
+
+Truck-built radars outside a base radius keep the builder faction. Enemies cannot operate them; they can only wreck or shovel the wreck.
+
+DAMAGE AND SALVAGE
+Destroy the set and it stays wrecked. Unfinished pads block vanilla dismantle. Finished wrecks use the GBRS shovel.
+
+FOR OTHER MODS
+Subscribe GBRS_RadarStationEvents:
+OnRadarContact, OnRadarContactLost, OnNetworkContact, OnWlrSolution, OnLockChanged, OnRadarDestroyed.
+
+KNOWN LIMITS
+LOCK and MANUAL workstation tabs are reserved and hidden until a fire-control or training addon exists. RF is not TPN-19 / RPL-5 handbook data. Local PPI has no secondary radar. WLR on crossing shells and HQ/relay hops should still be checked in multiplayer. Editor thumbnails may lag until regenerated in Workbench.
+
+Load RDF, then GBRS. Place a pad, shovel it, power on, tune RADAR NET, and sit the scope.
