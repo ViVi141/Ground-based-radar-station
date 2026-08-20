@@ -107,6 +107,37 @@ class GBRS_PlayerControllerNet
     }
 
     //------------------------------------------------------------------------------------------------
+    static bool RequestSubscribePpi(GBRS_RadarStationComponent station)
+    {
+        return RequestPpiSubscription(station, true);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    static bool RequestUnsubscribePpi(GBRS_RadarStationComponent station)
+    {
+        return RequestPpiSubscription(station, false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected static bool RequestPpiSubscription(GBRS_RadarStationComponent station, bool subscribe)
+    {
+        if (!station)
+            return false;
+
+        RplId stationId = station.GetStationRplId();
+        if (!stationId.IsValid())
+            return false;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(GetGame().GetPlayerController());
+        if (!playerController)
+            return false;
+
+        playerController.GBRS_RpcAsk_PpiSubscribe(stationId, subscribe);
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
     static GBRS_RadarStationComponent ResolveStation(RplId stationId)
     {
         if (!stationId.IsValid())
@@ -171,6 +202,12 @@ modded class SCR_PlayerController
     void GBRS_RpcAsk_ForceIntelTx(RplId stationId)
     {
         Rpc(RpcAsk_GBRS_ForceIntelTx, stationId);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_RpcAsk_PpiSubscribe(RplId stationId, bool subscribe)
+    {
+        Rpc(RpcAsk_GBRS_PpiSubscribe, stationId, subscribe);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -293,6 +330,34 @@ modded class SCR_PlayerController
     }
 
     //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Server)]
+    protected void RpcAsk_GBRS_PpiSubscribe(RplId stationId, bool subscribe)
+    {
+        GBRS_RadarStationComponent station = GBRS_PlayerControllerNet.ResolveStation(stationId);
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        int playerId = GetPlayerId();
+        if (subscribe)
+        {
+            if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+                return;
+
+            if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
+                return;
+
+            station.AuthoritySubscribePpi(playerId);
+            return;
+        }
+
+        station.AuthorityUnsubscribePpi(playerId);
+    }
+
+    //------------------------------------------------------------------------------------------------
     void GBRS_NotifyIntelTxResult(bool sent)
     {
         if (GBRS_IsLocalPlayerController())
@@ -387,6 +452,42 @@ modded class SCR_PlayerController
 
         GBRS_ShowIntelAlert(
             title, subtitle, true, voiceKind, gridPacked, paramA, paramB, quality, factionKey, interrupt);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_NotifyPpiSnapshot(
+        RplId stationId,
+        vector origin,
+        float scanAzDeg,
+        float rangeM,
+        string eccm,
+        array<int> packedInts,
+        array<float> packedFloats)
+    {
+        if (GBRS_IsLocalPlayerController())
+        {
+            RpcDo_GBRS_PpiSnapshot(
+                stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+            return;
+        }
+
+        Rpc(RpcDo_GBRS_PpiSnapshot,
+            stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Unreliable, RplRcver.Owner)]
+    protected void RpcDo_GBRS_PpiSnapshot(
+        RplId stationId,
+        vector origin,
+        float scanAzDeg,
+        float rangeM,
+        string eccm,
+        array<int> packedInts,
+        array<float> packedFloats)
+    {
+        GBRS_RadarStationMenu.ApplyReplicatedSnapshot(
+            stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
     }
 
     //------------------------------------------------------------------------------------------------

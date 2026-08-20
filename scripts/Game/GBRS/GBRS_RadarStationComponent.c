@@ -163,6 +163,11 @@ class GBRS_RadarStationComponent : ScriptComponent
     // Fused-track seen map (fused id -> last seen s) for one-shot net alerts.
     protected ref map<int, float> m_NetworkContactSeen;
 
+    // PPI subscribe stream: authority scans, then pushes plots/tracks to
+    // operators who opened the workstation. Proxies never run RDF ScanOnce.
+    protected ref array<int> m_PpiSubscriberPlayerIds;
+    protected float m_fNextPpiSnapshotS;
+
     override void OnPostInit(IEntity owner)
     {
         SetEventMask(owner, EntityEvent.INIT | EntityEvent.FRAME);
@@ -189,6 +194,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_WlrFiredTrackIds = new map<int, bool>();
         if (!m_NetworkContactSeen)
             m_NetworkContactSeen = new map<int, float>();
+        if (!m_PpiSubscriberPlayerIds)
+            m_PpiSubscriberPlayerIds = new array<int>();
         BindDamageManager(owner);
         BindBuildingCompositionGate(owner);
         if (IsCompositionReady())
@@ -227,13 +234,21 @@ class GBRS_RadarStationComponent : ScriptComponent
         SyncRadarBindToAntenna(owner);
         SyncAntennaBoneSpin(owner);
         SyncEntityYawAntenna(owner);
-        TickScattererRegistry(owner);
         RenderScanVisuals(owner);
+
+        if (!IsAuthority())
+        {
+            SuppressProxyScan();
+            return;
+        }
+
+        TickScattererRegistry(owner);
         UpdateContactEvents(owner);
         PublishDatalink(owner);
         UpdateNetworkContactEvents(owner);
         UpdateWlrEvents(owner);
         DebugScanTick(owner);
+        TickPpiSnapshot(owner);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -903,6 +918,248 @@ class GBRS_RadarStationComponent : ScriptComponent
     }
 
     //------------------------------------------------------------------------------------------------
+    //! Workstation opened: this player should receive the PPI plot/track stream.
+    void AuthoritySubscribePpi(int playerId)
+    {
+        if (!IsAuthority())
+            return;
+        if (playerId < 0)
+            return;
+        if (!m_bPowered)
+            return;
+        if (IsDestroyed())
+            return;
+
+        if (!m_PpiSubscriberPlayerIds)
+            m_PpiSubscriberPlayerIds = new array<int>();
+
+        if (m_PpiSubscriberPlayerIds.Find(playerId) < 0)
+            m_PpiSubscriberPlayerIds.Insert(playerId);
+
+        SendPpiSnapshotToPlayer(playerId);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void AuthorityUnsubscribePpi(int playerId)
+    {
+        if (!IsAuthority())
+            return;
+        if (!m_PpiSubscriberPlayerIds)
+            return;
+
+        int idx = m_PpiSubscriberPlayerIds.Find(playerId);
+        if (idx >= 0)
+            m_PpiSubscriberPlayerIds.Remove(idx);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void ClearPpiSubscribers()
+    {
+        if (m_PpiSubscriberPlayerIds)
+            m_PpiSubscriberPlayerIds.Clear();
+        m_fNextPpiSnapshotS = 0.0;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Proxies keep antenna visuals and mode settings, but must not ScanOnce.
+    protected void SuppressProxyScan()
+    {
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (sensor)
+            sensor.SetForceLocalScan(false);
+        if (m_Radar.IsEnabled())
+            m_Radar.SetEnabled(false);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! RDF runs only on the machine that owns the simulation.
+    protected void ApplySensorScanAuthority()
+    {
+        if (!m_Radar)
+            return;
+
+        bool runScan = false;
+        if (IsAuthority() && m_bPowered)
+        {
+            if (!IsDestroyed())
+                runScan = true;
+        }
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (sensor)
+            sensor.SetForceLocalScan(runScan);
+        m_Radar.SetEnabled(runScan);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void TickPpiSnapshot(IEntity owner)
+    {
+        if (!owner)
+            return;
+        if (!m_PpiSubscriberPlayerIds)
+            return;
+        if (m_PpiSubscriberPlayerIds.Count() < 1)
+            return;
+
+        float nowS = System.GetTickCount() * 0.001;
+        if (nowS < m_fNextPpiSnapshotS)
+            return;
+        m_fNextPpiSnapshotS = nowS + GBRS_RadarStationConstants.PPI_SNAPSHOT_INTERVAL_S;
+
+        PrunePpiSubscribers();
+        if (m_PpiSubscriberPlayerIds.Count() < 1)
+            return;
+
+        array<int> packedInts = new array<int>();
+        array<float> packedFloats = new array<float>();
+        vector origin;
+        float scanAzDeg;
+        float rangeM;
+        string eccm;
+        BuildPpiSnapshot(origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+
+        int i = 0;
+        while (i < m_PpiSubscriberPlayerIds.Count())
+        {
+            DispatchPpiSnapshot(
+                m_PpiSubscriberPlayerIds.Get(i),
+                origin,
+                scanAzDeg,
+                rangeM,
+                eccm,
+                packedInts,
+                packedFloats);
+            i = i + 1;
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void SendPpiSnapshotToPlayer(int playerId)
+    {
+        array<int> packedInts = new array<int>();
+        array<float> packedFloats = new array<float>();
+        vector origin;
+        float scanAzDeg;
+        float rangeM;
+        string eccm;
+        BuildPpiSnapshot(origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+        DispatchPpiSnapshot(playerId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void BuildPpiSnapshot(
+        out vector origin,
+        out float scanAzDeg,
+        out float rangeM,
+        out string eccm,
+        notnull array<int> packedInts,
+        notnull array<float> packedFloats)
+    {
+        origin = GetScanOriginWorld();
+        scanAzDeg = GetLiveScanAngleDeg();
+        rangeM = 2000.0;
+        eccm = "";
+
+        RDF_RadarSensor sensor = null;
+        RDF_RadarSettings settings = null;
+        RDF_RadarProjectileTracker tracker = null;
+        array<ref RDF_RadarTarget> plots = null;
+        if (m_Radar)
+            sensor = m_Radar.GetSensor();
+        if (sensor)
+        {
+            settings = sensor.GetSettings();
+            plots = sensor.GetPlots();
+            tracker = sensor.GetTracker();
+            eccm = sensor.GetEccmStatusShort();
+        }
+        if (settings && settings.m_Range > 0.0)
+            rangeM = settings.m_Range;
+        if (sensor)
+        {
+            RDF_RadarScanContext ctx = sensor.GetScanContext();
+            if (ctx)
+            {
+                if (ctx.m_Origin.LengthSq() > 0.0001)
+                    origin = ctx.m_Origin;
+                if (ctx.m_RangeM > 0.0)
+                    rangeM = ctx.m_RangeM;
+            }
+        }
+
+        array<ref RDF_RadarFusedTrack> fused = null;
+        RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();
+        if (hub && hub.IsEnabled())
+            fused = hub.GetFusedTracks();
+
+        int netOnline = GetOnlineDatalinkStationCount();
+        GBRS_PpiSnapshot.Pack(
+            plots,
+            settings,
+            tracker,
+            fused,
+            netOnline,
+            packedInts,
+            packedFloats);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void DispatchPpiSnapshot(
+        int playerId,
+        vector origin,
+        float scanAzDeg,
+        float rangeM,
+        string eccm,
+        notnull array<int> packedInts,
+        notnull array<float> packedFloats)
+    {
+        PlayerManager playerManager = GetGame().GetPlayerManager();
+        if (!playerManager)
+            return;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(playerManager.GetPlayerController(playerId));
+        if (!playerController)
+            return;
+
+        playerController.GBRS_NotifyPpiSnapshot(
+            GetStationRplId(),
+            origin,
+            scanAzDeg,
+            rangeM,
+            eccm,
+            packedInts,
+            packedFloats);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void PrunePpiSubscribers()
+    {
+        if (!m_PpiSubscriberPlayerIds)
+            return;
+
+        PlayerManager playerManager = GetGame().GetPlayerManager();
+        int i = m_PpiSubscriberPlayerIds.Count() - 1;
+        while (i >= 0)
+        {
+            int playerId = m_PpiSubscriberPlayerIds.Get(i);
+            bool keep = false;
+            if (playerManager)
+            {
+                PlayerController controller = playerManager.GetPlayerController(playerId);
+                if (controller)
+                    keep = true;
+            }
+            if (!keep)
+                m_PpiSubscriberPlayerIds.Remove(i);
+            i = i - 1;
+        }
+    }
+
+    //------------------------------------------------------------------------------------------------
     //! Operator TX NET. Authority-only. Interrupts the current intel VO.
     bool AuthorityForceIntelTx()
     {
@@ -1440,11 +1697,7 @@ class GBRS_RadarStationComponent : ScriptComponent
                 m_WorkstationMode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
             m_bPowered = true;
             ApplyWorkstationModeLocal(m_WorkstationMode);
-
-            RDF_RadarSensor poweredSensor = m_Radar.GetSensor();
-            if (poweredSensor)
-                poweredSensor.SetForceLocalScan(true);
-            m_Radar.SetEnabled(true);
+            ApplySensorScanAuthority();
             EnsureAntennaResolved();
             SetAntennaSpinning(true);
             SetTraceIgnoreActive(true);
@@ -1470,6 +1723,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         SetTraceIgnoreActive(false);
         StopSupplyDrain();
         ClearContactEvents();
+        ClearPpiSubscribers();
         GBRS_RadarStationMenu.CloseIfBound(this);
         SyncIntelRadio(false);
     }
@@ -1588,9 +1842,12 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         if (m_bDebugLog)
         {
+            string forceLocal = "0";
+            if (IsAuthority())
+                forceLocal = "1";
             Print("[GBRS-DEBUG] Configured faction=" + ((int)m_eFactionPreset).ToString()
                 + " rpm=" + m_fScanRpm.ToString()
-                + " forceLocal=1 powered=" + BoolDebugFlag(m_bPowered), LogLevel.WARNING);
+                + " forceLocal=" + forceLocal + " powered=" + BoolDebugFlag(m_bPowered), LogLevel.WARNING);
         }
     }
 
@@ -1621,11 +1878,11 @@ class GBRS_RadarStationComponent : ScriptComponent
         // Configure replaces the stock ConfigureMode settings object.
         m_fProductUpdateIntervalS = settings.m_UpdateInterval;
         StampScanPhaseOnSettings(settings);
-        sensor.SetForceLocalScan(true);
         m_Radar.SetMode(ERDF_RadarSensorMode.RDF_RADAR_MODE_PULSE_DOPPLER);
         sensor.Configure(settings);
         sensor.ResetSession();
         m_Radar.SetEventMask(owner, EntityEvent.FRAME);
+        ApplySensorScanAuthority();
 
         RDF_RadarNetworkAPI networkApi =
             RDF_RadarNetworkAPI.Cast(owner.FindComponent(RDF_RadarNetworkAPI));
@@ -1815,11 +2072,11 @@ class GBRS_RadarStationComponent : ScriptComponent
         m_fAntennaFrozenAngleRad = currentAngleRad;
 
         StampScanPhaseOnSettings(settings);
-        sensor.SetForceLocalScan(true);
         m_Radar.SetMode(mode);
         sensor.Configure(settings);
         sensor.ResetSession();
         m_Radar.SetEventMask(owner, EntityEvent.FRAME);
+        ApplySensorScanAuthority();
 
         RDF_RadarNetworkAPI networkApi =
             RDF_RadarNetworkAPI.Cast(owner.FindComponent(RDF_RadarNetworkAPI));
@@ -3708,6 +3965,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected void ShutdownRadar()
     {
         ClearContactEvents();
+        ClearPpiSubscribers();
         m_bLockLayerEnabled = false;
         if (m_Radar)
             m_Radar.SetEnabled(false);

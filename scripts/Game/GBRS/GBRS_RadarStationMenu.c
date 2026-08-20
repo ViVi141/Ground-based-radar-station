@@ -79,6 +79,16 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected float m_fLastIntelTxS;
 	// 0 = follow RF max until the operator zooms the PPI.
 	protected float m_PpiViewRangeM;
+	protected bool m_bHasPpiSnapshot;
+	protected vector m_PpiSnapOrigin;
+	protected float m_PpiSnapScanAzDeg;
+	protected float m_PpiSnapRangeM;
+	protected string m_PpiSnapEccm;
+	protected int m_PpiSnapDetectedTotal;
+	protected int m_PpiSnapNetOnline;
+	protected ref array<ref RDF_RadarTarget> m_PpiSnapPlots;
+	protected ref array<ref RDF_RadarTrack> m_PpiSnapTracks;
+	protected ref array<ref RDF_RadarFusedTrack> m_PpiSnapFused;
 	protected ref GBRS_PpiZoomWheelHandler m_PpiWheelHandler;
 	protected Widget m_wPpiWheelHost;
 
@@ -207,6 +217,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_ActiveMode = MODE_PD_SEARCH;
 		EnsurePersistBuffer();
 		ClearPersist();
+		ClearPpiSnapshot();
 		m_PpiViewRangeM = 0.0;
 
 		Widget root = GetRootWidget();
@@ -228,6 +239,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (m_ActiveMode == MODE_MANUAL)
 			RefreshManualParamList();
 
+		GBRS_PlayerControllerNet.RequestSubscribePpi(station);
 		StartFeed();
 		FeedOnce();
 	}
@@ -245,6 +257,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_iFocusedModeTab = 0;
 		EnsurePersistBuffer();
 		ClearPersist();
+		ClearPpiSnapshot();
 		m_PpiViewRangeM = 0.0;
 
 		Widget root = GetRootWidget();
@@ -262,17 +275,21 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	override void OnMenuClose()
 	{
+		GBRS_RadarStationComponent station = m_Station;
 		UnbindNavigation();
 		UnbindPpiZoomWheel();
 		StopDeviceListener();
 		StopFeed();
 		ClearPersist();
+		ClearPpiSnapshot();
 		m_bBound = false;
 		m_Station = null;
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
 		m_PpiViewRangeM = 0.0;
 		GBRS_RadarStationHud.Detach();
+		if (station)
+			GBRS_PlayerControllerNet.RequestUnsubscribePpi(station);
 		super.OnMenuClose();
 	}
 
@@ -1385,6 +1402,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		m_ActiveMode = liveMode;
 		ClearPersist();
+		ClearPpiSnapshot();
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
@@ -1415,13 +1433,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return false;
 
 		if (m_Station.IsDestroyedForPpi())
-			return false;
-
-		RDF_RadarComponent radar = m_Station.GetRadarComponent();
-		if (!radar)
-			return false;
-
-		if (!radar.IsEnabled())
 			return false;
 
 		return true;
@@ -1819,20 +1830,90 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	}
 
 	//------------------------------------------------------------------------------------------------
+	static void ApplyReplicatedSnapshot(
+		RplId stationId,
+		vector origin,
+		float scanAzDeg,
+		float rangeM,
+		string eccm,
+		array<int> packedInts,
+		array<float> packedFloats)
+	{
+		MenuManager menuManager = GetGame().GetMenuManager();
+		if (!menuManager)
+			return;
+
+		MenuBase existing = menuManager.FindMenuByPreset(ChimeraMenuPreset.GBRS_RadarStationMenu);
+		GBRS_RadarStationMenu menu = GBRS_RadarStationMenu.Cast(existing);
+		if (!menu)
+			return;
+
+		menu.StoreReplicatedSnapshot(
+			stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void StoreReplicatedSnapshot(
+		RplId stationId,
+		vector origin,
+		float scanAzDeg,
+		float rangeM,
+		string eccm,
+		array<int> packedInts,
+		array<float> packedFloats)
+	{
+		if (!m_bBound || !m_Station)
+			return;
+
+		if (m_Station.GetStationRplId() != stationId)
+			return;
+
+		array<ref RDF_RadarTarget> plots;
+		array<ref RDF_RadarTrack> tracks;
+		array<ref RDF_RadarFusedTrack> fused;
+		int detectedTotal;
+		int netOnline;
+		if (!GBRS_PpiSnapshot.Unpack(
+			packedInts, packedFloats, plots, tracks, fused, detectedTotal, netOnline))
+			return;
+
+		m_PpiSnapOrigin = origin;
+		m_PpiSnapScanAzDeg = scanAzDeg;
+		m_PpiSnapRangeM = rangeM;
+		m_PpiSnapEccm = eccm;
+		m_PpiSnapDetectedTotal = detectedTotal;
+		m_PpiSnapNetOnline = netOnline;
+		m_PpiSnapPlots = plots;
+		m_PpiSnapTracks = tracks;
+		m_PpiSnapFused = fused;
+		m_bHasPpiSnapshot = true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ClearPpiSnapshot()
+	{
+		m_bHasPpiSnapshot = false;
+		m_PpiSnapOrigin = "0 0 0";
+		m_PpiSnapScanAzDeg = 0.0;
+		m_PpiSnapRangeM = 0.0;
+		m_PpiSnapEccm = "";
+		m_PpiSnapDetectedTotal = 0;
+		m_PpiSnapNetOnline = 0;
+		if (m_PpiSnapPlots)
+			m_PpiSnapPlots.Clear();
+		if (m_PpiSnapTracks)
+			m_PpiSnapTracks.Clear();
+		if (m_PpiSnapFused)
+			m_PpiSnapFused.Clear();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	void FeedOnce()
 	{
 		if (!m_bBound)
 			return;
 
 		if (!m_Station)
-			return;
-
-		RDF_RadarComponent radar = m_Station.GetRadarComponent();
-		if (!radar)
-			return;
-
-		RDF_RadarSensor sensor = radar.GetSensor();
-		if (!sensor)
 			return;
 
 		if (!GBRS_RadarStationHud.IsVisible())
@@ -1843,31 +1924,36 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		vector hudOrigin = m_Station.GetScanOriginWorld();
 		vector hudForward = m_Station.GetScanForwardWorld();
-
-		RDF_RadarScanContext ctx = sensor.GetScanContext();
-		RDF_RadarSettings settings = sensor.GetSettings();
-
 		float rfRange = 2000.0;
-		if (settings)
-			rfRange = settings.m_Range;
+		string eccm = "";
+		array<ref RDF_RadarTarget> livePlots = null;
+		array<ref RDF_RadarTrack> replicatedTracks = null;
+		array<ref RDF_RadarFusedTrack> replicatedFused = null;
+		int netOnline = -1;
 
-		if (ctx)
+		if (m_bHasPpiSnapshot)
 		{
-			if (ctx.m_Origin.LengthSq() > 0.0001)
-				hudOrigin = ctx.m_Origin;
-			if (ctx.m_RangeM > 0.0)
-				rfRange = ctx.m_RangeM;
+			hudOrigin = m_PpiSnapOrigin;
+			float azRad = m_PpiSnapScanAzDeg * 0.017453292519943295;
+			hudForward = Vector(Math.Cos(azRad), 0.0, Math.Sin(azRad));
+			if (m_PpiSnapRangeM > 0.0)
+				rfRange = m_PpiSnapRangeM;
+			eccm = m_PpiSnapEccm;
+			livePlots = m_PpiSnapPlots;
+			replicatedTracks = m_PpiSnapTracks;
+			replicatedFused = m_PpiSnapFused;
+			netOnline = m_PpiSnapNetOnline;
 		}
 
 		float viewRange = ResolvePpiViewRange(rfRange);
 
-		IngestLivePlots(sensor.GetPlots(), settings, nowS);
+		IngestLivePlots(livePlots, null, nowS);
 		CoastPersist(nowS);
 		PrunePersist(nowS, lifeS);
 
 		float clusterIntervalS = CLUSTER_INTERVAL_MS * 0.001;
 		bool needCluster = false;
-		if (m_DisplayPlots.Count() == 0)
+		if (!m_DisplayPlots || m_DisplayPlots.Count() == 0)
 			needCluster = true;
 		if ((nowS - m_LastClusterS) >= clusterIntervalS)
 			needCluster = true;
@@ -1878,17 +1964,23 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_LastClusterS = nowS;
 		}
 
+		int detectedTotal = m_DetectedInRange;
+		if (m_bHasPpiSnapshot)
+			detectedTotal = m_PpiSnapDetectedTotal;
+
 		GBRS_RadarStationHud.SetDisplayRange(viewRange);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
-		// RDF 1.0.0 ECCM decision status → PPI jam ring + list footer.
-		GBRS_RadarStationHud.SetEccmStatus(sensor.GetEccmStatusShort());
+		GBRS_RadarStationHud.SetEccmStatus(eccm);
 		GBRS_RadarStationHud.FeedScan(
 			m_DisplayPlots,
 			hudOrigin,
 			hudForward,
 			viewRange,
-			sensor.GetTracker(),
-			m_DetectedInRange,
-			sensor.GetLockManager());
+			null,
+			detectedTotal,
+			null,
+			replicatedTracks,
+			replicatedFused,
+			netOnline);
 	}
 }

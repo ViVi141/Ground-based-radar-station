@@ -150,6 +150,8 @@ class GBRS_RadarStationHud
     protected ref SharedItemRef m_PpiFaceTex;
     protected ref array<ref GBRS_WlrPersistDisplay> m_WlrPersist;
     protected ref array<ref RDF_RadarTrack> m_CachedDisplayTracks;
+    protected ref array<ref RDF_RadarFusedTrack> m_ReplicatedFused;
+    protected int m_ReplicatedNetOnline = -1;
 
     static GBRS_RadarStationHud GetInstance()
     {
@@ -347,9 +349,22 @@ class GBRS_RadarStationHud
         float range,
         RDF_RadarProjectileTracker tracker,
         int detectedTotal,
-        RDF_RadarLockManager lockMgr)
+        RDF_RadarLockManager lockMgr,
+        array<ref RDF_RadarTrack> replicatedTracks,
+        array<ref RDF_RadarFusedTrack> replicatedFused,
+        int replicatedNetOnline)
     {
-        GetInstance().Update(targets, origin, forward, range, tracker, detectedTotal, lockMgr);
+        GetInstance().Update(
+            targets,
+            origin,
+            forward,
+            range,
+            tracker,
+            detectedTotal,
+            lockMgr,
+            replicatedTracks,
+            replicatedFused,
+            replicatedNetOnline);
     }
 
     protected void AttachInternal(Widget root, IEntity opticsParent)
@@ -412,6 +427,9 @@ class GBRS_RadarStationHud
         m_OpticsParent = null;
         if (m_WlrPersist)
             m_WlrPersist.Clear();
+        m_CachedDisplayTracks = null;
+        m_ReplicatedFused = null;
+        m_ReplicatedNetOnline = -1;
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
         GBRS_RadarWlrBallisticSolver.Clear();
@@ -749,7 +767,10 @@ class GBRS_RadarStationHud
         float range,
         RDF_RadarProjectileTracker tracker,
         int detectedTotal,
-        RDF_RadarLockManager lockMgr)
+        RDF_RadarLockManager lockMgr,
+        array<ref RDF_RadarTrack> replicatedTracks,
+        array<ref RDF_RadarFusedTrack> replicatedFused,
+        int replicatedNetOnline)
     {
         if (!m_wRoot)
             return;
@@ -761,6 +782,8 @@ class GBRS_RadarStationHud
             m_DetectedTotal = detectedTotal;
 
         m_LockManager = lockMgr;
+        m_ReplicatedFused = replicatedFused;
+        m_ReplicatedNetOnline = replicatedNetOnline;
 
         float now = System.GetTickCount() * 0.001;
         if (now - m_LastUpdateS < UPDATE_INTERVAL)
@@ -769,7 +792,10 @@ class GBRS_RadarStationHud
 
         // One clustered track pass per HUD tick. PPI, AZ/EL, list, and WLR
         // persist used to each walk GetAllTracks independently.
-        m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
+        if (replicatedTracks)
+            m_CachedDisplayTracks = replicatedTracks;
+        else
+            m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
 
         // Keep the station panel centered/covering the screen: the layout root is
         // authored at 1920x1080 absolute and MenuManager may re-place it, so
@@ -1020,10 +1046,13 @@ class GBRS_RadarStationHud
             return;
 
         RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();
-        if (!hub || !hub.IsEnabled())
-            return;
-
-        array<ref RDF_RadarFusedTrack> fused = hub.GetFusedTracks();
+        array<ref RDF_RadarFusedTrack> fused = m_ReplicatedFused;
+        if (!fused)
+        {
+            if (!hub || !hub.IsEnabled())
+                return;
+            fused = hub.GetFusedTracks();
+        }
         if (!fused || fused.Count() < 1)
             return;
 
@@ -1130,7 +1159,9 @@ class GBRS_RadarStationHud
     // online net with no target does not read as off-line.
     protected string NetworkStatusString()
     {
-        int online = GBRS_RadarStationComponent.GetOnlineDatalinkStationCount();
+        int online = m_ReplicatedNetOnline;
+        if (online < 0)
+            online = GBRS_RadarStationComponent.GetOnlineDatalinkStationCount();
 
         bool anyFused = (s_NetFusedCount > 0 || s_NetOutRangeCount > 0);
         if (online <= 0 && !anyFused)
@@ -1659,6 +1690,8 @@ class GBRS_RadarStationHud
                     RDF_RadarWlrFix fix = null;
                     if (sol)
                         fix = sol.m_Fix;
+                    if (!fix)
+                        fix = tr.m_LastWlrFix;
                     if (!fix)
                         continue;
                     if (!fix.m_LaunchValid && !fix.m_ImpactValid)
