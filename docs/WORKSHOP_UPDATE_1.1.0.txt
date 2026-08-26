@@ -1,0 +1,85 @@
+# Workshop / 工坊更新说明 — GBRS 1.1.0
+
+> 可直接粘贴到 Arma Reforger / Steam 工坊「更新说明」。英文版见下方。
+
+---
+
+## 中文（短）
+
+**Ground-based radar station 1.1.0**（需 **RDF ≥ 1.1.6**）
+
+- 对齐 RDF 1.1.6：美军/苏军 PD MTI 标定钉死，苏军不再误套美军 HwCalib
+- 工作台：OPTICS 可选光学画面；约 60 Hz 刷新；修复 PPI 错误锁死 2 km
+- WLR：收紧关联门 + JPDA，减轻连发粘轨；改善倒飞箭头与离谱落点显示
+- Demo：炮弹只在干地发射，方位错开
+
+---
+
+## English (short)
+
+**Ground-based radar station 1.1.0** (requires **RDF ≥ 1.1.6**)
+
+- RDF 1.1.6 alignment: pinned US/USSR PD MTI floors; USSR VHF never loads SHORAD HwCalib
+- Workstation: optional OPTICS PIP; ~60 Hz redraw; fix PPI wrongly locking to 2 km
+- WLR: tighter gates + JPDA (less barrage track glue); saner LCH/IMP and shell headings
+- Demo: dry-land mortar pads and staggered fire azimuths
+
+---
+
+## 中文（完整）
+
+### 依赖
+
+本模组 **1.1.0** 需要 **Radar Development Framework ≥ 1.1.6**。请先订阅并启用 RDF，再加载 GBRS。
+
+### 探测 / 射频
+
+- 美军空搜与苏军 VHF 预警的 MTI 杂波底被作者值钉死，不再被 RDF Suggest/Derive 在无 profile 时冲掉。
+- 苏军站不会再错误加载美军 SHORAD 硬件标定。
+
+### 工作台
+
+- 顶栏 **OPTICS**：默认关闭光学 PIP，需要时再开（减轻性能占用，并避免左侧 Az/El 图被拉伸）。
+- 画面刷新约 60 Hz；扫描线跟随真实天线指向。
+- **重要修复**：打开工作台后 PPI 显示距离不再错误卡在 2 km；默认跟射频量程（美 7 km / 苏 10 km 等），滚轮或 ↑↓ 缩放后才会锁定。
+
+### 反炮兵 WLR
+
+- 收紧航迹关联门并开启 JPDA，减轻「同一走廊连发炮弹粘成一条轨」导致的速度/弹道发飘。
+- 发射点 / 落点显示会过滤离谱解；方向反了会自动对调后再画。
+- 炮弹箭头优先沿发射→落点或真实位置弦，减少「倒着飞」观感。
+
+### 已知说明
+
+- WLR 日志里的 `trackVr` 为径向速度：负值通常表示弹丸在**远离**雷达，不等于倒飞。
+- LOCK / MANUAL 工作台页仍预留未开放。
+
+---
+
+## English (full)
+
+### Dependency
+
+GBRS **1.1.0** requires **Radar Development Framework ≥ 1.1.6**. Subscribe RDF first.
+
+### RF
+
+- Pinned US / USSR PD MTI floors so missing HwCalib no longer overwrites author values via Suggest/Derive.
+- USSR VHF path never applies the US SHORAD hardware calibration profile.
+
+### Workstation
+
+- **OPTICS** toggle: optical PIP off by default.
+- ~60 Hz UI; sweep needle tracks the live antenna.
+- **Fix**: PPI range no longer locks to 2 km on open; follows RF max until you zoom.
+
+### WLR
+
+- Tighter association gates + JPDA for multi-shell barrages on one corridor.
+- Launch/impact display sanitizes bad arcs and can swap reversed ends.
+- Shell headings prefer LCH→IMP or position chord (not LOS×radial alone).
+
+### Notes
+
+- Demo `trackVr` is radial rate (negative ≈ outbound), not “flying backwards.”
+- LOCK / MANUAL tabs remain reserved.

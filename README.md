@@ -125,7 +125,8 @@ GBRS_RadarStationDemo.Stop();
 
 ## 文档
 
-- `docs/CHANGELOG.md` — 版本发布说明
+- `docs/CHANGELOG.md` — 版本发布说明（中英）
+- `docs/WORKSHOP_UPDATE_1.1.0.txt` — 工坊更新说明（可粘贴）
 - `docs/CURRENT_PROGRESS.md` — 施工垫 / 放置相关笔记
 - `tools/PD_VALIDATION.md`、`tools/WLR_VALIDATION.md` — 离线探测标定
 - `tools/WLR_TRACKER_VALIDATION.md` — WLR 轨道碎片化 / PPI 杂乱离线验证
