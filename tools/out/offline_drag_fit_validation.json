@@ -10,11 +10,11 @@
       "densified": false,
       "impact_err_m_median": {
         "vacuum_fit": 338.6,
-        "full_drag_fit": 7.4
+        "full_drag_fit": 69.7
       },
       "launch_err_m_median": {
         "vacuum_fit": 159.5,
-        "full_drag_fit": 2.8
+        "full_drag_fit": 39.5
       },
       "drag_fit_acceptance": [
         1.0,
@@ -30,11 +30,11 @@
       "densified": false,
       "impact_err_m_median": {
         "vacuum_fit": 351.2,
-        "full_drag_fit": 7.4
+        "full_drag_fit": 62.1
       },
       "launch_err_m_median": {
         "vacuum_fit": 199.7,
-        "full_drag_fit": 3.6
+        "full_drag_fit": 53.9
       },
       "drag_fit_acceptance": [
         1.0,
@@ -50,11 +50,11 @@
       "densified": false,
       "impact_err_m_median": {
         "vacuum_fit": 338.6,
-        "full_drag_fit": 7.4
+        "full_drag_fit": 69.7
       },
       "launch_err_m_median": {
         "vacuum_fit": 159.5,
-        "full_drag_fit": 2.8
+        "full_drag_fit": 39.5
       },
       "drag_fit_acceptance": [
         1.0,
@@ -70,11 +70,11 @@
       "densified": false,
       "impact_err_m_median": {
         "vacuum_fit": 288.9,
-        "full_drag_fit": 7.7
+        "full_drag_fit": 57.3
       },
       "launch_err_m_median": {
         "vacuum_fit": 122.1,
-        "full_drag_fit": 2.4
+        "full_drag_fit": 27.2
       },
       "drag_fit_acceptance": [
         1.0,
@@ -90,11 +90,11 @@
       "densified": false,
       "impact_err_m_median": {
         "vacuum_fit": 345.4,
-        "full_drag_fit": 11.0
+        "full_drag_fit": 69.7
       },
       "launch_err_m_median": {
         "vacuum_fit": 147.6,
-        "full_drag_fit": 4.2
+        "full_drag_fit": 39.8
       },
       "drag_fit_acceptance": [
         1.0,
@@ -110,11 +110,11 @@
       "densified": true,
       "impact_err_m_median": {
         "vacuum_fit": 344.1,
-        "full_drag_fit": 7.3
+        "full_drag_fit": 71.3
       },
       "launch_err_m_median": {
         "vacuum_fit": 157.9,
-        "full_drag_fit": 2.7
+        "full_drag_fit": 37.5
       },
       "drag_fit_acceptance": [
         1.0,
@@ -130,11 +130,11 @@
       "densified": true,
       "impact_err_m_median": {
         "vacuum_fit": 351.0,
-        "full_drag_fit": 11.0
+        "full_drag_fit": 71.4
       },
       "launch_err_m_median": {
         "vacuum_fit": 146.2,
-        "full_drag_fit": 4.0
+        "full_drag_fit": 37.8
       },
       "drag_fit_acceptance": [
         1.0,
@@ -150,11 +150,11 @@
       "densified": false,
       "impact_err_m_median": {
         "vacuum_fit": 351.2,
-        "full_drag_fit": 7.4
+        "full_drag_fit": 62.1
       },
       "launch_err_m_median": {
         "vacuum_fit": 199.7,
-        "full_drag_fit": 3.6
+        "full_drag_fit": 53.9
       },
       "drag_fit_acceptance": [
         1.0,

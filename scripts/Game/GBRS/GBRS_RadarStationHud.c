@@ -39,9 +39,9 @@ class GBRS_RadarStationHud
     static const float OPTICS_FORWARD_CLEAR_M = 2.5;
     // Fixed upward look bias for PIP clearance — not antenna elevation.
     static const float OPTICS_LOOK_UP_Y = 0.08;
-    // Match workstation feed (~30 Hz); optics RT can run faster.
-    static const float UPDATE_INTERVAL = 0.05;
-    static const int OPTICS_MAX_FPS = 45;
+    // Workstation UI redraw at 60 Hz (menu feed matches).
+    static const float UPDATE_INTERVAL = 0.0166667;
+    static const int OPTICS_MAX_FPS = 60;
     // PIP cameras often start underexposed; sync main HDR then lift slightly.
     static const float OPTICS_HDR_BOOST = 1.35;
 
@@ -123,11 +123,42 @@ class GBRS_RadarStationHud
         return s_NetworkOverlay;
     }
 
+    // Optical sight PIP is opt-in (costly RT). Default off until the operator
+    // toggles OPTICS on the mode bar.
+    static void SetOpticsEnabled(bool enabled)
+    {
+        GetInstance().SetOpticsEnabledInternal(enabled);
+    }
+
+    static bool IsOpticsEnabled()
+    {
+        return GetInstance().m_bOpticsEnabled;
+    }
+
+    static bool ToggleOpticsEnabled()
+    {
+        GBRS_RadarStationHud inst = GetInstance();
+        bool next = true;
+        if (inst.m_bOpticsEnabled)
+            next = false;
+        inst.SetOpticsEnabledInternal(next);
+        return inst.m_bOpticsEnabled;
+    }
+
+    static void SetTrackCoastAnchor(float wallTimeS)
+    {
+        GetInstance().m_TrackCoastAnchorS = wallTimeS;
+    }
+
     protected Widget m_wRoot;
     protected ref GBRS_RadarStationHudWidgets m_Widgets;
 
     protected SCR_PIPCamera m_OpticsCamera;
     protected IEntity m_OpticsParent;
+    protected bool m_bOpticsEnabled;
+    // Wall-clock when the last PPI track snap arrived; used to coast symbols
+    // between ~30 Hz snaps at the 60 Hz UI rate.
+    protected float m_TrackCoastAnchorS;
     protected float m_DisplayRange = 7000.0;
     protected float m_LastUpdateS;
     protected string m_Mode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
@@ -230,9 +261,8 @@ class GBRS_RadarStationHud
             showTable = false;
         inst.SetContactsTableVisible(showTable);
 
-        // Keep the external optics PIP in every workstation mode (incl. WLR) so
-        // the optical sight does not go dark when the radar station is open.
-        if (inst.m_OpticsParent && !inst.m_OpticsCamera)
+        // Optics PIP is opt-in via OPTICS mode-bar button (see SetOpticsEnabled).
+        if (inst.m_bOpticsEnabled && inst.m_OpticsParent && !inst.m_OpticsCamera)
             inst.CreateOpticsCamera(inst.m_OpticsParent);
     }
 
@@ -379,8 +409,7 @@ class GBRS_RadarStationHud
         if (m_wRoot == root)
         {
             m_OpticsParent = opticsParent;
-            if (!m_OpticsCamera)
-                CreateOpticsCamera(opticsParent);
+            ApplyOpticsVisibility();
             return;
         }
 
@@ -411,7 +440,10 @@ class GBRS_RadarStationHud
             m_Widgets.m_wPpiMode.SetText(m_Mode);
 
         m_OpticsParent = opticsParent;
-        CreateOpticsCamera(opticsParent);
+        // Default off: operator opts in with OPTICS. OpticsSlot stays sized so
+        // Az/El keeps its authored FillWeight (placeholder shown until enabled).
+        m_bOpticsEnabled = false;
+        ApplyOpticsVisibility();
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
         Print("[GBRS HUD] attached to menu root");
@@ -420,6 +452,7 @@ class GBRS_RadarStationHud
     protected void DetachInternal()
     {
         DestroyOpticsCamera();
+        m_bOpticsEnabled = false;
         m_wRoot = null;
         m_LockManager = null;
         if (m_Widgets)
@@ -436,6 +469,7 @@ class GBRS_RadarStationHud
         m_ReplicatedNetOnline = -1;
         m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
+        m_TrackCoastAnchorS = 0.0;
         GBRS_RadarWlrBallisticSolver.Clear();
     }
 
@@ -599,8 +633,58 @@ class GBRS_RadarStationHud
         }
     }
 
+    protected void SetOpticsEnabledInternal(bool enabled)
+    {
+        if (m_bOpticsEnabled == enabled)
+        {
+            ApplyOpticsVisibility();
+            return;
+        }
+
+        m_bOpticsEnabled = enabled;
+        ApplyOpticsVisibility();
+    }
+
+    // Show/hide the optical PIP inside a fixed OpticsSlot. Never collapse the
+    // slot — hiding it lets AzElSlot FillWeight swallow the left column and
+    // stretch the elevation-azimuth plot.
+    protected void ApplyOpticsVisibility()
+    {
+        if (m_Widgets)
+        {
+            if (m_Widgets.m_wOpticsSlot)
+                m_Widgets.m_wOpticsSlot.SetVisible(true);
+
+            if (m_Widgets.m_wOpticsRT)
+                m_Widgets.m_wOpticsRT.SetVisible(m_bOpticsEnabled);
+
+            if (m_Widgets.m_wOpticsPlaceholder)
+                m_Widgets.m_wOpticsPlaceholder.SetVisible(!m_bOpticsEnabled);
+
+            if (m_Widgets.m_wOpticsInfo)
+            {
+                if (m_bOpticsEnabled)
+                    m_Widgets.m_wOpticsInfo.SetText("AZ --  EL FIXED");
+                else
+                    m_Widgets.m_wOpticsInfo.SetText("OFF");
+            }
+        }
+
+        if (!m_bOpticsEnabled)
+        {
+            DestroyOpticsCamera();
+            return;
+        }
+
+        if (m_OpticsParent && !m_OpticsCamera)
+            CreateOpticsCamera(m_OpticsParent);
+    }
+
     protected void CreateOpticsCamera(IEntity parent)
     {
+        if (!m_bOpticsEnabled)
+            return;
+
         if (!parent)
             return;
 
@@ -807,7 +891,8 @@ class GBRS_RadarStationHud
         SyncPpiSquare();
         SyncAzElSize();
 
-        UpdateOpticsCamera(origin, forward);
+        if (m_bOpticsEnabled)
+            UpdateOpticsCamera(origin, forward);
         if (m_Mode == MODE_WLR)
         {
             if (!replicatedWlr)
@@ -1242,7 +1327,8 @@ class GBRS_RadarStationHud
 
             float bx;
             float by;
-            if (!WorldToPpi(origin, tr.m_FilteredPosition, bx, by))
+            vector drawPos = CoastTrackWorldPos(tr);
+            if (!WorldToPpi(origin, drawPos, bx, by))
                 continue;
 
             int color = TrackColor(tr);
@@ -1274,14 +1360,14 @@ class GBRS_RadarStationHud
             // operator can see where an interference source is.
             if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
             {
-                DrawPpiAlertRing(origin, tr.m_FilteredPosition, WLR_ALERT_RADIUS_M * 1.2, COL_EMITTER);
-                DrawPpiLabel(bx, by, "JAM " + GetPpiMapLabel(tr.m_FilteredPosition), COL_EMITTER);
+                DrawPpiAlertRing(origin, drawPos, WLR_ALERT_RADIUS_M * 1.2, COL_EMITTER);
+                DrawPpiLabel(bx, by, "JAM " + GetPpiMapLabel(drawPos), COL_EMITTER);
                 drawn = drawn + 1;
                 continue;
             }
 
             // TWS tracks show map-grid coordinates directly on the PPI.
-            DrawPpiLabel(bx, by, GetPpiMapLabel(tr.m_FilteredPosition), COL_TRACK_LABEL);
+            DrawPpiLabel(bx, by, GetPpiMapLabel(drawPos), COL_TRACK_LABEL);
 
             drawn = drawn + 1;
         }
@@ -1296,6 +1382,27 @@ class GBRS_RadarStationHud
 
         m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
         return m_CachedDisplayTracks;
+    }
+
+    // Soft-coast track symbols between PPI snaps so 60 Hz redraw does not
+    // hold a frozen blip until the next authority pack arrives.
+    protected vector CoastTrackWorldPos(RDF_RadarTrack tr)
+    {
+        if (!tr)
+            return "0 0 0";
+
+        vector pos = tr.m_FilteredPosition;
+        if (m_TrackCoastAnchorS <= 0.0)
+            return pos;
+
+        float nowS = System.GetTickCount() * 0.001;
+        float dt = nowS - m_TrackCoastAnchorS;
+        if (dt <= 0.0)
+            return pos;
+        if (dt > 0.25)
+            return pos;
+
+        return pos + (tr.m_FilteredVelocity * dt);
     }
 
     protected array<ref RDF_RadarTrack> CollectDisplayTracks(

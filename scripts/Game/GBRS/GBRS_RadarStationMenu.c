@@ -28,7 +28,7 @@ class GBRS_PpiZoomWheelHandler : ScriptedWidgetEventHandler
 
 class GBRS_RadarStationMenu : ChimeraMenuBase
 {
-	protected static const int FEED_INTERVAL_MS = 50;
+	protected static const int FEED_INTERVAL_MS = 16;
 	protected static const int CLUSTER_INTERVAL_MS = 100;
 	protected static const int PERSIST_MAX_BLIPS = 512;
 	protected static const int DISPLAY_MAX_BLIPS = 64;
@@ -346,6 +346,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				invIntel.Insert(OnIntelTxBtn);
 			widgets.m_wIntelTxBtn.SetColor(Color.FromRGBA(90, 255, 160, 255));
 		}
+
+		if (widgets.m_wOpticsToggleBtn)
+		{
+			MuteWLibSounds(widgets.m_wOpticsToggleBtn);
+			ScriptInvoker invOptics = ButtonActionComponent.GetOnAction(widgets.m_wOpticsToggleBtn, true);
+			if (invOptics)
+				invOptics.Insert(OnOpticsToggleBtn);
+			UpdateOpticsToggleVisual();
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -587,6 +596,29 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		m_fLastIntelTxS = nowS;
 		GBRS_PlayerControllerNet.RequestForceIntelTx(m_Station);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void OnOpticsToggleBtn(Widget w, float value, EActionTrigger reason)
+	{
+		GBRS_RadarStationHud.ToggleOpticsEnabled();
+		UpdateOpticsToggleVisual();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void UpdateOpticsToggleVisual()
+	{
+		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
+		if (!widgets)
+			return;
+		if (!widgets.m_wOpticsToggleBtn)
+			return;
+
+		bool on = GBRS_RadarStationHud.IsOpticsEnabled();
+		if (on)
+			widgets.m_wOpticsToggleBtn.SetColor(Color.FromRGBA(80, 210, 255, 255));
+		else
+			widgets.m_wOpticsToggleBtn.SetColor(Color.FromRGBA(58, 78, 74, 150));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1890,6 +1922,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_PpiSnapFused = fused;
 		m_PpiSnapWlr = wlr;
 		m_bHasPpiSnapshot = true;
+		GBRS_RadarStationHud.SetTrackCoastAnchor(System.GetTickCount() * 0.001);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1925,6 +1958,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			GBRS_RadarStationHud.Attach(GetRootWidget(), m_Station.GetOwner());
 
 		vector hudOrigin = m_Station.GetScanOriginWorld();
+		// Sweep / wedge must track the live antenna every UI tick. Snapshot az
+		// only arrives at PPI_SNAPSHOT_INTERVAL and makes the beam stutter.
 		vector hudForward = m_Station.GetScanForwardWorld();
 		float rfRange = 2000.0;
 		string eccm = "";
@@ -1938,8 +1973,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (m_bHasPpiSnapshot)
 		{
 			hudOrigin = m_PpiSnapOrigin;
-			float azRad = m_PpiSnapScanAzDeg * 0.017453292519943295;
-			hudForward = Vector(Math.Cos(azRad), 0.0, Math.Sin(azRad));
 			if (m_PpiSnapRangeM > 0.0)
 				rfRange = m_PpiSnapRangeM;
 			eccm = m_PpiSnapEccm;

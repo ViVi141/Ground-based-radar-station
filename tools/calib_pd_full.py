@@ -30,8 +30,10 @@ def mtd_clutter_bin_gain(bin_index: int, floor: float, leak: float) -> float:
 
 
 def suggest_mti_floor(sigma_vr: float, wavelength: float, prf: float, order: int = 1) -> float:
+    # Match RDF_RadarHwCalib.SuggestMtiClutterFloor (RDF 1.1.6): residue ≈
+    # (2π·σ_f/PRF)^(2N). Missing 2π underestimates N=1 by ~40×.
     sigma_fd = 2.0 * max(0.05, sigma_vr) / wavelength
-    x = abs(sigma_fd / prf)
+    x = abs(2.0 * math.pi * sigma_fd / prf)
     residue = x ** (2 * order)
     return float(max(1e-6, min(0.5, residue)))
 

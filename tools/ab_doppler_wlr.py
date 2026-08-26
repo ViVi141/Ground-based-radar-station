@@ -137,8 +137,17 @@ def nelder_mead_cost(vel_init, drag_init, cost_fn, drag_lo, drag_hi, pert=5.0, i
         p[axis] += pert
         sim_vel.append(tuple(p)); sim_drag.append(drag_init)
         sim_cost.append(c(p, drag_init))
-    sim_vel.append(tuple(init)); sim_drag.append(drag_init)
-    sim_cost.append(c(init, drag_init))
+    # RDF 1.1.6: 5th vertex perturbs drag only (not a duplicate of vertex 0).
+    drag_span = drag_hi - drag_lo
+    if drag_span < 1.0e-6:
+        drag_span = max(1.0e-3, abs(drag_init) * 0.3)
+    dart = drag_init + 0.3 * drag_span
+    if dart > drag_hi:
+        dart = drag_hi
+    if dart < drag_lo:
+        dart = drag_lo
+    sim_vel.append(tuple(init)); sim_drag.append(dart)
+    sim_cost.append(c(init, dart))
 
     for _ in range(iters):
         worst = 0

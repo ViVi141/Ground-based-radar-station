@@ -150,6 +150,20 @@ FrameWidgetClass {
      {
      }
     }
+    ButtonWidgetClass "{69FCEDCEB00101C4}" : "{75C912A1C89BE6C2}UI/layouts/WidgetLibrary/Buttons/WLib_ButtonText.layout" {
+     Name "OpticsToggleBtn"
+     Slot LayoutSlot "{69FCEDCEB00101C5}" {
+      Padding 0 0 8 0
+      VerticalAlign 1
+     }
+     components {
+      SCR_ButtonTextComponent "{69FCEDCEB00101C6}" {
+       m_sText "OPTICS"
+      }
+     }
+     {
+     }
+    }
     HorizontalLayoutWidgetClass "{69FCEDCEB00101E0}" {
      Name "NavHints"
      Slot LayoutSlot "{69FCEDCEB00101E1}" {
@@ -1727,5 +1741,6 @@ FrameWidgetClass {
      }
     }
    }
+  }
  }
 }

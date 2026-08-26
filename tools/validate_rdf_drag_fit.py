@@ -53,18 +53,29 @@ def dragfit_resid(positions, times, anchor, vel, drag):
 
 
 def nelder_mead_drag(positions, times, anchor, vel_init, drag_lo, drag_hi, wind=None):
+    # Mirror RDF_RadarBallistics.NelderMeadDrag (RDF 1.1.6): 5th vertex must
+    # perturb ONLY the drag axis so the simplex spans drag (dart = dragInit
+    # duplicated vertex 0 and pinned drag to the prior).
     init = list(vel_init)
+    drag_init = 0.000615  # prefab prior (AIR_DRAG_SHELL_82MM_HE)
     simplex_vel = [tuple(init)]
-    simplex_drag = [0.000615]                       # init at prefab prior (true drag)
+    simplex_drag = [drag_init]
     simplex_cost = [dragfit_resid(positions,times,anchor,simplex_vel[0],simplex_drag[0])]
     pert = 5.0
     for axis in range(3):
         p = list(init)
         p[axis] += pert
-        d = 0.000615
+        d = drag_init
         simplex_vel.append(tuple(p)); simplex_drag.append(d)
         simplex_cost.append(dragfit_resid(positions,times,anchor,p,d))
-    dart = 0.000615
+    drag_span = drag_hi - drag_lo
+    if drag_span < 1.0e-6:
+        drag_span = max(1.0e-3, abs(drag_init) * 0.3)
+    dart = drag_init + 0.3 * drag_span
+    if dart > drag_hi:
+        dart = drag_hi
+    if dart < drag_lo:
+        dart = drag_lo
     simplex_vel.append(tuple(init)); simplex_drag.append(dart)
     simplex_cost.append(dragfit_resid(positions,times,anchor,init,dart))
 

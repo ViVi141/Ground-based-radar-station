@@ -111,7 +111,26 @@ class GBRS_RadarStationConfig
 
     // Re-stamp PD MTI after swapping Hardware (e.g. P-18 RF front-end).
     // Mirrors RDF_RadarSensor.CreatePulseDopplerSettings hardware block.
+    // US SHORAD: allow $profile HwCalib override; floors match HwCalib_US.json.
     static void ApplyPulseDopplerHardware(RDF_RadarHardware hw)
+    {
+        ApplyPulseDopplerHardwareEx(hw, true, 0.0001, 0.000000001);
+    }
+
+    // VHF EW: never load the SHORAD HwCalib profile; pin the P-18 bin-0 floor.
+    static void ApplyPulseDopplerHardwareVhf(RDF_RadarHardware hw)
+    {
+        ApplyPulseDopplerHardwareEx(hw, false, 0.01, 0.000000001);
+    }
+
+    // Author floors stay pinned. Derive is off so a missing HwCalib does not
+    // overwrite with SuggestMtiClutterFloor (RDF 1.1.6 restored the 2π factor
+    // and that fallback jumped ~40×). Profile load still overrides when on.
+    static void ApplyPulseDopplerHardwareEx(
+        RDF_RadarHardware hw,
+        bool loadHwCalibFromProfile,
+        float mtiClutterFloor,
+        float mtdClutterLeakage)
     {
         if (!hw)
             return;
@@ -119,11 +138,11 @@ class GBRS_RadarStationConfig
         hw.m_EnableMti = true;
         hw.m_MtiMode = ERDF_MtiMode.RDF_MTI_MTD_BANK;
         hw.m_DopplerBinCount = 16;
-        hw.m_MtiClutterFloor = 0.0001;
-        hw.m_MtdClutterLeakage = 0.000001;
+        hw.m_MtiClutterFloor = mtiClutterFloor;
+        hw.m_MtdClutterLeakage = mtdClutterLeakage;
         hw.m_ClutterSigmaVrMs = 0.5;
-        hw.m_DeriveMtdLeakageFromSigmaVr = true;
-        hw.m_LoadHwCalibFromProfile = true;
+        hw.m_DeriveMtdLeakageFromSigmaVr = false;
+        hw.m_LoadHwCalibFromProfile = loadHwCalibFromProfile;
         hw.m_PrfStaggerRatio = 1.2;
         hw.m_MtiStaggerDeblind = true;
         hw.m_CoherentIntegration = true;
@@ -476,10 +495,8 @@ class GBRS_RadarStationConfig
         hw.AddElevationBeam("low", 2.0, 16.0, 0.0);
         hw.AddElevationBeam("mid", 18.0, 24.0, 0.0);
         hw.AddElevationBeam("high", 42.0, 30.0, -1.0);
-        ApplyPulseDopplerHardware(hw);
-        // Do not load SHORAD profile HwCalib over VHF RF; keep P-18 bin-0 floor.
-        hw.m_LoadHwCalibFromProfile = false;
-        hw.m_MtiClutterFloor = 0.01;
+        // MTD_BANK + pinned VHF floor; never apply SHORAD HwCalib onto P-18 RF.
+        ApplyPulseDopplerHardwareVhf(hw);
         ApplySearchPulseBlindZone(hw, false);
         settings.m_Hardware = hw;
 
