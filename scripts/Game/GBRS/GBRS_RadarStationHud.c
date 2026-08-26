@@ -1105,7 +1105,21 @@ class GBRS_RadarStationHud
             float dirX;
             float dirZ;
             float speed;
-            TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
+            // Prefer the accepted launch→impact arc direction. FitVacuum /
+            // Doppler-radial headings reverse near CPA and with sparse hits.
+            if (persist && persist.m_HasLive && persist.m_HasLaunch && persist.m_HasImpact)
+            {
+                vector arcDir = persist.m_LiveVel;
+                dirX = arcDir[0];
+                dirZ = arcDir[2];
+                speed = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+                if (speed < 0.001)
+                    speed = 50.0;
+            }
+            else
+            {
+                TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
+            }
             if (speed >= 3.0)
             {
                 DrawPpiChevron(bx, by, dirX, dirZ, color);
@@ -1572,34 +1586,21 @@ class GBRS_RadarStationHud
         float vz = tr.m_FilteredVelocity[2];
         float vH = Math.Sqrt(vx * vx + vz * vz);
 
-        // Prefer a least-squares ballistic fit over the position history; a
-        // single-LOS Doppler velocity is radial-only and gives a badly wrong
-        // heading for a shell crossing/toward the radar. Low min-point/span so
-        // sparse sweep samples still trigger a fit. Only fall back when absent.
-        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 3)
+        // 1) Accepted / sanitized WLR launch→impact (stable course).
+        RDF_RadarWlrFix wlrFix = GBRS_RadarWlrBallisticSolver.SanitizeFixForDisplay(
+            tr.m_LastWlrFix, tr);
+        if (wlrFix)
         {
-            RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
-                tr.m_Positions,
-                tr.m_Times,
-                RDF_RadarBallistics.GRAVITY_M_S2,
-                3,
-                0.25,
-                250.0,
-                24);
-            if (fit && fit.m_Valid)
-            {
-                vector fv = fit.m_Velocity;
-                if (fv[0] * fv[0] + fv[2] * fv[2] >= 4.0)
-                {
-                    dirX = fv[0];
-                    dirZ = fv[2];
-                    speed = Math.Sqrt(fv[0] * fv[0] + fv[2] * fv[2]);
-                    return;
-                }
-            }
+            vector arc = wlrFix.m_ImpactPos - wlrFix.m_LaunchPos;
+            dirX = arc[0];
+            dirZ = arc[2];
+            speed = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+            if (speed >= 3.0)
+                return;
         }
 
-        // Otherwise trust the measured position chord (true motion).
+        // 2) Measured position chord — true ground track. Prefer this over a
+        // sparse FitVacuum (3 pts / 0.25 s), which often reverses near CPA.
         if (haveChord)
         {
             dirX = chordX;
@@ -1608,6 +1609,7 @@ class GBRS_RadarStationHud
             return;
         }
 
+        // 3) Filtered Cartesian velocity when it has a horizontal component.
         if (vH >= 3.0)
         {
             dirX = vx;
@@ -1615,6 +1617,11 @@ class GBRS_RadarStationHud
             speed = vH;
             return;
         }
+
+        // 4) Projectiles: never fall back to LOS*(-radial). That path is what
+        // painted "flying backwards" on crossing / inbound shells.
+        if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            return;
 
         float azRad = tr.m_FilteredAzimuthDeg * 0.017453292519943295;
         float rr = tr.m_FilteredRangeRateMs;
@@ -1795,49 +1802,52 @@ class GBRS_RadarStationHud
                     if (!tr)
                         continue;
 
+                    GBRS_WlrPersistDisplay entry = FindWlrPersist(tr.m_TrackId);
                     GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
                     RDF_RadarWlrFix fix = null;
                     if (sol)
                         fix = sol.m_Fix;
-                    if (!fix)
-                        fix = tr.m_LastWlrFix;
-                    if (!fix)
-                        continue;
-                    if (!fix.m_LaunchValid && !fix.m_ImpactValid)
-                        continue;
 
-                    GBRS_WlrPersistDisplay entry = FindWlrPersist(tr.m_TrackId);
+                    // Quality-gated fix: create / refresh LCH→IMP. Ungated raw
+                    // LastWlrFix is never painted (early reverse / wild arcs).
+                    if (fix && (fix.m_LaunchValid || fix.m_ImpactValid))
+                    {
+                        if (!entry)
+                        {
+                            entry = new GBRS_WlrPersistDisplay();
+                            entry.m_TrackId = tr.m_TrackId;
+                            m_WlrPersist.Insert(entry);
+                        }
+
+                        entry.m_Id = "W" + PadNum(tr.m_TrackId, 2);
+                        entry.m_LastSeenS = worldNowS;
+                        entry.m_HasLaunch = fix.m_LaunchValid;
+                        if (fix.m_LaunchValid)
+                        {
+                            entry.m_LaunchPos = fix.m_LaunchPos;
+                            entry.m_LaunchTimeS = fix.m_LaunchTimeS;
+                        }
+                        entry.m_HasImpact = fix.m_ImpactValid;
+                        if (fix.m_ImpactValid)
+                        {
+                            entry.m_ImpactPos = fix.m_ImpactPos;
+                            entry.m_ImpactTimeS = fix.m_ImpactTimeS;
+                        }
+
+                        entry.m_LivePos = WlrPositionOnArc(entry, worldNowS);
+                        entry.m_LiveVel = WlrArcDirection(entry, tr);
+                        entry.m_HasLive = true;
+                        continue;
+                    }
+
+                    // No accepted fix yet: keep the shell blip on filtered
+                    // kinematics so the operator sees the track without a lie.
                     if (!entry)
-                    {
-                        entry = new GBRS_WlrPersistDisplay();
-                        entry.m_TrackId = tr.m_TrackId;
-                        m_WlrPersist.Insert(entry);
-                    }
+                        continue;
 
-                    entry.m_Id = "W" + PadNum(tr.m_TrackId, 2);
                     entry.m_LastSeenS = worldNowS;
-                    entry.m_HasLaunch = fix.m_LaunchValid;
-                    if (fix.m_LaunchValid)
-                    {
-                        entry.m_LaunchPos = fix.m_LaunchPos;
-                        entry.m_LaunchTimeS = fix.m_LaunchTimeS;
-                    }
-                    entry.m_HasImpact = fix.m_ImpactValid;
-                    if (fix.m_ImpactValid)
-                    {
-                        entry.m_ImpactPos = fix.m_ImpactPos;
-                        entry.m_ImpactTimeS = fix.m_ImpactTimeS;
-                    }
-
-                    // Live shell marker: anchor it on the ballistic launch->impact
-                    // arc by time. The alpha-beta filtered position (m_FilteredPosition
-                    // with vr=0 + sparse samples) jitters / reverses / overshoots by
-                    // hundreds of metres; the quantified arc interpolation is ~0-3 m
-                    // and cannot reverse past launch or beyond impact.
-                    entry.m_LivePos = WlrPositionOnArc(entry, worldNowS);
-                    // Direction along the arc (launch->impact), stable; fall back
-                    // to the fit track velocity if no arc existed yet.
-                    entry.m_LiveVel = WlrArcDirection(entry, tr);
+                    entry.m_LivePos = tr.m_FilteredPosition;
+                    entry.m_LiveVel = GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
                     entry.m_HasLive = true;
                 }
             }

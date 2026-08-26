@@ -77,8 +77,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 	protected float m_fLastModeNavS;
 	protected float m_fLastIntelTxS;
-	// 0 = follow RF max until the operator zooms the PPI.
+	// 0 + !manual = follow RF max until the operator zooms the PPI.
 	protected float m_PpiViewRangeM;
+	protected bool m_bPpiZoomManual;
 	protected bool m_bHasPpiSnapshot;
 	protected vector m_PpiSnapOrigin;
 	protected float m_PpiSnapScanAzDeg;
@@ -144,6 +145,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		openMenu.m_PpiViewRangeM = rangeM;
+		openMenu.m_bPpiZoomManual = true;
 		GBRS_RadarStationHud.SetDisplayRange(rangeM);
 	}
 
@@ -220,6 +222,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		ClearPersist();
 		ClearPpiSnapshot();
 		m_PpiViewRangeM = 0.0;
+		m_bPpiZoomManual = false;
 
 		Widget root = GetRootWidget();
 		IEntity opticsParent = station.GetOwner();
@@ -260,6 +263,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		ClearPersist();
 		ClearPpiSnapshot();
 		m_PpiViewRangeM = 0.0;
+		m_bPpiZoomManual = false;
 
 		Widget root = GetRootWidget();
 		if (root)
@@ -288,6 +292,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
 		m_PpiViewRangeM = 0.0;
+		m_bPpiZoomManual = false;
 		GBRS_RadarStationHud.Detach();
 		if (station)
 			GBRS_PlayerControllerNet.RequestUnsubscribePpi(station);
@@ -781,6 +786,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		m_PpiViewRangeM = next;
+		m_bPpiZoomManual = true;
 		m_LastClusterS = 0.0;
 		GBRS_RadarStationHud.SetDisplayRange(m_PpiViewRangeM);
 	}
@@ -849,6 +855,12 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (settings)
 			rangeM = settings.m_Range;
 
+		// Prefer authored product range for the PPI ring. Scan context can lag
+		// one tick behind a mode swap; do not let a stale / zero ctx shrink the
+		// display below the station RF max.
+		if (rangeM > 0.0)
+			return rangeM;
+
 		RDF_RadarScanContext ctx = sensor.GetScanContext();
 		if (ctx)
 		{
@@ -863,15 +875,22 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected float ResolvePpiViewRange(float rfRange)
 	{
 		if (rfRange <= 0.0)
-			rfRange = 2000.0;
+			rfRange = 7000.0;
 
 		float minView = PPI_RANGE_MIN_M;
 		if (minView > rfRange)
 			minView = rfRange;
 
-		if (m_PpiViewRangeM <= 0.0)
+		// Until the operator zooms, always track the live RF max (US 7 km /
+		// USSR 10 km). An early FeedOnce used to lock onto a 2 km placeholder
+		// before the first PPI snapshot arrived.
+		if (!m_bPpiZoomManual || m_PpiViewRangeM <= 0.0)
+		{
 			m_PpiViewRangeM = rfRange;
-		else if (m_PpiViewRangeM > rfRange)
+			return m_PpiViewRangeM;
+		}
+
+		if (m_PpiViewRangeM > rfRange)
 			m_PpiViewRangeM = rfRange;
 		else if (m_PpiViewRangeM < minView)
 			m_PpiViewRangeM = minView;
@@ -1961,7 +1980,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		// Sweep / wedge must track the live antenna every UI tick. Snapshot az
 		// only arrives at PPI_SNAPSHOT_INTERVAL and makes the beam stutter.
 		vector hudForward = m_Station.GetScanForwardWorld();
-		float rfRange = 2000.0;
+		// RF max from live settings (7 / 8 / 10 km). Never seed from the old
+		// 2 km placeholder — that locked the PPI ring until the operator zoomed.
+		float rfRange = GetRfRangeM();
+		if (rfRange <= 0.0)
+			rfRange = 7000.0;
 		string eccm = "";
 		array<ref RDF_RadarTarget> livePlots = null;
 		array<ref RDF_RadarTrack> replicatedTracks = null;
@@ -1973,8 +1996,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (m_bHasPpiSnapshot)
 		{
 			hudOrigin = m_PpiSnapOrigin;
-			if (m_PpiSnapRangeM > 0.0)
-				rfRange = m_PpiSnapRangeM;
 			eccm = m_PpiSnapEccm;
 			livePlots = m_PpiSnapPlots;
 			replicatedTracks = m_PpiSnapTracks;

@@ -4,13 +4,14 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 - **Addon ID**：`Groundbasedradarstation`
 - **GUID**：`69FCEDCE73FC5335`
+- **Version**：1.1.0
 
 ## 依赖
 
-| 模组 | GUID |
-|---|---|
-| Radar Development Framework | `6892AB0669DF29AA` |
-| 原版 | `58D0FB3206B6F859` |
+| 模组 | GUID | 最低版本 |
+|---|---|---|
+| Radar Development Framework | `6892AB0669DF29AA` | **1.1.6** |
+| 原版 | `58D0FB3206B6F859` | — |
 
 ## 放置
 
@@ -124,6 +125,7 @@ GBRS_RadarStationDemo.Stop();
 
 ## 文档
 
+- `docs/CHANGELOG.md` — 版本发布说明
 - `docs/CURRENT_PROGRESS.md` — 施工垫 / 放置相关笔记
 - `tools/PD_VALIDATION.md`、`tools/WLR_VALIDATION.md` — 离线探测标定
 - `tools/WLR_TRACKER_VALIDATION.md` — WLR 轨道碎片化 / PPI 杂乱离线验证

@@ -13,6 +13,9 @@ class GBRS_RadarStationConstants
     // Reserved: operator-training / manual RF console, no matching mod yet.
     static const string MODE_MANUAL = "MANUAL";
 
+    // Semver for README / CHANGELOG / PPI mode bar. Bump on workshop releases.
+    static const string ADDON_VERSION = "1.1.0";
+
     static const ResourceName PREFAB_E_US =
         "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et";
     static const ResourceName PREFAB_E_USSR =

@@ -1,8 +1,8 @@
 # GBRS Conflict 建造 — 进度
 
 > 最后更新：2026-08-26
+> **版本：1.1.0**（RDF ≥ 1.1.6）
 > 状态：**BUILDING 放置已正常**。放置 `E_RadarStation_S_*` 会先出 FRB 施工区，铲完才生成成品雷达。
-> 依赖：**RDF ≥ 1.1.6**（MTI Suggest 2π、WLR Nelder-Mead drag 维、多人首帧 PPI、公平扫描游标）。
 > UI：顶栏 **OPTICS** 可选打开光学 PIP（默认关，占位保留布局）；工作台刷新 **60 Hz**；扫描线跟 live antenna；PPI snap ~30 Hz + 航迹 coast。
 
 ---

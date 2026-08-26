@@ -5,6 +5,7 @@ class GBRS_RadarStationHudWidgets
     // Root / columns
     Widget m_wRoot;
     Widget m_wModeBar;
+    TextWidget m_wModeBarTitle;
     Widget m_wModeTabs;
     Widget m_wModeTabPd;
     Widget m_wModeTabWlr;
@@ -91,6 +92,7 @@ class GBRS_RadarStationHudWidgets
 
         m_wRoot = root;
         m_wModeBar = root.FindAnyWidget("ModeBar");
+        m_wModeBarTitle = TextWidget.Cast(root.FindAnyWidget("ModeBarTitle"));
         m_wModeTabs = root.FindAnyWidget("ModeTabs");
         m_wModeTabPd = root.FindAnyWidget("ModeTabPd");
         m_wModeTabWlr = root.FindAnyWidget("ModeTabWlr");
@@ -166,6 +168,9 @@ class GBRS_RadarStationHudWidgets
         m_wListBType = TextWidget.Cast(root.FindAnyWidget("ListB_Type"));
         m_wListBSnr = TextWidget.Cast(root.FindAnyWidget("ListB_Snr"));
 
+        if (m_wModeBarTitle)
+            m_wModeBarTitle.SetText("GBRS v" + GBRS_RadarStationConstants.ADDON_VERSION);
+
         bool ok = true;
         ok = Require(m_wOpticsPanel, "OpticsPanel") && ok;
         ok = Require(m_wAzElPanel, "AzElPanel") && ok;
@@ -208,6 +213,7 @@ class GBRS_RadarStationHudWidgets
     {
         m_wRoot = null;
         m_wModeBar = null;
+        m_wModeBarTitle = null;
         m_wModeTabs = null;
         m_wModeTabPd = null;
         m_wModeTabWlr = null;

@@ -326,7 +326,9 @@ class GBRS_RadarStationConfig
         settings.m_FairScanCursor = true;
         settings.m_TrackCoastOnMiss = true;
         settings.m_TrackCoastOnDopplerNull = false;
-        settings.m_TrackCoastMaxSec = 12.0;
+        // Short coast: a long-lived coasting file near the mortar line steals
+        // the next round's first hits (same az, overlapping range gate).
+        settings.m_TrackCoastMaxSec = 6.0;
         if (!settings.m_MeasurementModel)
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
@@ -534,13 +536,19 @@ class GBRS_RadarStationConfig
         settings.m_SectorSweepCenterRad = 0.0;                  // default aim = east
         settings.m_SectorSweepHalfWidthRad = 0.785398;          // ±45° corridor
         settings.m_SectorSweepRateRadS = 1.2;                   // fast enough passes
-        settings.m_WeaponLocateMinHits = 3;
-        settings.m_WeaponLocateMinSpanS = 0.8;
+        // Sector-sweep shells get few hits per pass. 4 / 1.0 s matches RDF
+        // defaults closely enough to limit garbage arcs without starving Demo.
+        settings.m_WeaponLocateMinHits = 4;
+        settings.m_WeaponLocateMinSpanS = 1.0;
+        settings.m_WeaponLocateMaxFitRmsM = 80.0;
         settings.m_TrackConfirmHits = 2;
-        // Slightly wider association gates than RDF defaults so measurement
-        // noise does not split one shell into several tracker files.
-        settings.m_TrackGateAzimuthDeg = 8.0;
-        settings.m_TrackGateRangeM = 600.0;
+        // RDF defaults are 4° / 400 m. GBRS previously used 8° / 600 m so a
+        // same-corridor barrage (Demo every 6 s) glued a new round onto a
+        // coasting prior track — history zigzagged and headings looked reversed.
+        // Tighter gates + JPDA keep simultaneous shells on separate files.
+        settings.m_TrackGateAzimuthDeg = 5.0;
+        settings.m_TrackGateRangeM = 350.0;
+        settings.m_EnableJpda = true;
         settings.m_UseBoundsCenter = false;
         settings.m_UseLocalOffset = false;
         settings.m_OriginOffset = "0 0 0";

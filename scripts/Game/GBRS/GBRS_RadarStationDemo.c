@@ -40,10 +40,15 @@ class GBRS_RadarStationDemo
     protected static const float USSR_AIR_FAR_M = 7000.0;
     protected static const float SHELL_SPEED_COEF = 1.736;
     protected static const float SHELL_ELEVATION_DEG = 55.0;
-    // Close enough to see from the dish; charge-2 / 55 deg still flies ~1.7 km.
-    protected static const float SHELL_LAUNCH_RANGE_M = 80.0;
+    // Close enough to paint on the Demo PPI (zoomed ~2.5 km) but far enough
+    // that launch≠radar. Must land on dry ground — see BuildFireAzimuth().
+    protected static const float SHELL_LAUNCH_RANGE_M = 700.0;
+    protected static const float SHELL_MIN_SURFACE_Y = 2.0;
     protected static const float SHELL_LAUNCH_HEIGHT_M = 8.0;
-    protected static const float SHELL_FIRE_INTERVAL_S = 6.0;
+    protected static const float SHELL_FIRE_INTERVAL_S = 8.0;
+    // Spread successive Demo rounds a few degrees so they do not sit inside
+    // one another's association gate on the same radial.
+    protected static const float SHELL_AZ_STAGGER_DEG = 3.0;
     protected static const int SHELL_KEEP_MAX = 4;
     // 8 km WLR PPI hides a 2 km mortar track against the core. Demo zooms in.
     protected static const float SHELL_PPI_VIEW_M = 2500.0;
@@ -708,27 +713,102 @@ class GBRS_RadarStationDemo
 
     protected void BuildFireAzimuth()
     {
+        // Default north (+Z). Subject-relative aim often pointed into the sea
+        // when the GM/editor camera sat north of the station (launch Y≈-2).
         m_FireAzimuthFlat = Vector(0.0, 0.0, 1.0);
-        if (!m_Subject)
+
+        BaseWorld world = GetGame().GetWorld();
+        if (!world)
             return;
 
-        vector delta = m_RadarOrigin - m_Subject.GetOrigin();
-        delta[1] = 0.0;
-        float len = delta.Length();
-        if (len < 1.0)
-            return;
+        // Prefer: away from the local subject (mortar "behind" the player),
+        // then compass probes until the launch pad is dry land.
+        array<vector> candidates = new array<vector>();
+        if (m_Subject)
+        {
+            vector delta = m_RadarOrigin - m_Subject.GetOrigin();
+            delta[1] = 0.0;
+            float len = delta.Length();
+            if (len >= 1.0)
+                candidates.Insert(delta * (1.0 / len));
+        }
 
-        m_FireAzimuthFlat = delta * (1.0 / len);
+        candidates.Insert(Vector(0.0, 0.0, 1.0));   // north
+        candidates.Insert(Vector(0.707, 0.0, 0.707)); // NE
+        candidates.Insert(Vector(-0.707, 0.0, 0.707)); // NW
+        candidates.Insert(Vector(1.0, 0.0, 0.0));    // east
+        candidates.Insert(Vector(-1.0, 0.0, 0.0));   // west
+        candidates.Insert(Vector(0.707, 0.0, -0.707)); // SE
+        candidates.Insert(Vector(-0.707, 0.0, -0.707)); // SW
+        candidates.Insert(Vector(0.0, 0.0, -1.0));  // south
+
+        int i = 0;
+        while (i < candidates.Count())
+        {
+            vector dir = candidates.Get(i);
+            i = i + 1;
+            if (IsDryFireCorridor(world, dir))
+            {
+                m_FireAzimuthFlat = dir;
+                float sy = SampleLaunchSurfaceY(world, dir);
+                Print("[GBRS Demo] mortar line az="
+                    + DirToRdfAzDeg(dir).ToString()
+                    + " deg launchSurfY=" + sy.ToString());
+                return;
+            }
+        }
+
+        Print("[GBRS Demo] no dry mortar corridor found; using north (shells may ditch).", LogLevel.WARNING);
     }
 
-    protected float FireAzimuthDeg()
+    protected float DirToRdfAzDeg(vector dir)
     {
-        float az = Math.Atan2(m_FireAzimuthFlat[2], m_FireAzimuthFlat[0]) * Math.RAD2DEG;
+        float az = Math.Atan2(dir[2], dir[0]) * Math.RAD2DEG;
         if (az < 0.0)
             az = az + 360.0;
         while (az >= 360.0)
             az = az - 360.0;
         return az;
+    }
+
+    protected float SampleLaunchSurfaceY(BaseWorld world, vector dirFlat)
+    {
+        if (!world)
+            return -1000.0;
+
+        vector p = m_RadarOrigin
+            + Vector(dirFlat[0] * SHELL_LAUNCH_RANGE_M, 0.0, dirFlat[2] * SHELL_LAUNCH_RANGE_M);
+        return world.GetSurfaceY(p[0], p[2]);
+    }
+
+    // Launch pad + downrange mid-point must be above sea / void so the 82 mm
+    // round actually flies in the WLR beam instead of spawning underwater.
+    protected bool IsDryFireCorridor(BaseWorld world, vector dirFlat)
+    {
+        if (!world)
+            return false;
+
+        float launchY = SampleLaunchSurfaceY(world, dirFlat);
+        if (launchY < SHELL_MIN_SURFACE_Y)
+            return false;
+
+        float radarY = m_RadarOrigin[1];
+        if (launchY < radarY - 40.0)
+            return false;
+
+        float midRange = SHELL_LAUNCH_RANGE_M + 900.0;
+        vector mid = m_RadarOrigin
+            + Vector(dirFlat[0] * midRange, 0.0, dirFlat[2] * midRange);
+        float midY = world.GetSurfaceY(mid[0], mid[2]);
+        if (midY < SHELL_MIN_SURFACE_Y)
+            return false;
+
+        return true;
+    }
+
+    protected float FireAzimuthDeg()
+    {
+        return DirToRdfAzDeg(m_FireAzimuthFlat);
     }
 
     protected bool ResolveOrSpawnStation()
@@ -1037,13 +1117,30 @@ class GBRS_RadarStationDemo
     //------------------------------------------------------------------------------------------------
     protected vector BuildLaunchDirection()
     {
+        vector flat = FireAzimuthFlatForShot(m_ShellsFired);
         float elevRad = SHELL_ELEVATION_DEG * Math.DEG2RAD;
         float c = Math.Cos(elevRad);
         float s = Math.Sin(elevRad);
         return Vector(
-            m_FireAzimuthFlat[0] * c,
+            flat[0] * c,
             s,
-            m_FireAzimuthFlat[2] * c);
+            flat[2] * c);
+    }
+
+    // Rotate the mortar line by ±stagger so barrage rounds are not clones on
+    // one RDF az radial (which the tracker would merge).
+    protected vector FireAzimuthFlatForShot(int shellIndex)
+    {
+        float stagger = 0.0;
+        if (SHELL_AZ_STAGGER_DEG > 0.0)
+        {
+            int slot = shellIndex % 5;
+            stagger = (slot - 2) * SHELL_AZ_STAGGER_DEG;
+        }
+
+        float baseAz = DirToRdfAzDeg(m_FireAzimuthFlat);
+        float azRad = (baseAz + stagger) * Math.DEG2RAD;
+        return Vector(Math.Cos(azRad), 0.0, Math.Sin(azRad));
     }
 
     protected bool TryFireShell()
@@ -1059,13 +1156,23 @@ class GBRS_RadarStationDemo
             return false;
         }
 
+        vector flat = FireAzimuthFlatForShot(m_ShellsFired);
         vector launchPos = m_RadarOrigin
             + Vector(
-                m_FireAzimuthFlat[0] * SHELL_LAUNCH_RANGE_M,
+                flat[0] * SHELL_LAUNCH_RANGE_M,
                 0.0,
-                m_FireAzimuthFlat[2] * SHELL_LAUNCH_RANGE_M);
+                flat[2] * SHELL_LAUNCH_RANGE_M);
         float surfaceY = world.GetSurfaceY(launchPos[0], launchPos[2]);
         launchPos[1] = surfaceY + SHELL_LAUNCH_HEIGHT_M;
+
+        if (surfaceY < SHELL_MIN_SURFACE_Y)
+        {
+            Print("[GBRS Demo] refuse shell: launch surfY="
+                + surfaceY.ToString()
+                + " (sea/void). Rebuild mortar azimuth.", LogLevel.WARNING);
+            BuildFireAzimuth();
+            return false;
+        }
 
         vector dir = BuildLaunchDirection();
         EntitySpawnParams spawnParams = new EntitySpawnParams();
@@ -1106,7 +1213,7 @@ class GBRS_RadarStationDemo
         m_LiveShells.Insert(shell);
         m_ShellsFired = m_ShellsFired + 1;
         Print("[GBRS Demo] fired 82 mm shell #" + m_ShellsFired.ToString()
-            + " rdfAz=" + FireAzimuthDeg().ToString()
+            + " rdfAz=" + DirToRdfAzDeg(flat).ToString()
             + " from " + launchPos.ToString());
         return true;
     }

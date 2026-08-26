@@ -1089,8 +1089,13 @@ class GBRS_RadarStationComponent : ScriptComponent
             {
                 if (ctx.m_Origin.LengthSq() > 0.0001)
                     origin = ctx.m_Origin;
-                if (ctx.m_RangeM > 0.0)
-                    rangeM = ctx.m_RangeM;
+                // Keep settings.m_Range for the PPI RF max. Context range is
+                // only a fallback when settings are missing.
+                if (rangeM <= 0.0)
+                {
+                    if (ctx.m_RangeM > 0.0)
+                        rangeM = ctx.m_RangeM;
+                }
             }
         }
 
@@ -2756,29 +2761,19 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!tr)
             return vel;
 
-        // 1) Least-squares vacuum fit over the measured history (smooth 3D vel).
-        // Low min-point/span so shells with sparse sweep samples still get a
-        // stable direction instead of falling back to the Doppler-radial path,
-        // which is ~90-157 deg wrong for crossing shells.
-        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 3)
+        // Prefer sanitized WLR arc direction for shells (never reverses).
+        RDF_RadarWlrFix wlrFix = GBRS_RadarWlrBallisticSolver.SanitizeFixForDisplay(
+            tr.m_LastWlrFix, tr);
+        if (wlrFix)
         {
-            RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
-                tr.m_Positions,
-                tr.m_Times,
-                RDF_RadarBallistics.GRAVITY_M_S2,
-                3,
-                0.25,
-                250.0,
-                24);
-            if (fit && fit.m_Valid)
-            {
-                vector fv = fit.m_Velocity;
-                if (fv.Length() >= 2.0)
-                    return fv;
-            }
+            vector arc = wlrFix.m_ImpactPos - wlrFix.m_LaunchPos;
+            arc[1] = 0.0;
+            if (arc.Length() >= 3.0)
+                return arc;
         }
 
-        // 2) Position chord over ~1 s (true motion direction).
+        // Position chord over ~1 s (true motion). Prefer before sparse vacuum
+        // fits that flip near closest approach.
         if (tr.m_Positions && tr.m_Times)
         {
             int n = tr.m_Positions.Count();
@@ -2807,9 +2802,29 @@ class GBRS_RadarStationComponent : ScriptComponent
             }
         }
 
-        if (vel.Length() < 0.001)
-            vel = tr.m_FilteredVelocity;
-        return vel;
+        if (vel.Length() >= 0.001)
+            return vel;
+
+        // Vacuum fit only when chord is too short (needs ≥5 pts / 1 s).
+        if (tr.m_Positions && tr.m_Times && tr.m_Positions.Count() >= 5)
+        {
+            RDF_RadarBallisticFitState fit = RDF_RadarBallistics.FitVacuumFromHistory(
+                tr.m_Positions,
+                tr.m_Times,
+                RDF_RadarBallistics.GRAVITY_M_S2,
+                5,
+                1.0,
+                120.0,
+                24);
+            if (fit && fit.m_Valid)
+            {
+                vector fv = fit.m_Velocity;
+                if (fv.Length() >= 2.0)
+                    return fv;
+            }
+        }
+
+        return tr.m_FilteredVelocity;
     }
 
     //------------------------------------------------------------------------------------------------
