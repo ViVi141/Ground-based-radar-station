@@ -1,7 +1,6 @@
 //------------------------------------------------------------------------------------------------
-//! Formal GBRS radar workstation menu (PD SEARCH / WLR).
-//! LOCK / MANUAL handlers stay compiled but are commented out until a
-//! fire-control / training addon exists.
+//! Formal GBRS radar workstation menu (PD SEARCH / WLR / LOCK).
+//! MANUAL handlers stay compiled but are reserved until a training addon exists.
 class GBRS_PersistPlot
 {
 	ref RDF_RadarTarget m_Target;
@@ -24,6 +23,16 @@ class GBRS_PpiZoomWheelHandler : ScriptedWidgetEventHandler
 
 		return true;
 	}
+
+	override bool OnMouseButtonDown(Widget w, int x, int y, int button)
+	{
+		if (!m_Menu)
+			return false;
+		if (button != 0)
+			return false;
+
+		return m_Menu.TryLockPaintedTarget(x, y);
+	}
 }
 
 class GBRS_RadarStationMenu : ChimeraMenuBase
@@ -35,18 +44,20 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	// Digital TWS afterglow: last few dwells only. Contacts live on the
 	// RDF track file (coast), not as a phosphor trail of raw plots.
 	protected static const float PLOT_AFTERGLOW_S = 0.45;
-	protected static const float DISPLAY_CLUSTER_M = 90.0;
+	protected static const float DISPLAY_CLUSTER_M = 120.0;
+	protected static const float DISPLAY_CLUSTER_AZ_DEG = 4.0;
+	protected static const float DISPLAY_CLUSTER_RANGE_M = 400.0;
 	protected static const float PERSIST_SPATIAL_M = 80.0;
 	protected static const string MODE_PD_SEARCH = GBRS_RadarStationConstants.MODE_PD_SEARCH;
 	protected static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
 	protected static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
 	protected static const string MODE_MANUAL = GBRS_RadarStationConstants.MODE_MANUAL;
 	protected static const string HINT_NOT_AVAILABLE = "Not available";
-	protected static const string HINT_CONTEXT = "north-up AZ/EL   Up/Dn PPI range";
+	protected static const string HINT_CONTEXT = "click contact to lock   Up/Dn PPI range";
 	protected static const string HINT_WLR = "WLR launch/impact   Up/Dn PPI range";
-	protected static const string HINT_LOCK = "auto-lock vehicles   Up/Dn PPI range";
+	protected static const string HINT_LOCK = "click contact to lock   Up/Dn PPI range";
 	protected static const float PPI_RANGE_MIN_M = 1000.0;
-	protected static const int PPI_RANGE_STEP_COUNT = 11;
+	protected static const int PPI_RANGE_STEP_COUNT = 15;
 
 	protected GBRS_RadarStationComponent m_Station;
 	protected bool m_bBound;
@@ -91,6 +102,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected ref array<ref RDF_RadarTrack> m_PpiSnapTracks;
 	protected ref array<ref RDF_RadarFusedTrack> m_PpiSnapFused;
 	protected ref array<ref GBRS_WlrPersistDisplay> m_PpiSnapWlr;
+	protected int m_PpiSnapLockedTrackId;
 	protected ref GBRS_PpiZoomWheelHandler m_PpiWheelHandler;
 	protected Widget m_wPpiWheelHost;
 
@@ -322,24 +334,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				invWlr.Insert(OnModeTabWlr);
 		}
 
-		// LOCK / MANUAL reserved — uncomment when a fire-control / training
-		// addon exists. Tabs stay in the layout.
-		// if (widgets.m_wModeTabLock)
-		// {
-		// 	MuteWLibSounds(widgets.m_wModeTabLock);
-		// 	ScriptInvoker invLock = ButtonActionComponent.GetOnAction(widgets.m_wModeTabLock, true);
-		// 	if (invLock)
-		// 		invLock.Insert(OnModeTabLock);
-		// }
-		// if (widgets.m_wModeTabManual)
-		// {
-		// 	MuteWLibSounds(widgets.m_wModeTabManual);
-		// 	ScriptInvoker invManual = ButtonActionComponent.GetOnAction(widgets.m_wModeTabManual, true);
-		// 	if (invManual)
-		// 		invManual.Insert(OnModeTabManual);
-		// }
 		if (widgets.m_wModeTabLock)
+		{
 			MuteWLibSounds(widgets.m_wModeTabLock);
+			ScriptInvoker invLock = ButtonActionComponent.GetOnAction(widgets.m_wModeTabLock, true);
+			if (invLock)
+				invLock.Insert(OnModeTabLock);
+		}
 		if (widgets.m_wModeTabManual)
 			MuteWLibSounds(widgets.m_wModeTabManual);
 
@@ -629,9 +630,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnModeTabLock(Widget w, float value, EActionTrigger reason)
 	{
-		// Reserved: no fire-control consumer yet.
-		// m_iFocusedModeTab = 2;
-		// ActivateFocusedModeTab();
+		m_iFocusedModeTab = 2;
+		ActivateFocusedModeTab();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -833,7 +833,15 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return 7000.0;
 		if (index == 9)
 			return 8000.0;
-		return 10000.0;
+		if (index == 10)
+			return 10000.0;
+		if (index == 11)
+			return 12000.0;
+		if (index == 12)
+			return 15000.0;
+		if (index == 13)
+			return 16000.0;
+		return 18000.0;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -850,39 +858,25 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!sensor)
 			return 0.0;
 
-		float rangeM = 0.0;
 		RDF_RadarSettings settings = sensor.GetSettings();
 		if (settings)
-			rangeM = settings.m_Range;
+			return settings.m_Range;
 
-		// Prefer authored product range for the PPI ring. Scan context can lag
-		// one tick behind a mode swap; do not let a stale / zero ctx shrink the
-		// display below the station RF max.
-		if (rangeM > 0.0)
-			return rangeM;
-
-		RDF_RadarScanContext ctx = sensor.GetScanContext();
-		if (ctx)
-		{
-			if (ctx.m_RangeM > 0.0)
-				rangeM = ctx.m_RangeM;
-		}
-
-		return rangeM;
+		return 0.0;
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected float ResolvePpiViewRange(float rfRange)
 	{
 		if (rfRange <= 0.0)
-			rfRange = 7000.0;
+			rfRange = 12000.0;
 
 		float minView = PPI_RANGE_MIN_M;
 		if (minView > rfRange)
 			minView = rfRange;
 
-		// Until the operator zooms, always track the live RF max (US 7 km /
-		// USSR 10 km). An early FeedOnce used to lock onto a 2 km placeholder
+		// Until the operator zooms, always track the live RF max (US 12 km /
+		// USSR 16 km). An early FeedOnce used to lock onto a 2 km placeholder
 		// before the first PPI snapshot arrived.
 		if (!m_bPpiZoomManual || m_PpiViewRangeM <= 0.0)
 		{
@@ -910,9 +904,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!CanAcceptModeNav())
 			return;
 
-		// LOCK / MANUAL reserved: wrap PD SEARCH / WLR only.
-		// Restore MODE_TAB_COUNT when those tabs are wired back up.
-		int tabCount = 2;
+		// LOCK on; MANUAL still reserved.
+		int tabCount = 3;
 		// int tabCount = MODE_TAB_COUNT;
 		m_iFocusedModeTab = m_iFocusedModeTab + delta;
 		while (m_iFocusedModeTab < 0)
@@ -989,9 +982,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		string nextMode = MODE_PD_SEARCH;
 		if (m_iFocusedModeTab == 1)
 			nextMode = MODE_WLR;
-		// Reserved: no matching fire-control / training addon yet.
-		// else if (m_iFocusedModeTab == 2)
-		// 	nextMode = MODE_LOCK;
+		else if (m_iFocusedModeTab == 2)
+			nextMode = MODE_LOCK;
+		// MANUAL still reserved.
 		// else if (m_iFocusedModeTab == 3)
 		// 	nextMode = MODE_MANUAL;
 
@@ -1678,28 +1671,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!m_PersistPlots)
 			return;
 
-		float dt = nowS - m_LastPersistCoastS;
 		m_LastPersistCoastS = nowS;
-		if (dt <= 0.0)
-			return;
-		if (dt > 0.5)
-			return;
-
-		int i = 0;
-		while (i < m_PersistPlots.Count())
-		{
-			GBRS_PersistPlot row = m_PersistPlots.Get(i);
-			i = i + 1;
-			if (!row || !row.m_Target)
-				continue;
-			if ((nowS - row.m_LastFreshS) < 0.05)
-				continue;
-
-			RDF_RadarTarget t = row.m_Target;
-			t.m_Position = t.m_Position + (t.m_Velocity * dt);
-			if (t.m_Distance > 1.0)
-				t.m_Distance = t.m_Distance + (t.m_RadialSpeedMs * dt);
-		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1816,14 +1788,17 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 						break;
 					}
 
-					if (!srcRoot && !keptRoot)
+					vector d = kept.m_Position - src.m_Position;
+					if (d.LengthSq() <= gateSq)
 					{
-						vector d = kept.m_Position - src.m_Position;
-						if (d.LengthSq() <= gateSq)
-						{
-							match = j;
-							break;
-						}
+						match = j;
+						break;
+					}
+
+					if (PlotsSharePolarCell(kept, src, origin, rng))
+					{
+						match = j;
+						break;
 					}
 				}
 				j = j + 1;
@@ -1853,15 +1828,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		}
 
 		m_DetectedInRange = m_DisplayPlots.Count();
-		TrimDisplayBudget();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void TrimDisplayBudget()
-	{
-		if (!m_DisplayPlots)
-			return;
-
 		while (m_DisplayPlots.Count() > DISPLAY_MAX_BLIPS)
 		{
 			int worst = 0;
@@ -1879,6 +1845,39 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			}
 			m_DisplayPlots.Remove(worst);
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool PlotsSharePolarCell(
+		RDF_RadarTarget a,
+		RDF_RadarTarget b,
+		vector origin,
+		float rngB)
+	{
+		if (!a || !b)
+			return false;
+
+		vector da = a.m_Position - origin;
+		vector db = b.m_Position - origin;
+		float azA = Math.Atan2(da[0], da[2]) * Math.RAD2DEG;
+		float azB = Math.Atan2(db[0], db[2]) * Math.RAD2DEG;
+		float dAz = azA - azB;
+		while (dAz > 180.0)
+			dAz = dAz - 360.0;
+		while (dAz < -180.0)
+			dAz = dAz + 360.0;
+		if (dAz < 0.0)
+			dAz = -dAz;
+		if (dAz > DISPLAY_CLUSTER_AZ_DEG)
+			return false;
+
+		float rngA = PlotRangeM(a, origin);
+		float dRng = rngA - rngB;
+		if (dRng < 0.0)
+			dRng = -dRng;
+		if (dRng > DISPLAY_CLUSTER_RANGE_M)
+			return false;
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1926,8 +1925,9 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		array<ref GBRS_WlrPersistDisplay> wlr;
 		int detectedTotal;
 		int netOnline;
+		int lockedTrackId;
 		if (!GBRS_PpiSnapshot.Unpack(
-			packedInts, packedFloats, plots, tracks, fused, wlr, detectedTotal, netOnline))
+			packedInts, packedFloats, plots, tracks, fused, wlr, detectedTotal, netOnline, lockedTrackId))
 			return;
 
 		m_PpiSnapOrigin = origin;
@@ -1936,6 +1936,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_PpiSnapEccm = eccm;
 		m_PpiSnapDetectedTotal = detectedTotal;
 		m_PpiSnapNetOnline = netOnline;
+		m_PpiSnapLockedTrackId = lockedTrackId;
 		m_PpiSnapPlots = plots;
 		m_PpiSnapTracks = tracks;
 		m_PpiSnapFused = fused;
@@ -1954,6 +1955,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_PpiSnapEccm = "";
 		m_PpiSnapDetectedTotal = 0;
 		m_PpiSnapNetOnline = 0;
+		m_PpiSnapLockedTrackId = 0;
 		if (m_PpiSnapPlots)
 			m_PpiSnapPlots.Clear();
 		if (m_PpiSnapTracks)
@@ -1962,6 +1964,46 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			m_PpiSnapFused.Clear();
 		if (m_PpiSnapWlr)
 			m_PpiSnapWlr.Clear();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool TryLockPaintedTarget(int localX, int localY)
+	{
+		if (!m_bBound || !m_Station)
+			return false;
+
+		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
+		if (!widgets || !widgets.m_wPpiCanvas)
+			return false;
+
+		float canvasX;
+		float canvasY;
+		widgets.m_wPpiCanvas.GetScreenPos(canvasX, canvasY);
+		float canvasW;
+		float canvasH;
+		widgets.m_wPpiCanvas.GetScreenSize(canvasW, canvasH);
+
+		float hostX = 0.0;
+		float hostY = 0.0;
+		if (m_wPpiWheelHost)
+			m_wPpiWheelHost.GetScreenPos(hostX, hostY);
+
+		float px = (hostX + localX) - canvasX;
+		float py = (hostY + localY) - canvasY;
+		if (px < 0.0)
+			return false;
+		if (py < 0.0)
+			return false;
+		if (px > canvasW)
+			return false;
+		if (py > canvasH)
+			return false;
+
+		int trackId = GBRS_RadarStationHud.PickTrackIdAtCanvasPixels(px, py);
+		if (trackId <= 0)
+			return false;
+
+		return m_Station.RequestLockTrack(trackId);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1980,11 +2022,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		// Sweep / wedge must track the live antenna every UI tick. Snapshot az
 		// only arrives at PPI_SNAPSHOT_INTERVAL and makes the beam stutter.
 		vector hudForward = m_Station.GetScanForwardWorld();
-		// RF max from live settings (7 / 8 / 10 km). Never seed from the old
+		// RF max from live settings (12 / 8 / 16 km). Never seed from the old
 		// 2 km placeholder — that locked the PPI ring until the operator zoomed.
 		float rfRange = GetRfRangeM();
 		if (rfRange <= 0.0)
-			rfRange = 7000.0;
+			rfRange = 12000.0;
 		string eccm = "";
 		array<ref RDF_RadarTarget> livePlots = null;
 		array<ref RDF_RadarTrack> replicatedTracks = null;
@@ -2006,12 +2048,29 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		}
 
 		float viewRange = ResolvePpiViewRange(rfRange);
-		m_DisplayPlots = livePlots;
-		m_DetectedInRange = detectedTotal;
+		if (m_bHasPpiSnapshot)
+		{
+			m_DisplayPlots = livePlots;
+			m_DetectedInRange = detectedTotal;
+		}
+		else
+		{
+			// In local / Workbench scenarios the client is the authority and the
+			// unreplicated snapshot has not arrived yet. Build the display list
+			// from live RDF so the first feed already shows contacts.
+			if (!m_DisplayPlots)
+				m_DisplayPlots = new array<ref RDF_RadarTarget>();
+			m_DisplayPlots.Clear();
+			TickLocalPlots(detectedTotal, replicatedTracks);
+		}
 
 		GBRS_RadarStationHud.SetDisplayRange(viewRange);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
 		GBRS_RadarStationHud.SetEccmStatus(eccm);
+		int lockedTrackId = 0;
+		if (m_bHasPpiSnapshot)
+			lockedTrackId = m_PpiSnapLockedTrackId;
+		GBRS_RadarStationHud.SetLockedTrackId(lockedTrackId);
 		GBRS_RadarStationHud.FeedScan(
 			m_DisplayPlots,
 			hudOrigin,
@@ -2024,5 +2083,39 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			replicatedFused,
 			netOnline,
 			replicatedWlr);
+	}
+
+	protected void TickLocalPlots(out int detectedTotal, out array<ref RDF_RadarTrack> tracks)
+	{
+		detectedTotal = 0;
+		tracks = null;
+		if (!m_Station)
+			return;
+
+		RDF_RadarComponent radar = m_Station.GetRadarComponent();
+		if (!radar)
+			return;
+
+		RDF_RadarSensor sensor = radar.GetSensor();
+		if (!sensor)
+			return;
+
+		RDF_RadarSettings settings = sensor.GetSettings();
+		array<ref RDF_RadarTarget> live = sensor.GetPlots();
+		if (!live)
+			return;
+
+		float nowS = System.GetTickCount() * 0.001;
+		IngestLivePlots(live, settings, nowS);
+		PrunePersist(nowS, GetPersistLifeS());
+		BuildClusteredDisplayPlots(m_Station.GetScanOriginWorld(), GetRfRangeM());
+		if (m_DisplayPlots)
+			detectedTotal = m_DisplayPlots.Count();
+
+		// Replicate tracks from the live sensor so the HUD track list is also
+		// populated in local / single-player Workbench runs.
+		RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+		if (tracker)
+			tracks = tracker.GetAllTracks();
 	}
 }

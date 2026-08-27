@@ -10,7 +10,7 @@ class GBRS_PpiSnapshot
     static const int MAX_FUSED = 16;
     static const int MAX_WLR = 16;
 
-    protected static const int HEADER_INTS = 6;
+    protected static const int HEADER_INTS = 7;
     protected static const int PLOT_INTS = 2;
     protected static const int PLOT_FLOATS = 10;
     protected static const int TRACK_INTS = 3;
@@ -48,6 +48,7 @@ class GBRS_PpiSnapshot
         array<ref GBRS_WlrPersistDisplay> wlrSrc,
         int detectedTotal,
         int netOnline,
+        int lockedTrackId,
         notnull array<int> ints,
         notnull array<float> floats)
     {
@@ -84,6 +85,7 @@ class GBRS_PpiSnapshot
         ints.Insert(detectedTotal);
         ints.Insert(netOnline);
         ints.Insert(wlrCount);
+        ints.Insert(lockedTrackId);
 
         int i = 0;
         while (i < plotCount)
@@ -123,7 +125,8 @@ class GBRS_PpiSnapshot
         out array<ref RDF_RadarFusedTrack> fused,
         out array<ref GBRS_WlrPersistDisplay> wlr,
         out int detectedTotal,
-        out int netOnline)
+        out int netOnline,
+        out int lockedTrackId)
     {
         plots = new array<ref RDF_RadarTarget>();
         tracks = new array<ref RDF_RadarTrack>();
@@ -131,6 +134,7 @@ class GBRS_PpiSnapshot
         wlr = new array<ref GBRS_WlrPersistDisplay>();
         detectedTotal = 0;
         netOnline = 0;
+        lockedTrackId = 0;
 
         if (!ints || !floats)
             return false;
@@ -143,6 +147,7 @@ class GBRS_PpiSnapshot
         detectedTotal = ints.Get(3);
         netOnline = ints.Get(4);
         int wlrCount = ints.Get(5);
+        lockedTrackId = ints.Get(6);
 
         if (plotCount < 0)
             plotCount = 0;

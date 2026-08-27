@@ -14,7 +14,7 @@ class GBRS_RadarStationConstants
     static const string MODE_MANUAL = "MANUAL";
 
     // Semver for README / CHANGELOG / PPI mode bar. Bump on workshop releases.
-    static const string ADDON_VERSION = "1.1.0";
+    static const string ADDON_VERSION = "1.1.5";
 
     static const ResourceName PREFAB_E_US =
         "{69FCEDCEA0010003}PrefabsEditable/Auto/Compositions/Misc/FreeRoamBuilding/E_RadarStation_S_US_01.et";

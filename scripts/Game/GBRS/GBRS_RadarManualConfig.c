@@ -12,7 +12,7 @@ class GBRS_RadarManualConfig
     static const int PARAM_STARE = 3;
     static const int PARAM_COUNT = 4;
 
-    float m_RangeM = 7000.0;
+    float m_RangeM = 12000.0;
     float m_ScanRpm = 10.0;
     float m_ElevationBoresightDeg = 2.0;
     float m_StareAzDeg = -1.0;
@@ -24,15 +24,15 @@ class GBRS_RadarManualConfig
     float m_AzimuthBeamwidthDeg = 2.5;
     float m_UpdateIntervalS = 0.04;
     float m_PeakPowerW = 120000.0;
-    float m_RangeMaxM = 7000.0;
+    float m_RangeMaxM = 12000.0;
 
     //------------------------------------------------------------------------------------------------
     void SeedFromFaction(EGBRS_RadarFactionPreset preset)
     {
         if (preset == EGBRS_RadarFactionPreset.USSR)
         {
-            m_RangeM = 10000.0;
-            m_RangeMaxM = 10000.0;
+            m_RangeM = 16000.0;
+            m_RangeMaxM = 16000.0;
             m_ScanRpm = 6.0;
             m_ElevationBoresightDeg = 2.0;
             m_DetectionSnrDb = 5.0;
@@ -44,8 +44,8 @@ class GBRS_RadarManualConfig
             return;
         }
 
-        m_RangeM = 7000.0;
-        m_RangeMaxM = 7000.0;
+        m_RangeM = 12000.0;
+        m_RangeMaxM = 12000.0;
         m_ScanRpm = 10.0;
         m_ElevationBoresightDeg = 2.0;
         m_DetectionSnrDb = 8.0;

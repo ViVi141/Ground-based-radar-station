@@ -4,7 +4,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 - **Addon ID**：`Groundbasedradarstation`
 - **GUID**：`69FCEDCE73FC5335`
-- **Version**：1.1.0
+- **Version**：1.1.5
 
 ## 依赖
 
@@ -46,8 +46,8 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 | 阵营 | 外形（史实） | 天线 | 探测（玩法，不是进近雷达手册） |
 |---|---|---|---|
-| 美军 | **AN/TPN-19**（美空军野战着陆管制中心 / RAPCON） | 整面天线偏航 | 7 km 脉冲多普勒空搜（10 RPM，约 2.5°）；8 km WLR（±45° 扇扫，12°，6 RPM） |
-| 苏军 | **Tesla RPL-5**（捷克联合无线电定位 / 进近雷达） | `antenna_rotation` 骨 | 10 km VHF 预警（P-18 式前端，6 RPM，约 6°）；10 km WLR（±45° 扇扫，15°，6 RPM） |
+| 美军 | **AN/TPN-19**（美空军野战着陆管制中心 / RAPCON） | 整面天线偏航 | 12 km 脉冲多普勒空搜（10 RPM，约 2.5°）；8 km WLR（360°，24°，6 RPM） |
+| 苏军 | **Tesla RPL-5**（捷克联合无线电定位 / 进近雷达） | `antenna_rotation` 骨 | 16 km VHF 预警（P-18 式前端，6 RPM，约 6°）；10 km WLR（360°，30°，6 RPM） |
 
 真实的 RPL-5 与 AN/TPN-19 都是机场进近 / 空管系统。本模组只用它们的外观，射频按 Conflict 空搜平衡，没有改成进近雷达量程。
 
@@ -56,7 +56,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 靠近成品雷达，己方交互：
 
 - 开关机（物资不够会拒绝开机；运行中扣不起则断电）
-- 打开 PPI：当前 `PD SEARCH` / `WLR`（`LOCK` / `MANUAL` 入口已注释预留，等有火控或训练模组再开）
+- 打开 PPI：`PD SEARCH` / `WLR` / `LOCK`（点击 PPI 航迹锁定；`MANUAL` 仍预留）
 - 扫描体可视化（本地）
 
 ### Script Debugger 演示
@@ -67,7 +67,7 @@ Workbench **Play** 后在 Script Debugger 执行（一次只开一个；走成�
 GBRS_RadarStationDemo.Start();      // 美军站 + PD SEARCH + 径向来回 Mi-8 + 打开 PPI
 GBRS_RadarStationDemo.StartUssr();  // 苏军站
 GBRS_RadarStationDemo.StartWlr();   // WLR + 周期性 82 mm 迫击炮弹
-// GBRS_RadarStationDemo.StartLock();  // 预留：等火控模组
+GBRS_RadarStationDemo.StartLock();  // 美军站 + LOCK（自动锁载具）
 GBRS_RadarStationDemo.Probe();      // 强制一拍并打印点迹
 GBRS_RadarStationDemo.Stop();
 ```
@@ -120,7 +120,7 @@ GBRS_RadarStationDemo.Stop();
 - 本地 PPI 没有二次雷达询问；搜索点迹保持匿名。融合 overlay 才读 IFF
 - 射频不是 RPL-5 / AN/TPN-19 的进近手册数据
 - 对调模型后，编辑器缩略图可能仍是旧外观，需在 Workbench 重新生成预览
-- WLR 扇扫解算与切向悬停直升机建议局内实测
+- WLR 全向扫描；悬停直升机速度读数建议局内再核一次
 - 情报网本机 2 km；HQ / 中继跳转需局内核对
 
 ## 文档

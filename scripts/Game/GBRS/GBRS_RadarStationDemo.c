@@ -9,7 +9,7 @@
 //   GBRS_RadarStationDemo.Start();      // US AN/TPN-19, PD SEARCH, radial Mi-8
 //   GBRS_RadarStationDemo.StartUssr();  // USSR RPL-5, PD SEARCH
 //   GBRS_RadarStationDemo.StartWlr();   // US station, WLR, periodic 82 mm shells
-//   GBRS_RadarStationDemo.StartLock();  // reserved (LOCK / fire-control)
+//   GBRS_RadarStationDemo.StartLock();  // US station, PD + auto-lock vehicles
 //   GBRS_RadarStationDemo.Probe();      // dump station sensor plots
 //   GBRS_RadarStationDemo.Stop();
 class GBRS_RadarStationDemo
@@ -141,13 +141,11 @@ class GBRS_RadarStationDemo
 
     static void StartLock()
     {
-        // Reserved: no matching fire-control addon yet.
-        // GetInstance().StartInternal(
-        //     EGBRS_RadarFactionPreset.US,
-        //     GBRS_RadarStationConstants.MODE_LOCK,
-        //     true,
-        //     false);
-        Print("[GBRS Demo] StartLock() reserved.", LogLevel.WARNING);
+        GetInstance().StartInternal(
+            EGBRS_RadarFactionPreset.US,
+            GBRS_RadarStationConstants.MODE_LOCK,
+            true,
+            false);
     }
 
     static void Stop()
@@ -1012,6 +1010,12 @@ class GBRS_RadarStationDemo
     protected void KeepStareOnAirTarget()
     {
         float az = AirTargetAzimuthDeg();
+        if (!m_Station.IsAntennaStare())
+        {
+            m_Station.SetAntennaStare(true, az);
+            return;
+        }
+
         float cur = m_Station.GetAntennaStareAzDeg();
         float d = az - cur;
         while (d > 180.0)

@@ -6,11 +6,17 @@
 // HwCalib) stays with RDF.
 //
 // Balance intent:
-//   US  = precise SHORAD (7 km PD / 8 km WLR, 10 RPM search, 2.5 deg beam).
-//   USSR = early-warning (10 km PD/WLR, 6 RPM search, 6 deg beam, VHF DEM 0.50).
+//   US  = precise SHORAD (12 km PD / 8 km WLR, 10 RPM search, 2.5 deg beam).
+//   USSR = early-warning (16 km PD / 10 km WLR, 6 RPM search, 6 deg beam, VHF DEM 0.50).
 class GBRS_RadarStationConfig
 {
     protected static const float MTI_DISPLAY_MIN_RADIAL_SPEED_MS = 3.0;
+    // Jets ~250 m/s; anything faster than ~Mach 1.3 from a single noisy dwell
+    // is a measurement jump, not a body velocity.
+    static const float MAX_BODY_SPEED_MS = 450.0;
+    // Rotor sidebands detect a hover, but the Doppler is blade-tip (~200 m/s),
+    // not fuselage motion. Below this, treat the contact as stationary.
+    static const float ROTOR_HOVER_SPEED_MS = 25.0;
     // X-band ferrite circulator recovery on the SHORAD search pulse.
     protected static const float US_SEARCH_RECEIVER_RECOVERY_S = 0.0000002;
     // VHF TR-tube recovery on the P-18-like long pulse.
@@ -70,6 +76,53 @@ class GBRS_RadarStationConfig
             radialSpeed = -radialSpeed;
 
         return radialSpeed >= MTI_DISPLAY_MIN_RADIAL_SPEED_MS;
+    }
+
+    // PPI coast / speed readout must not treat blade Doppler or a one-dwell
+    // position jump as the aircraft's ground speed. Hovering helicopters were
+    // painted at 200+ m/s; jets entering the beam then coasted off the scope.
+    static vector SanitizePlotCoastVelocity(RDF_RadarTarget target)
+    {
+        vector zero = "0 0 0";
+        if (!target)
+            return zero;
+
+        if (target.m_RotorSidebandUsed)
+            return zero;
+
+        float speed = target.m_Velocity.Length();
+        if (speed > MAX_BODY_SPEED_MS)
+            return zero;
+
+        return target.m_Velocity;
+    }
+
+    static float SanitizeDisplaySpeedMs(float speedMs, bool rotorSideband)
+    {
+        float speed = speedMs;
+        if (speed < 0.0)
+            speed = -speed;
+
+        if (speed > MAX_BODY_SPEED_MS)
+            return 0.0;
+
+        if (rotorSideband)
+        {
+            if (speed <= ROTOR_HOVER_SPEED_MS)
+                return 0.0;
+            if (speed > 90.0)
+                return 0.0;
+        }
+
+        return speed;
+    }
+
+    static vector SanitizeTrackCoastVelocity(vector velocity)
+    {
+        float speed = velocity.Length();
+        if (speed > MAX_BODY_SPEED_MS)
+            return "0 0 0";
+        return velocity;
     }
 
     // TX blanking Rmin = c·(τ + recovery)/2. Syncs m_MinDistance so HUD/debug
@@ -254,11 +307,10 @@ class GBRS_RadarStationConfig
         // intervals; GBRS_RadarProjectileTrackerFix raises the tracker's own
         // miss allowance when mechanical scan is enabled.
         settings.m_TrackMaxMisses = 32;
-        // RDF 1.0.2 FindGatingTrack already drops leftover plots inside an
-        // existing track gate. 8° / 600 m is wide enough for mechanical-scan
-        // measurement noise without merging a formation.
-        settings.m_TrackGateAzimuthDeg = 8.0;
-        settings.m_TrackGateRangeM = 600.0;
+        // 10 RPM US search revisits every 6 s. A 250 m/s jet travels ~1.5 km
+        // in that gap; 600 m gates dropped the file and the blip jumped.
+        settings.m_TrackGateAzimuthDeg = 10.0;
+        settings.m_TrackGateRangeM = 1200.0;
         if (!settings.m_MeasurementModel)
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
@@ -335,6 +387,9 @@ class GBRS_RadarStationConfig
         ApplySystemLayers(settings);
         ApplyMechanicalScanBudget(settings);
         ApplyScattererDiscoveryBudget(settings);
+        // Shells live only a few seconds. The shared 1 s discovery interval
+        // let infantry fill the classify queue before the round was tabled.
+        settings.m_ScattererDiscoveryIntervalS = 0.35;
         // RDF 1.0.2+ default is 2 solves/scan (queue the rest). GBRS PPI launch
         // / impact / ETA need the fix in the same barrage, so take the governor
         // max and keep the overflow queue. HUD reads track.m_LastWlrFix only —
@@ -415,11 +470,11 @@ class GBRS_RadarStationConfig
         }
     }
 
-    // US AN/TPN-19 visual, SHORAD pulse-Doppler search (~7 km). Not GCA handbook RF.
+    // US AN/TPN-19 visual, SHORAD pulse-Doppler search (~12 km). Not GCA handbook RF.
     static RDF_RadarSettings CreateUsSearch()
     {
-        RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(64);
-        settings.m_Range = 7000.0;
+        RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(96);
+        settings.m_Range = 12000.0;
         // 10 RPM × 2.5° beam ≈ 42 ms on target. 40 ms keeps overlap without
         // running ScanOnce on almost every game frame (20 ms was hitching).
         settings.m_UpdateInterval = 0.04;
@@ -452,20 +507,17 @@ class GBRS_RadarStationConfig
         ApplyFullFidelity(settings);
         settings.m_CfarMode = ERDF_CfarMode.RDF_CFAR_CA;
         ApplyWorkstationReadout(settings, true);
-        // RDF 1.0.2 FindGatingTrack drops leftover plots already inside an
-        // existing track gate, so the old 14° / 900 m US gate would merge a
-        // formation. Keep the shared 8° / 600 m fidelity gates.
         settings.m_TrackCoastMaxSec = 16.0;
         SyncMinDistanceToPulseBlind(settings);
         settings.Validate();
         return settings;
     }
 
-    // USSR Tesla RPL-5 visual, P-18-like VHF early-warning pulse-Doppler (~10 km).
+    // USSR Tesla RPL-5 visual, P-18-like VHF early-warning pulse-Doppler (~16 km).
     static RDF_RadarSettings CreateUssrSearch()
     {
-        RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(96);
-        settings.m_Range = 10000.0;
+        RDF_RadarSettings settings = RDF_RadarSensor.CreatePulseDopplerSettings(128);
+        settings.m_Range = 16000.0;
         // At 6 RPM the P-18-like 6-degree azimuth beam moves 1.44 degrees in
         // 40 ms, so dwells stay continuous across the beam.
         settings.m_UpdateInterval = 0.04;
@@ -523,23 +575,20 @@ class GBRS_RadarStationConfig
             return;
 
         settings.m_SectorHalfAngleDeg = 180.0;
-        settings.m_UpdateInterval = 0.15;
+        settings.m_UpdateInterval = 0.08;
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
-        // Counter-battery WLR sweeps back and forth within a narrow threat
-        // sector (cold-war sector-scan behavior) instead of a full 360° rotation
-        // or a parked stare. The operator can re-centre the sector; the defaults
-        // cover a ±45° corridor around the radar's default aim.
+        // Full 360° mechanical rotation. A default ±45° east corridor left
+        // most mortar/arty fire unilluminated, so WLR painted an empty PPI.
         settings.m_EnableMechanicalScan = true;
-        settings.m_SectorSweepEnabled = true;
-        settings.m_SectorSweepCenterRad = 0.0;                  // default aim = east
-        settings.m_SectorSweepHalfWidthRad = 0.785398;          // ±45° corridor
-        settings.m_SectorSweepRateRadS = 1.2;                   // fast enough passes
-        // Sector-sweep shells get few hits per pass. 4 / 1.0 s matches RDF
-        // defaults closely enough to limit garbage arcs without starving Demo.
-        settings.m_WeaponLocateMinHits = 4;
-        settings.m_WeaponLocateMinSpanS = 1.0;
+        settings.m_SectorSweepEnabled = false;
+        settings.m_SectorSweepCenterRad = 0.0;
+        settings.m_SectorSweepHalfWidthRad = 3.14159265;
+        settings.m_SectorSweepRateRadS = 0.6;
+        // 24–30° beam at 6 RPM dwells ~0.7 s; 0.08 s scans yield enough hits.
+        settings.m_WeaponLocateMinHits = 3;
+        settings.m_WeaponLocateMinSpanS = 0.6;
         settings.m_WeaponLocateMaxFitRmsM = 80.0;
         settings.m_TrackConfirmHits = 2;
         // RDF defaults are 4° / 400 m. GBRS previously used 8° / 600 m so a
@@ -563,6 +612,7 @@ class GBRS_RadarStationConfig
             // sector-sweep is driven by the sweep parameters above.
             settings.m_Hardware.m_ScanRpm = GBRS_RadarStationConstants.WLR_SCAN_RPM;
             settings.m_Hardware.ClearElevationBeams();
+            settings.m_Hardware.AddElevationBeam("flat", 5.0, 16.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_low", 15.0, 28.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_mid", 35.0, 30.0, 0.0);
             settings.m_Hardware.AddElevationBeam("mortar_high", 55.0, 28.0, -0.5);
@@ -573,7 +623,7 @@ class GBRS_RadarStationConfig
         SyncMinDistanceToPulseBlind(settings);
     }
 
-    // US counter-battery WLR (~8 km slow all-around rotation).
+    // US counter-battery WLR (~8 km all-around rotation).
     // Offline-tuned (tools/simulate_wlr_projectile.py + WLR_VALIDATION.md):
     // 500 kW gives ~8.6 dB at beam center and ~3.0 dB at 12 deg offset.
     // Gate 4 dB keeps center detections and drops the cheap offset lobe,
@@ -592,11 +642,10 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 4.0;
         if (settings.m_Hardware)
         {
-            // Narrow azimuth beam: the sector-sweep scans the corridor rapidly,
-            // so a narrow beam (cold-war counter-battery) keeps angular quality
-            // while still catching each shell across the sweep. Boresight peak
-            // gain is unaffected by beam width (Gaussian peaks at 1.0).
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 12.0;
+            // Wider azimuth beam so a 6 RPM 360° scan still dwells long enough
+            // on a shell to confirm a track (narrow 12° + ±45° east missed
+            // almost every round the operator actually fired).
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 24.0;
             settings.m_Hardware.m_PeakPowerW = 500000.0;
         }
         ApplyWlrProductFlags(settings);
@@ -613,7 +662,7 @@ class GBRS_RadarStationConfig
         return settings;
     }
 
-    // USSR counter-battery WLR (~10 km slow all-around rotation, wider beam).
+    // USSR counter-battery WLR (~10 km all-around rotation, wider beam).
     // VHF hardware (P-18-like) gives a large lambda^2 advantage at 10 km:
     // offline chain (no clutter) shows ~30 dB center SNR — far above the gate,
     // so peak power stays at the P-18 default (250 kW, CreateP18Like). The
@@ -631,9 +680,8 @@ class GBRS_RadarStationConfig
         settings.m_DetectionSnrDb = 5.0;
         if (settings.m_Hardware)
         {
-            // Slightly wider than US for VHF; still a narrow azimuth beam for
-            // the fast sector-sweep (see US WLR note).
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 15.0;
+            // Wider than US for VHF; all-around mechanical scan (see US WLR).
+            settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
         }
         ApplyWlrProductFlags(settings);
         // Same VHF surface-scale relief as USSR search; clutter stays enabled.

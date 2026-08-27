@@ -250,6 +250,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         PublishDatalink(owner);
         UpdateNetworkContactEvents(owner);
         UpdateWlrEvents(owner);
+        UpdateLockDwell(owner);
         DebugScanTick(owner);
         TickPpiSnapshot(owner);
     }
@@ -1128,6 +1129,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_PpiBaker.GetWlrPersist(),
             m_PpiBaker.GetDetectedTotal(),
             netOnline,
+            ResolveLockedTrackId(),
             packedInts,
             packedFloats);
     }
@@ -1927,6 +1929,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (m_bPowered)
             SetAntennaSpinning(true);
 
+        if (m_bAntennaStare)
+            ApplyAntennaStarePhase(owner);
+
         if (m_bDebugLog)
         {
             string projFlag = "0";
@@ -1991,7 +1996,32 @@ class GBRS_RadarStationComponent : ScriptComponent
     // Air search PD plus lock-manager auto-acquire for vehicles.
     protected void ApplyLockSettings(IEntity owner)
     {
-        ApplySearchSettings(owner);
+        bool alreadySearch = false;
+        if (m_WorkstationMode == GBRS_RadarStationConstants.MODE_PD_SEARCH)
+            alreadySearch = true;
+        if (m_WorkstationMode == GBRS_RadarStationConstants.MODE_LOCK)
+            alreadySearch = true;
+
+        // Reconfigure only when leaving WLR/MANUAL. ResetSession would wipe
+        // the painted tracks the operator just clicked.
+        if (!alreadySearch)
+            ApplySearchSettings(owner);
+
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSensor liveSensor = m_Radar.GetSensor();
+        if (liveSensor)
+        {
+            RDF_RadarSettings settings = liveSensor.GetSettings();
+            if (settings)
+            {
+                settings.m_KeepEntityTruth = true;
+                settings.m_EnableDwellScheduler = true;
+                settings.Validate();
+            }
+        }
+
         ConfigureLockLayer(true);
     }
 
@@ -2118,10 +2148,15 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (settings.m_Hardware)
             m_fScanRpm = settings.m_Hardware.m_ScanRpm;
 
-        // If the new product spins and we are coming out of a parked mode (the
-        // previous rpm was <= 0, or we were in an antenna stare), re-base the
-        // scan phase so the antenna resumes from its current physical bearing.
-        if (m_fScanRpm > 0.0 && (prevRpm <= 0.0 || m_bAntennaStare))
+        // Keep an active stare parked. Re-basing mechanical phase while stare
+        // is still requested used to drop m_bAntennaStare and resume 10 RPM,
+        // so the HUD sweep walked off the painted contact.
+        if (m_bAntennaStare)
+        {
+            ApplyAntennaStarePhase(owner);
+            StampScanPhaseOnSettings(settings);
+        }
+        else if (m_fScanRpm > 0.0 && prevRpm <= 0.0)
         {
             BaseWorld world2 = GetGame().GetWorld();
             float timeS = 0.0;
@@ -2130,11 +2165,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_fScanPhaseOffsetRad = currentAngleRad
                 - timeS * m_fScanRpm * Math.PI * 2.0 / 60.0;
             m_bAntennaFrozen = false;
-            if (m_bAntennaStare)
-            {
-                m_bAntennaStare = false;
-                m_bStarePhaseCleared = true;
-            }
             StampScanPhaseOnSettings(settings);
         }
 
@@ -2160,6 +2190,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             lockMgr.SetAutoAcquire(false);
             lockMgr.Unlock();
+            sensor.ClearDesignation();
             if (m_bLockLayerEnabled != false)
             {
                 m_bLockLayerEnabled = false;
@@ -2179,8 +2210,8 @@ class GBRS_RadarStationComponent : ScriptComponent
         lockMgr.SetTypeFilter(true, false, false);
         lockMgr.SetMaxLockRange(maxRange);
         lockMgr.SetLockSector(0.0);
-        lockMgr.SetAcquireHits(2);
-        lockMgr.SetCoastMaxSec(3.0);
+        lockMgr.SetAcquireHits(1);
+        lockMgr.SetCoastMaxSec(8.0);
 
         if (m_bLockLayerEnabled != enableAutoLock)
         {
@@ -2188,6 +2219,173 @@ class GBRS_RadarStationComponent : ScriptComponent
             if (GBRS_RadarStationEvents.OnLockChanged)
                 GBRS_RadarStationEvents.OnLockChanged.Invoke(this, enableAutoLock);
         }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Park FIRE_CONTROL dwells on the locked scatterer so STT actually holds
+    //! the painted contact instead of waiting for the next mechanical pass.
+    protected void UpdateLockDwell(IEntity owner)
+    {
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_LOCK)
+            return;
+
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        RDF_RadarLockManager lockMgr = sensor.GetLockManager();
+        if (!lockMgr)
+            return;
+
+        if (!lockMgr.IsLocked())
+        {
+            sensor.ClearDesignation();
+            return;
+        }
+
+        int trackId = ResolveLockedTrackId();
+        if (trackId <= 0)
+            return;
+
+        RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+        if (!tracker)
+            return;
+
+        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
+        if (!tracks)
+            return;
+
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (tr.m_TrackId != trackId)
+                continue;
+            if (tr.m_ScattererId > 0)
+                sensor.DesignateScattererId(tr.m_ScattererId);
+            return;
+        }
+    }
+
+    int ResolveLockedTrackId()
+    {
+        if (!m_Radar)
+            return 0;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return 0;
+
+        RDF_RadarLockManager lockMgr = sensor.GetLockManager();
+        if (!lockMgr)
+            return 0;
+        if (!lockMgr.IsLocked())
+            return 0;
+
+        IEntity lockEnt;
+        vector lockPos;
+        if (!lockMgr.GetLockedTarget(lockEnt, lockPos))
+            return 0;
+
+        RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+        if (!tracker)
+            return 0;
+
+        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
+        if (!tracks)
+            return 0;
+
+        int bestId = 0;
+        float bestDist = 120.0;
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+
+            if (lockEnt && tr.m_ScattererId > 0)
+            {
+                RDF_RadarScatterer entry = RDF_RadarScattererRegistry.FindById(tr.m_ScattererId);
+                if (entry && entry.m_Entity)
+                {
+                    IEntity plotRoot = entry.m_Entity.GetRootParent();
+                    if (!plotRoot)
+                        plotRoot = entry.m_Entity;
+                    IEntity lockRoot = lockEnt.GetRootParent();
+                    if (!lockRoot)
+                        lockRoot = lockEnt;
+                    if (plotRoot == lockRoot)
+                        return tr.m_TrackId;
+                }
+            }
+
+            float dist = vector.Distance(tr.m_FilteredPosition, lockPos);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestId = tr.m_TrackId;
+            }
+        }
+
+        return bestId;
+    }
+
+    bool RequestLockTrack(int trackId)
+    {
+        if (IsDestroyed())
+            return false;
+        if (!m_bPowered)
+            return false;
+
+        if (IsAuthority())
+            return AuthorityLockTrack(trackId);
+
+        return GBRS_PlayerControllerNet.RequestLockTrack(this, trackId);
+    }
+
+    bool AuthorityLockTrack(int trackId)
+    {
+        if (!IsAuthority())
+            return false;
+        if (IsDestroyed())
+            return false;
+        if (!m_bPowered)
+            return false;
+
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_LOCK)
+        {
+            ApplyWorkstationModeLocal(GBRS_RadarStationConstants.MODE_LOCK);
+            Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(GBRS_RadarStationConstants.MODE_LOCK));
+        }
+
+        if (!m_Radar)
+            return false;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return false;
+
+        RDF_RadarLockManager lockMgr = sensor.GetLockManager();
+        if (!lockMgr)
+            return false;
+
+        if (trackId <= 0)
+        {
+            lockMgr.Unlock();
+            return true;
+        }
+
+        lockMgr.SetAutoAcquire(false);
+        lockMgr.LockTrackId(trackId);
+        return true;
     }
 
     protected void ApplyElevationToSettings(RDF_RadarSettings settings)
@@ -2761,17 +2959,6 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!tr)
             return vel;
 
-        // Prefer sanitized WLR arc direction for shells (never reverses).
-        RDF_RadarWlrFix wlrFix = GBRS_RadarWlrBallisticSolver.SanitizeFixForDisplay(
-            tr.m_LastWlrFix, tr);
-        if (wlrFix)
-        {
-            vector arc = wlrFix.m_ImpactPos - wlrFix.m_LaunchPos;
-            arc[1] = 0.0;
-            if (arc.Length() >= 3.0)
-                return arc;
-        }
-
         // Position chord over ~1 s (true motion). Prefer before sparse vacuum
         // fits that flip near closest approach.
         if (tr.m_Positions && tr.m_Times)
@@ -2802,6 +2989,34 @@ class GBRS_RadarStationComponent : ScriptComponent
             }
         }
 
+        if (vel.Length() > GBRS_RadarStationConfig.MAX_BODY_SPEED_MS)
+            vel = "0 0 0";
+
+        // Prefer sanitized WLR arc direction for shells (never reverses).
+        // The arc itself is metres, not m/s — scale by chord / filter speed.
+        RDF_RadarWlrFix wlrFix = GBRS_RadarWlrBallisticSolver.SanitizeFixForDisplay(
+            tr.m_LastWlrFix, tr);
+        if (wlrFix)
+        {
+            vector arc = wlrFix.m_ImpactPos - wlrFix.m_LaunchPos;
+            arc[1] = 0.0;
+            float arcLen = arc.Length();
+            if (arcLen >= 3.0)
+            {
+                vector dir = arc * (1.0 / arcLen);
+                float spd = vel.Length();
+                if (spd < 2.0)
+                {
+                    spd = tr.m_FilteredVelocity.Length();
+                    if (spd > GBRS_RadarStationConfig.MAX_BODY_SPEED_MS)
+                        spd = 0.0;
+                }
+                if (spd < 2.0)
+                    spd = 200.0;
+                return dir * spd;
+            }
+        }
+
         if (vel.Length() >= 0.001)
             return vel;
 
@@ -2819,12 +3034,12 @@ class GBRS_RadarStationComponent : ScriptComponent
             if (fit && fit.m_Valid)
             {
                 vector fv = fit.m_Velocity;
-                if (fv.Length() >= 2.0)
+                if (fv.Length() >= 2.0 && fv.Length() <= GBRS_RadarStationConfig.MAX_BODY_SPEED_MS)
                     return fv;
             }
         }
 
-        return tr.m_FilteredVelocity;
+        return GBRS_RadarStationConfig.SanitizeTrackCoastVelocity(tr.m_FilteredVelocity);
     }
 
     //------------------------------------------------------------------------------------------------

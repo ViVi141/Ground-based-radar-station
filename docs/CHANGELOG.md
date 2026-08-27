@@ -1,5 +1,73 @@
 # CHANGELOG
 
+## 1.1.5 — 2026-08-27
+
+依赖 / Requires **RDF ≥ 1.1.6**。
+
+### 中文
+
+- 修复 Workbench / 单机场景下 PPI 快照未到达导致右侧面板为空的问题：现在直接从 RDF 传感器读取 live plots 与 tracks 填充 `ListBody`。
+- 恢复右侧面板动态内容，去掉临时测试文本；现在列出航迹/点迹的方位、距离、高度、速度、类型、信噪比。
+- 左下角 AzEl 增加点迹显示，并给所有 blip 加白色外晕以在深色背景上可见。
+- 本地模式下航迹也直接回传给 HUD，避免确认航迹丢失。
+- 统一菜单与烘焙器的极坐标聚类（±4° / 400 m），解决一机多点未完全合并的问题。
+- 放宽航迹显示距离门到量程 1.1 倍，与点迹一致。
+
+### English
+
+- Fixed empty right-side contacts panel in local / Workbench runs: `ListBody` now populates from live RDF plots and tracks when the replicated snapshot has not arrived yet.
+- Removed temporary test text; restored dynamic contact list with azimuth, range, altitude, speed, type and SNR.
+- Added plot drawing to the bottom-left AzEl display and a white halo around every blip for visibility against the dark background.
+- Local-mode tracks are also fed back to the HUD so confirmed tracks are no longer lost.
+- Unified polar clustering (±4° / 400 m) between the menu and the PPI baker to fully merge multi-scatterer returns.
+- Track display range gate relaxed to 1.1× zoom range, matching plots.
+
+---
+
+## 1.1.3 — 2026-08-27
+
+依赖 / Requires **RDF ≥ 1.1.6**。
+
+### 中文
+
+- PPI 点迹余辉停在最后一次探测位置，不再用速度外推；波束离开后余辉不再滑走。
+- 同一机体的多 scatterer（机身+旋翼）按 120 m 空间门合并，避免一机五点。
+- 右侧目标栏：没有确认航迹时回退到点迹；未确认航迹也会上表。
+- Demo / 设置推送不再清掉仍在请求的天线盯视；径向飞行时也会把被清掉的盯视拉回来。
+- PD SEARCH 的 PPI / AzEl 同时画冻结点迹和 TWS 方块，扫描线跟 live 天线。
+
+### English
+
+- Plot afterglow is frozen at last detection (no persist coast).
+- Multi-scatterer airframes cluster within 120 m.
+- Contacts table falls back to plots when the track file is empty; tentatives are listed.
+- Antenna stare survives settings push and Demo re-applies it if it was dropped.
+- PD SEARCH paints frozen plots plus TWS squares; sweep still follows the live antenna.
+
+---
+
+## 1.1.1 — 2026-08-27
+
+依赖 / Requires **RDF ≥ 1.1.6**。
+
+### 中文
+
+- 空搜量程：美军 **12 km**，苏军 **16 km**（WLR 仍为 8 / 10 km，弹丸 SNR 不够再加）。
+- 空搜关联门加到 **10° / 1200 m**，高速喷气进出波束时不再轻易断档乱跳。
+- **LOCK** 工作台页开放：自动锁最近载具；在 PPI 上点击航迹可指定锁定（供 SAM/AAA 火控桥）。
+- WLR 改回 **360° 机械扫描**（加宽方位波束 + 低仰角瓣），不再默认只扫东侧 ±45°。
+- 旋翼边带多普勒不再当机体速度：悬停直升机不再显示成几百米每秒，PPI coast 也不会把点迹甩飞。
+
+### English
+
+- Air-search range: US **12 km**, USSR **16 km** (WLR stays 8 / 10 km).
+- Wider air-search gates (**10° / 1200 m**) so jets survive the time between beam passes.
+- **LOCK** mode is live: auto-acquire vehicles; click a PPI track to designate (fire-control bridge).
+- WLR is all-around mechanical scan again (wider az beam + low-elevation lobe). Default ±45° east corridor is gone.
+- Rotor-sideband Doppler is no longer treated as body speed, so hovering helicopters stop reading as hundreds of m/s.
+
+---
+
 ## 1.1.0 — 2026-08-26
 
 依赖 / Requires **RDF ≥ 1.1.6**。

@@ -88,6 +88,25 @@ class GBRS_PlayerControllerNet
     }
 
     //------------------------------------------------------------------------------------------------
+    static bool RequestLockTrack(GBRS_RadarStationComponent station, int trackId)
+    {
+        if (!station)
+            return false;
+
+        RplId stationId = station.GetStationRplId();
+        if (!stationId.IsValid())
+            return false;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(GetGame().GetPlayerController());
+        if (!playerController)
+            return false;
+
+        playerController.GBRS_RpcAsk_LockTrack(stationId, trackId);
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
     static bool RequestForceIntelTx(GBRS_RadarStationComponent station)
     {
         if (!station)
@@ -199,6 +218,12 @@ modded class SCR_PlayerController
     }
 
     //------------------------------------------------------------------------------------------------
+    void GBRS_RpcAsk_LockTrack(RplId stationId, int trackId)
+    {
+        Rpc(RpcAsk_GBRS_LockTrack, stationId, trackId);
+    }
+
+    //------------------------------------------------------------------------------------------------
     void GBRS_RpcAsk_ForceIntelTx(RplId stationId)
     {
         Rpc(RpcAsk_GBRS_ForceIntelTx, stationId);
@@ -305,6 +330,27 @@ modded class SCR_PlayerController
             return;
 
         station.AuthoritySetAntennaStare(enabled, azDeg);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Server)]
+    protected void RpcAsk_GBRS_LockTrack(RplId stationId, int trackId)
+    {
+        GBRS_RadarStationComponent station = GBRS_PlayerControllerNet.ResolveStation(stationId);
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
+            return;
+
+        station.AuthorityLockTrack(trackId);
     }
 
     //------------------------------------------------------------------------------------------------

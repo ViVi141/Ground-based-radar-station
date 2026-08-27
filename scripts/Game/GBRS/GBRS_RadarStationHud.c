@@ -91,8 +91,10 @@ class GBRS_RadarStationHud
     // Multi-radar network overlay: tracks fused across the GBRS net.
     static const int COL_NET = ARGB(230, 120, 180, 255);
     static const int COL_LOCK = ARGB(255, 255, 70, 70);
-    static const int COL_PLOT_GLOW = ARGB(110, 90, 180, 130);
-    static const int COL_TRACK = ARGB(255, 90, 255, 150);
+    static const int COL_PLOT_GLOW = ARGB(255, 255, 235, 70);
+    static const int COL_TRACK = ARGB(255, 255, 255, 255);
+    static const int COL_TRACK_FILL = ARGB(255, 255, 40, 60);
+    static const int COL_TRACK_OUTLINE = ARGB(255, 255, 255, 255);
     static const int COL_TRACK_TENT = ARGB(200, 210, 220, 100);
     static const int COL_TRACK_COAST = ARGB(230, 140, 210, 255);
     static const int COL_TRACK_LABEL = ARGB(220, 220, 255, 210);
@@ -159,11 +161,13 @@ class GBRS_RadarStationHud
     // Wall-clock when the last PPI track snap arrived; used to coast symbols
     // between ~30 Hz snaps at the 60 Hz UI rate.
     protected float m_TrackCoastAnchorS;
-    protected float m_DisplayRange = 7000.0;
+    protected float m_DisplayRange = 12000.0;
     protected float m_LastUpdateS;
     protected string m_Mode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
     protected int m_DetectedTotal;
     protected RDF_RadarLockManager m_LockManager;
+    protected int m_LockedTrackId;
+    protected vector m_ScanOrigin;
     // RDF 1.0.0 ECCM decision status ("eccm=0" | "eccm slb/prf/freq/burn").
     protected string m_EccmStatus = "eccm=0";
     // MANUAL mode parameter list rendering (set by the menu).
@@ -247,18 +251,14 @@ class GBRS_RadarStationHud
             if (mode == GBRS_RadarStationConstants.MODE_WLR)
                 inst.m_Widgets.m_wPpiHint.SetText("LCH orange  IMP cyan   Up/Dn PPI range");
             else if (mode == GBRS_RadarStationConstants.MODE_LOCK)
-                inst.m_Widgets.m_wPpiHint.SetText("auto-lock vehicles   Up/Dn PPI range");
+                inst.m_Widgets.m_wPpiHint.SetText("click contact to lock   Up/Dn PPI range");
             else if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
                 inst.m_Widgets.m_wPpiHint.SetText("Up/Dn parameter   Left/Right value   wheel PPI range");
             else
-                inst.m_Widgets.m_wPpiHint.SetText("north-up AZ/EL   Up/Dn PPI range");
+                inst.m_Widgets.m_wPpiHint.SetText("click contact to lock   Up/Dn PPI range");
         }
 
-        bool showTable = true;
-        if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
-            showTable = false;
-        else if (mode == GBRS_RadarStationConstants.MODE_WLR)
-            showTable = false;
+        bool showTable = false;
         inst.SetContactsTableVisible(showTable);
 
         // Optics PIP is opt-in via OPTICS mode-bar button (see SetOpticsEnabled).
@@ -274,7 +274,7 @@ class GBRS_RadarStationHud
         if (m_Widgets.m_wListTable)
             m_Widgets.m_wListTable.SetVisible(contacts);
         if (m_Widgets.m_wListBody)
-            m_Widgets.m_wListBody.SetVisible(!contacts);
+            m_Widgets.m_wListBody.SetVisible(true);
     }
 
     protected void ApplyModeChrome(string mode)
@@ -339,6 +339,65 @@ class GBRS_RadarStationHud
         if (rangeM <= 0.0)
             return;
         GetInstance().m_DisplayRange = rangeM;
+    }
+
+    static void SetLockedTrackId(int trackId)
+    {
+        GetInstance().m_LockedTrackId = trackId;
+    }
+
+    protected int PickTrackIdAtCanvasPixelsInternal(float pixelX, float pixelY)
+    {
+        if (!m_Widgets || !m_Widgets.m_wPpiCanvas)
+            return 0;
+
+        float canvasW;
+        float canvasH;
+        m_Widgets.m_wPpiCanvas.GetScreenSize(canvasW, canvasH);
+        if (canvasW < 1.0)
+            canvasW = 1.0;
+        if (canvasH < 1.0)
+            canvasH = 1.0;
+
+        float clickX = (pixelX / canvasW) * m_PpiW;
+        float clickY = (pixelY / canvasH) * m_PpiH;
+
+        array<ref RDF_RadarTrack> tracks = m_CachedDisplayTracks;
+        if (!tracks)
+            return 0;
+
+        int bestId = 0;
+        float bestDist = 28.0;
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+
+            float bx;
+            float by;
+            vector drawPos = CoastTrackWorldPos(tr);
+            if (!WorldToPpi(m_ScanOrigin, drawPos, bx, by))
+                continue;
+
+            float dx = bx - clickX;
+            float dy = by - clickY;
+            float dist = Math.Sqrt(dx * dx + dy * dy);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestId = tr.m_TrackId;
+            }
+        }
+
+        return bestId;
+    }
+
+    static int PickTrackIdAtCanvasPixels(float pixelX, float pixelY)
+    {
+        return GetInstance().PickTrackIdAtCanvasPixelsInternal(pixelX, pixelY);
     }
 
     // RDF 1.0.0 ECCM status from the Sensor (GetEccmStatusShort): drives the
@@ -434,7 +493,7 @@ class GBRS_RadarStationHud
         if (m_Widgets.m_wListBody)
         {
             m_Widgets.m_wListBody.SetText("(no contacts)");
-            m_Widgets.m_wListBody.SetVisible(false);
+            m_Widgets.m_wListBody.SetVisible(true);
         }
         if (m_Widgets.m_wPpiMode)
             m_Widgets.m_wPpiMode.SetText(m_Mode);
@@ -455,6 +514,7 @@ class GBRS_RadarStationHud
         m_bOpticsEnabled = false;
         m_wRoot = null;
         m_LockManager = null;
+        m_LockedTrackId = 0;
         if (m_Widgets)
             m_Widgets.Clear();
         m_Widgets = null;
@@ -873,6 +933,7 @@ class GBRS_RadarStationHud
         m_LockManager = lockMgr;
         m_ReplicatedFused = replicatedFused;
         m_ReplicatedNetOnline = replicatedNetOnline;
+        m_ScanOrigin = origin;
 
         float now = System.GetTickCount() * 0.001;
         if (now - m_LastUpdateS < UPDATE_INTERVAL)
@@ -899,8 +960,8 @@ class GBRS_RadarStationHud
                 UpdateWlrPersist(origin, tracker);
         }
         UpdatePpi(targets, origin, forward, tracker);
-        UpdateAzEl(targets, origin, tracker);
         UpdateList(targets, origin, tracker);
+        UpdateAzEl(targets, origin, tracker);
 
         if (m_Widgets && m_Widgets.m_wPpiRange)
             m_Widgets.m_wPpiRange.SetText(RangeLabel(m_DisplayRange));
@@ -921,7 +982,7 @@ class GBRS_RadarStationHud
         if (m_DisplayRange <= 0.0)
             return true;
 
-        if (rng > m_DisplayRange)
+        if (rng > m_DisplayRange * 1.1)
             return false;
 
         return true;
@@ -946,8 +1007,12 @@ class GBRS_RadarStationHud
         if (dist < 0.001)
             return 0.0;
 
-        float el = Math.Asin(delta[1] / dist) * Math.RAD2DEG;
-        return el;
+        float s = delta[1] / dist;
+        if (s > 1.0)
+            s = 1.0;
+        if (s < -1.0)
+            s = -1.0;
+        return Math.Asin(s) * Math.RAD2DEG;
     }
 
     // RHS Garmin pattern: face texture + sweep/blips share one Canvas command list.
@@ -1016,6 +1081,7 @@ class GBRS_RadarStationHud
             float bearing = Math.Atan2(nx, nz);
             AddSweepWedge(bearing);
 
+            // Dotted scan line so it remains visible over the PPI face texture.
             array<float> sweep = new array<float>();
             AppendUnitPoint(sweep, m_PpiCx, m_PpiCy);
             AppendUnitPoint(sweep, m_PpiCx + nx * m_PpiR, m_PpiCy - nz * m_PpiR);
@@ -1030,33 +1096,13 @@ class GBRS_RadarStationHud
 
         if (m_Mode == MODE_WLR)
         {
-            if (targets && m_DisplayRange > 0.0)
-            {
-                int index = 0;
-                foreach (RDF_RadarTarget t : targets)
-                {
-                    if (!t)
-                        continue;
-                    if (!IsInDisplayRange(t, origin))
-                        continue;
-                    if (index >= MAX_DRAW_BLIPS)
-                        break;
-
-                    float bx;
-                    float by;
-                    if (!WorldToPpi(origin, t.m_Position, bx, by))
-                        continue;
-
-                    DrawPlotAfterglow(bx, by, t);
-                    index = index + 1;
-                }
-            }
-
+            DrawSearchPlots(targets, origin);
             DrawWlrShellTracks(origin, tracker);
             DrawWlrAlerts(origin);
         }
         else
         {
+            DrawSearchPlots(targets, origin);
             DrawTwsTracks(origin, tracker);
         }
 
@@ -1064,6 +1110,36 @@ class GBRS_RadarStationHud
         DrawNetworkFusedTracks(origin);
 
         m_Widgets.m_wPpiCanvas.SetDrawCommands(m_PpiAll);
+    }
+
+    // Frozen last-hit afterglow. Do not extrapolate these; TWS squares are
+    // the predicted file. Sliding plots after the beam left looked like the
+    // sweep was flinging contacts.
+    protected void DrawSearchPlots(array<ref RDF_RadarTarget> targets, vector origin)
+    {
+        if (!targets)
+            return;
+        if (m_DisplayRange <= 0.0)
+            return;
+
+        int index = 0;
+        foreach (RDF_RadarTarget t : targets)
+        {
+            if (!t)
+                continue;
+            if (!IsInDisplayRange(t, origin))
+                continue;
+            if (index >= MAX_DRAW_BLIPS)
+                break;
+
+            float bx;
+            float by;
+            if (!WorldToPpi(origin, t.m_Position, bx, by))
+                continue;
+
+            DrawPlotAfterglow(bx, by, t);
+            index = index + 1;
+        }
     }
 
     // WLR live shells: draw the track file itself. Launch/impact overlays
@@ -1292,11 +1368,8 @@ class GBRS_RadarStationHud
         {
             if (t.m_IsFalsePlot)
                 color = ARGB(90, 255, 95, 95);
-            else
-            {
-                if (t.m_LosBlocked)
-                    color = ARGB(90, 110, 235, 255);
-            }
+            else if (t.m_LosBlocked)
+                color = ARGB(90, 110, 235, 255);
         }
 
         vector centerPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(bx, by, 0.0));
@@ -1305,6 +1378,17 @@ class GBRS_RadarStationHud
             rPx = UnitSizeToPixels(4.5);
         if (rPx < 1.0)
             rPx = 1.0;
+
+        // Always draw a bright halo so the dot survives the dark PPI face texture.
+        array<float> hv = new array<float>();
+        float haloPx = rPx * 1.8;
+        if (haloPx < 3.0)
+            haloPx = 3.0;
+        m_Widgets.m_wPpiCanvas.TessellateCircle(centerPx, haloPx, 10, hv);
+        PolygonDrawCommand halo = new PolygonDrawCommand();
+        halo.m_iColor = ARGB(255, 255, 255, 255);
+        halo.m_Vertices = hv;
+        m_PpiAll.Insert(halo);
 
         array<float> bv = new array<float>();
         m_Widgets.m_wPpiCanvas.TessellateCircle(centerPx, rPx, 8, bv);
@@ -1341,16 +1425,18 @@ class GBRS_RadarStationHud
 
             float bx;
             float by;
-            vector drawPos = CoastTrackWorldPos(tr);
+            vector drawPos = TrackDrawWorldPos(tr, origin);
             if (!WorldToPpi(origin, drawPos, bx, by))
                 continue;
 
             int color = TrackColor(tr);
-            float half = 6.0;
+            float half = 7.0;
 
             bool locked = false;
             if (hasLock)
                 locked = IsLockMatchedTrack(tr, lockPos);
+            if (!locked && m_LockedTrackId > 0 && tr.m_TrackId == m_LockedTrackId)
+                locked = true;
             if (locked)
             {
                 color = COL_LOCK;
@@ -1398,25 +1484,39 @@ class GBRS_RadarStationHud
         return m_CachedDisplayTracks;
     }
 
-    // Soft-coast track symbols between PPI snaps so 60 Hz redraw does not
-    // hold a frozen blip until the next authority pack arrives.
+    // Authority snapshot already carries RDF-filtered position at ~30 Hz.
     protected vector CoastTrackWorldPos(RDF_RadarTrack tr)
     {
+        return TrackDrawWorldPos(tr, m_ScanOrigin);
+    }
+
+    // Prefer filtered ECEF; if that is 0/invalid, rebuild from RDF az/range
+    // (0 deg = +X east, 90 deg = +Z north).
+    protected vector TrackDrawWorldPos(RDF_RadarTrack tr, vector origin)
+    {
         if (!tr)
-            return "0 0 0";
+            return origin;
 
         vector pos = tr.m_FilteredPosition;
-        if (m_TrackCoastAnchorS <= 0.0)
-            return pos;
+        if (VecFinite(pos))
+        {
+            vector delta = pos - origin;
+            if (delta.LengthSq() > 1.0)
+                return pos;
+        }
 
-        float nowS = System.GetTickCount() * 0.001;
-        float dt = nowS - m_TrackCoastAnchorS;
-        if (dt <= 0.0)
-            return pos;
-        if (dt > 0.25)
-            return pos;
+        float rng = tr.m_FilteredRangeM;
+        if (rng > 1.0)
+        {
+            float azRad = tr.m_FilteredAzimuthDeg * 0.017453292519943295;
+            vector rebuilt;
+            rebuilt[0] = origin[0] + rng * Math.Cos(azRad);
+            rebuilt[1] = origin[1];
+            rebuilt[2] = origin[2] + rng * Math.Sin(azRad);
+            return rebuilt;
+        }
 
-        return pos + (tr.m_FilteredVelocity * dt);
+        return pos;
     }
 
     protected array<ref RDF_RadarTrack> CollectDisplayTracks(
@@ -1439,8 +1539,6 @@ class GBRS_RadarStationHud
             i = i + 1;
             if (!tr)
                 continue;
-            if (!tr.m_Confirmed)
-                continue;
             if (!IsTrackInDisplayRange(tr, origin))
                 continue;
 
@@ -1462,7 +1560,8 @@ class GBRS_RadarStationHud
 
             if (match < 0)
             {
-                result.Insert(tr);
+                if (result.Count() < MAX_DRAW_BLIPS)
+                    result.Insert(tr);
                 continue;
             }
 
@@ -1512,6 +1611,12 @@ class GBRS_RadarStationHud
             return false;
         if (!b)
             return true;
+        if (a.m_Confirmed != b.m_Confirmed)
+        {
+            if (a.m_Confirmed)
+                return true;
+            return false;
+        }
         if (a.m_Coasting != b.m_Coasting)
         {
             if (!a.m_Coasting)
@@ -1594,9 +1699,17 @@ class GBRS_RadarStationHud
             vector arc = wlrFix.m_ImpactPos - wlrFix.m_LaunchPos;
             dirX = arc[0];
             dirZ = arc[2];
-            speed = Math.Sqrt(dirX * dirX + dirZ * dirZ);
-            if (speed >= 3.0)
+            float arcLen = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+            if (arcLen >= 3.0)
+            {
+                if (haveChord)
+                    speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(chordSpeed, false);
+                else
+                    speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(vH, false);
+                if (speed < 3.0)
+                    speed = 3.0;
                 return;
+            }
         }
 
         // 2) Measured position chord — true ground track. Prefer this over a
@@ -1605,7 +1718,7 @@ class GBRS_RadarStationHud
         {
             dirX = chordX;
             dirZ = chordZ;
-            speed = chordSpeed;
+            speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(chordSpeed, false);
             return;
         }
 
@@ -1614,7 +1727,7 @@ class GBRS_RadarStationHud
         {
             dirX = vx;
             dirZ = vz;
-            speed = vH;
+            speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(vH, false);
             return;
         }
 
@@ -1627,10 +1740,10 @@ class GBRS_RadarStationHud
         float rr = tr.m_FilteredRangeRateMs;
         dirX = Math.Cos(azRad) * (-rr);
         dirZ = Math.Sin(azRad) * (-rr);
-        if (rr < 0.0)
-            speed = -rr;
-        else
-            speed = rr;
+        float radialAbs = rr;
+        if (radialAbs < 0.0)
+            radialAbs = -radialAbs;
+        speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(radialAbs, false);
     }
 
     protected bool IsTrackInDisplayRange(RDF_RadarTrack tr, vector origin)
@@ -1641,14 +1754,14 @@ class GBRS_RadarStationHud
         float rng = tr.m_FilteredRangeM;
         if (rng <= 0.0)
         {
-            vector d = tr.m_FilteredPosition - origin;
+            vector d = TrackDrawWorldPos(tr, origin) - origin;
             rng = d.Length();
         }
 
         if (m_DisplayRange <= 0.0)
             return true;
 
-        if (rng > m_DisplayRange)
+        if (rng > m_DisplayRange * 1.1)
             return false;
 
         return true;
@@ -1726,8 +1839,9 @@ class GBRS_RadarStationHud
         return true;
     }
 
-    // Returns false when the plot is outside the current display range or the
-    // position is not finite.
+    // Returns false when the position is not finite. Clamps range to rim so
+    // the blip is always visible when on the same radial, even beyond the
+    // current display range.
     protected bool WorldToPpi(vector origin, vector worldPos, out float outX, out float outY)
     {
         outX = m_PpiCx;
@@ -1742,30 +1856,9 @@ class GBRS_RadarStationHud
         float normX = delta[0] / m_DisplayRange;
         float normZ = delta[2] / m_DisplayRange;
         float d2 = normX * normX + normZ * normZ;
-        if (d2 > 1.0)
-            return false;
+        if (d2 <= 0.000001)
+            return true;
 
-        outX = m_PpiCx + normX * m_PpiR;
-        outY = m_PpiCy - normZ * m_PpiR;
-        return true;
-    }
-
-    // Clamp to PPI rim so WLR launch/impact outside range still draw. Rejects
-    // non-finite positions so a bad ballistic fix can never feed the draw path.
-    protected bool WorldToPpiClamped(vector origin, vector worldPos, out float outX, out float outY)
-    {
-        outX = m_PpiCx;
-        outY = m_PpiCy;
-
-        if (m_DisplayRange <= 0.0)
-            return false;
-        if (!VecFinite(worldPos) || !VecFinite(origin))
-            return false;
-
-        vector delta = worldPos - origin;
-        float normX = delta[0] / m_DisplayRange;
-        float normZ = delta[2] / m_DisplayRange;
-        float d2 = normX * normX + normZ * normZ;
         if (d2 > 1.0)
         {
             float d = Math.Sqrt(d2);
@@ -2015,9 +2108,9 @@ class GBRS_RadarStationHud
                 float ly0;
                 float lx1;
                 float ly1;
-                if (WorldToPpiClamped(origin, entry.m_LaunchPos, lx0, ly0))
+                if (WorldToPpi(origin, entry.m_LaunchPos, lx0, ly0))
                 {
-                    if (WorldToPpiClamped(origin, entry.m_ImpactPos, lx1, ly1))
+                    if (WorldToPpi(origin, entry.m_ImpactPos, lx1, ly1))
                     {
                         // Always connect launch and impact with a clear solid
                         // line; then overlay the live-remaining segment.
@@ -2033,7 +2126,7 @@ class GBRS_RadarStationHud
                 DrawPpiAlertRing(origin, entry.m_LaunchPos, alertUnit, COL_WLR_LAUNCH);
                 float lx;
                 float ly;
-                if (WorldToPpiClamped(origin, entry.m_LaunchPos, lx, ly))
+                if (WorldToPpi(origin, entry.m_LaunchPos, lx, ly))
                 {
                     DrawPpiSquare(lx, ly, 5.0, COL_WLR_LAUNCH);
                     DrawPpiLabel(lx, ly, "LCH " + id + " " + GetPpiMapLabel(entry.m_LaunchPos), COL_WLR_LAUNCH);
@@ -2045,7 +2138,7 @@ class GBRS_RadarStationHud
                 DrawPpiAlertRing(origin, entry.m_ImpactPos, alertUnit, COL_WLR_IMPACT);
                 float ix;
                 float iy;
-                if (WorldToPpiClamped(origin, entry.m_ImpactPos, ix, iy))
+                if (WorldToPpi(origin, entry.m_ImpactPos, ix, iy))
                 {
                     DrawPpiCross(ix, iy, 7.0, COL_WLR_IMPACT);
                     string eta = FormatEtaS(entry.m_ImpactTimeS - nowS);
@@ -2116,6 +2209,22 @@ class GBRS_RadarStationHud
 
     protected void DrawPpiSquare(float cx, float cy, float half, int color)
     {
+        array<float> fill = new array<float>();
+        AppendUnitPoint(fill, cx - half, cy - half);
+        AppendUnitPoint(fill, cx + half, cy - half);
+        AppendUnitPoint(fill, cx + half, cy + half);
+        AppendUnitPoint(fill, cx - half, cy + half);
+        PolygonDrawCommand poly = new PolygonDrawCommand();
+        poly.m_iColor = COL_TRACK_FILL;
+        if (color == COL_LOCK)
+            poly.m_iColor = ARGB(255, 255, 30, 30);
+        else if (color == COL_TRACK_TENT)
+            poly.m_iColor = ARGB(255, 255, 200, 60);
+        else if (color == COL_PROJ)
+            poly.m_iColor = ARGB(255, 255, 220, 70);
+        poly.m_Vertices = fill;
+        m_PpiAll.Insert(poly);
+
         array<float> verts = new array<float>();
         AppendUnitPoint(verts, cx - half, cy - half);
         AppendUnitPoint(verts, cx + half, cy - half);
@@ -2123,10 +2232,10 @@ class GBRS_RadarStationHud
         AppendUnitPoint(verts, cx - half, cy + half);
         AppendUnitPoint(verts, cx - half, cy - half);
         LineDrawCommand sq = new LineDrawCommand();
-        sq.m_iColor = color;
-        sq.m_fWidth = UnitSizeToPixels(1.6);
-        if (sq.m_fWidth < 1.0)
-            sq.m_fWidth = 1.0;
+        sq.m_iColor = COL_TRACK_OUTLINE;
+        sq.m_fWidth = UnitSizeToPixels(2.2);
+        if (sq.m_fWidth < 2.0)
+            sq.m_fWidth = 2.0;
         sq.m_Vertices = verts;
         m_PpiAll.Insert(sq);
     }
@@ -2214,7 +2323,7 @@ class GBRS_RadarStationHud
     {
         float bx;
         float by;
-        if (!WorldToPpiClamped(origin, worldPos, bx, by))
+        if (!WorldToPpi(origin, worldPos, bx, by))
             return;
 
         vector centerPx = m_Widgets.m_wPpiCanvas.PosToPixels(Vector(bx, by, 0.0));
@@ -2388,7 +2497,8 @@ class GBRS_RadarStationHud
     {
         float vx = t.m_Velocity[0];
         float vz = t.m_Velocity[2];
-        float speed = Math.Sqrt(vx * vx + vz * vz);
+        float speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(
+            Math.Sqrt(vx * vx + vz * vz), t.m_RotorSidebandUsed);
         if (speed < 2.0)
             return;
         float dx = vx * 0.22;
@@ -2426,16 +2536,8 @@ class GBRS_RadarStationHud
         m_AzElAll.Clear();
 
         DrawAzElGrid();
-
-        if (m_Mode == MODE_WLR)
-        {
-            DrawAzElPlots(targets, origin);
-            DrawAzElTracks(origin, tracker);
-        }
-        else
-        {
-            DrawAzElTracks(origin, tracker);
-        }
+        DrawAzElPlots(targets, origin);
+        DrawAzElTracks(origin, tracker);
 
         m_Widgets.m_wAzElCanvas.SetDrawCommands(m_AzElAll);
     }
@@ -2450,14 +2552,12 @@ class GBRS_RadarStationHud
         {
             if (!t)
                 continue;
-            if (!IsInDisplayRange(t, origin))
-                continue;
             if (index >= MAX_DRAW_BLIPS)
                 break;
 
             float az = NorthUpAzimuthDeg(t, origin);
             float el = NorthUpElevationDeg(t, origin);
-            DrawAzElMark(az, el, BlipColor(t), 4.5);
+            DrawAzElMark(az, el, BlipColor(t), 16.0);
             index = index + 1;
         }
     }
@@ -2479,13 +2579,14 @@ class GBRS_RadarStationHud
             if (index >= MAX_DRAW_BLIPS)
                 break;
 
-            vector d = tr.m_FilteredPosition - origin;
+            vector drawPos = TrackDrawWorldPos(tr, origin);
+            vector d = drawPos - origin;
             float az = Math.Atan2(d[0], d[2]) * Math.RAD2DEG;
             if (az < 0.0)
                 az = az + 360.0;
             float horiz = Math.Sqrt(d[0] * d[0] + d[2] * d[2]);
             float el = Math.Atan2(d[1], Math.Max(0.001, horiz)) * Math.RAD2DEG;
-            DrawAzElMark(az, el, TrackColor(tr), 5.0);
+            DrawAzElMark(az, el, TrackColor(tr), 16.0);
             index = index + 1;
         }
     }
@@ -2498,17 +2599,66 @@ class GBRS_RadarStationHud
         if (el > AZEL_EL_MAX)
             el = AZEL_EL_MAX;
 
-        float x = (azDeg / 360.0) * m_AzElW;
-        float y = m_AzElH - ((el - AZEL_EL_MIN) / (AZEL_EL_MAX - AZEL_EL_MIN)) * m_AzElH;
+        float margin = 10.0;
+        float innerW = m_AzElW - margin * 2.0;
+        float innerH = m_AzElH - margin * 2.0;
+        if (innerW < 1.0)
+            innerW = m_AzElW;
+        if (innerH < 1.0)
+            innerH = m_AzElH;
+
+        float az = azDeg;
+        while (az < 0.0)
+            az = az + 360.0;
+        while (az >= 360.0)
+            az = az - 360.0;
+
+        float x = margin + (az / 360.0) * innerW;
+        float y = margin + innerH - ((el - AZEL_EL_MIN) / (AZEL_EL_MAX - AZEL_EL_MIN)) * innerH;
+        AddAzElBlip(x, y, color, sizeUnit);
+
+        // 0 deg sits on the left edge; also paint the wrap so a due-north
+        // contact is not clipped off the plot.
+        if (az <= 12.0)
+            AddAzElBlip(margin + innerW, y, color, sizeUnit);
+        if (az >= 348.0)
+            AddAzElBlip(margin, y, color, sizeUnit);
+    }
+
+    protected void AddAzElBlip(float x, float y, int color, float sizeUnit)
+    {
+        if (!m_Widgets || !m_Widgets.m_wAzElCanvas)
+            return;
+
+        if (x != x || y != y)
+            return;
+        if (x > float.INFINITY || x < -float.INFINITY)
+            return;
+        if (y > float.INFINITY || y < -float.INFINITY)
+            return;
 
         vector centerPx = m_Widgets.m_wAzElCanvas.PosToPixels(Vector(x, y, 0.0));
         vector sizePx = m_Widgets.m_wAzElCanvas.SizeToPixels(Vector(sizeUnit, sizeUnit, 0.0));
         float rPx = sizePx[0];
-        if (rPx < 1.0)
-            rPx = 1.0;
+        if (rPx < 6.0)
+            rPx = 6.0;
 
         array<float> verts = new array<float>();
-        m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, rPx, 8, verts);
+        m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, rPx, 10, verts);
+        if (verts.Count() < 6)
+            return;
+
+        // Outer halo for visibility against the dark AzEl background.
+        array<float> haloVerts = new array<float>();
+        m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, rPx * 1.35, 12, haloVerts);
+        if (haloVerts.Count() >= 6)
+        {
+            PolygonDrawCommand halo = new PolygonDrawCommand();
+            halo.m_iColor = ARGB(255, 255, 255, 255);
+            halo.m_Vertices = haloVerts;
+            m_AzElAll.Insert(halo);
+        }
+
         PolygonDrawCommand blip = new PolygonDrawCommand();
         blip.m_iColor = color;
         blip.m_Vertices = verts;
@@ -2590,7 +2740,7 @@ class GBRS_RadarStationHud
             return;
         }
 
-        SetContactsTableVisible(true);
+        SetContactsTableVisible(false);
 
         string colNr = "";
         string colAz = "";
@@ -2599,54 +2749,109 @@ class GBRS_RadarStationHud
         string colSpd = "";
         string colType = "";
         string colSnr = "";
-        int row = 0;
-        if (m_CachedDisplayTracks)
-        {
-            row = AppendTrackListRows(
-                tracker,
-                origin,
-                colNr,
-                colAz,
-                colRng,
-                colAlt,
-                colSpd,
-                colType,
-                colSnr);
-        }
-        else if (targets)
-        {
-            row = AppendPlotListRows(
-                targets,
-                origin,
-                colNr,
-                colAz,
-                colRng,
-                colAlt,
-                colSpd,
-                colType,
-                colSnr);
-        }
+        int rows = 0;
 
-        if (row == 0)
+        rows = AppendTrackListRows(tracker, origin, colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
+        if (rows < MAX_LIST_ROWS && targets)
+            rows = rows + AppendPlotListRows(targets, origin, colNr, colAz, colRng, colAlt, colSpd, colType, colSnr, rows);
+
+        if (m_Widgets.m_wListBody)
         {
-            colNr = "--";
-            colAz = "---";
-            colRng = "-.-";
-            colAlt = "-.-";
-            colSpd = "---";
-            colType = "----";
-            colSnr = "--";
+            string body = "";
+            if (colNr != "")
+                body = "NR AZ\tRNG\tALT\tSPD\tTYPE\tSNR\n" + MergeContactColumns(colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
+            if (body == "")
+                body = " ";
+            m_Widgets.m_wListBody.SetText(body);
         }
+        UpdateListFooter(rows, tracker);
+    }
 
-        SetListCol(m_Widgets.m_wListBNr, colNr);
-        SetListCol(m_Widgets.m_wListBAz, colAz);
-        SetListCol(m_Widgets.m_wListBRng, colRng);
-        SetListCol(m_Widgets.m_wListBAlt, colAlt);
-        SetListCol(m_Widgets.m_wListBSpd, colSpd);
-        SetListCol(m_Widgets.m_wListBType, colType);
-        SetListCol(m_Widgets.m_wListBSnr, colSnr);
+    protected string MergeContactColumns(
+        string colNr,
+        string colAz,
+        string colRng,
+        string colAlt,
+        string colSpd,
+        string colType,
+        string colSnr)
+    {
+        int nrCount = CountLines(colNr);
+        int azCount = CountLines(colAz);
+        int rngCount = CountLines(colRng);
+        int altCount = CountLines(colAlt);
+        int spdCount = CountLines(colSpd);
+        int typeCount = CountLines(colType);
+        int snrCount = CountLines(colSnr);
+        int maxCount = nrCount;
+        if (azCount > maxCount)
+            maxCount = azCount;
+        if (rngCount > maxCount)
+            maxCount = rngCount;
+        if (altCount > maxCount)
+            maxCount = altCount;
+        if (spdCount > maxCount)
+            maxCount = spdCount;
+        if (typeCount > maxCount)
+            maxCount = typeCount;
+        if (snrCount > maxCount)
+            maxCount = snrCount;
+        if (maxCount <= 0)
+            return "";
 
-        UpdateListFooter(row, tracker);
+        string result = "";
+        int i = 0;
+        while (i < maxCount)
+        {
+            if (i > 0)
+                result = result + "\n";
+            result = result + PadCell(LineAt(colNr, i), 3) + " "
+                + PadCell(LineAt(colAz, i), 3) + " "
+                + PadCell(LineAt(colRng, i), 5) + " "
+                + PadCell(LineAt(colAlt, i), 5) + " "
+                + PadCell(LineAt(colSpd, i), 4) + " "
+                + PadCell(LineAt(colType, i), 4) + " "
+                + PadCell(LineAt(colSnr, i), 4);
+            i = i + 1;
+        }
+        return result;
+    }
+
+    protected string PadCell(string text, int width)
+    {
+        if (text == "")
+        {
+            text = "-";
+        }
+        while (text.Length() < width)
+            text = text + " ";
+        return text;
+    }
+
+    protected int CountLines(string text)
+    {
+        if (text == "")
+            return 0;
+        int count = 1;
+        int i = 0;
+        while (i < text.Length())
+        {
+            if (text.Get(i) == 10)
+                count = count + 1;
+            i = i + 1;
+        }
+        return count;
+    }
+
+    protected string LineAt(string text, int index)
+    {
+        if (text == "")
+            return "";
+        array<string> parts = new array<string>();
+        text.Split("\n", parts);
+        if (index < 0 || index >= parts.Count())
+            return "";
+        return parts.Get(index);
     }
 
     protected int AppendTrackListRows(
@@ -2675,14 +2880,15 @@ class GBRS_RadarStationHud
             if (row >= MAX_LIST_ROWS)
                 break;
 
-            vector d = tr.m_FilteredPosition - origin;
+            vector drawPos = TrackDrawWorldPos(tr, origin);
+            vector d = drawPos - origin;
             float az = Math.Atan2(d[0], d[2]) * Math.RAD2DEG;
             if (az < 0.0)
                 az = az + 360.0;
             float rngKm = tr.m_FilteredRangeM / 1000.0;
             if (rngKm <= 0.0)
                 rngKm = d.Length() / 1000.0;
-            float altKm = tr.m_FilteredPosition[1] / 1000.0;
+            float altKm = drawPos[1] / 1000.0;
             float dirX;
             float dirZ;
             float spd;
@@ -2710,9 +2916,10 @@ class GBRS_RadarStationHud
         inout string colAlt,
         inout string colSpd,
         inout string colType,
-        inout string colSnr)
+        inout string colSnr,
+        int startRow)
     {
-        int row = 0;
+        int row = startRow;
         foreach (RDF_RadarTarget t : targets)
         {
             if (!t)
@@ -2730,9 +2937,10 @@ class GBRS_RadarStationHud
                 rngKm = d.Length() / 1000.0;
             }
             float altKm = t.m_Position[1] / 1000.0;
-            float spd = t.m_Velocity.Length();
+            float spd = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(
+                t.m_Velocity.Length(), t.m_RotorSidebandUsed);
 
-            colNr = AppendColLine(colNr, PadNum(row, 2));
+            colNr = AppendColLine(colNr, PadNum(row + 1, 2));
             colAz = AppendColLine(colAz, PadNum(az, 3));
             colRng = AppendColLine(colRng, Fmt1(rngKm));
             colAlt = AppendColLine(colAlt, Fmt1(altKm));
@@ -2742,7 +2950,7 @@ class GBRS_RadarStationHud
             row = row + 1;
         }
 
-        return row;
+        return row - startRow;
     }
 
     protected string TrackTypeTag(RDF_RadarTrack tr)
@@ -2803,6 +3011,8 @@ class GBRS_RadarStationHud
         int detected = m_DetectedTotal;
         if (detected < row)
             detected = row;
+        if (detected < 0)
+            detected = 0;
 
         // Readable two-line footer: line 1 = scan summary; line 2 = mode /
         // ECCM / network status.
@@ -2820,8 +3030,12 @@ class GBRS_RadarStationHud
             string lockStatus = "SEARCH";
             if (m_LockManager)
                 lockStatus = m_LockManager.GetStatusShort();
+            else if (m_LockedTrackId > 0)
+                lockStatus = "TRACKING id=" + m_LockedTrackId.ToString();
             line2 = "Lock: " + lockStatus;
             if (m_LockManager && m_LockManager.IsLocked())
+                line2 = line2 + "  FIRE AUTHORIZED";
+            else if (m_LockedTrackId > 0)
                 line2 = line2 + "  FIRE AUTHORIZED";
         }
         else
@@ -3076,14 +3290,16 @@ class GBRS_RadarStationHud
         if (t.m_IsFalsePlot)
             return "FAKE";
         if (m_Mode == MODE_WLR)
-            return "SHELL";
+            return "SHEL";
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
             return "PROJ";
         if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
             return "EMIT";
         if (t.m_IsAnonymous)
             return "ANON";
-        return "VEH ";
+        if (t.m_RotorSidebandUsed)
+            return "ROTR";
+        return "AIR ";
     }
 
     protected string RangeLabel(float rangeM)
@@ -3117,5 +3333,73 @@ class GBRS_RadarStationHud
         while (s.Length() < width)
             s = " " + s;
         return s;
+    }
+
+    protected string PadLeft(string text, int width)
+    {
+        while (text.Length() < width)
+            text = " " + text;
+        return text;
+    }
+
+    protected string FormatAngle(float v)
+    {
+        int t = (int)(v + 0.5);
+        if (v < 0.0)
+            t = (int)(v - 0.5);
+        string s = t.ToString();
+        while (s.Length() < 3)
+            s = " " + s;
+        return s;
+    }
+
+    protected string FormatDistanceM(float v)
+    {
+        int km = (int)(v * 0.001 + 0.5);
+        if (v < 0.0)
+            km = (int)(v * 0.001 - 0.5);
+        string s = km.ToString();
+        while (s.Length() < 3)
+            s = " " + s;
+        return s + "km";
+    }
+
+    protected string FormatSpeedMs(RDF_RadarTarget t)
+    {
+        float spd = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(
+            t.m_Velocity.Length(), t.m_RotorSidebandUsed);
+        int s = (int)(spd + 0.5);
+        if (spd < 0.0)
+            s = (int)(spd - 0.5);
+        string txt = s.ToString();
+        while (txt.Length() < 3)
+            txt = " " + txt;
+        return txt + "m";
+    }
+
+    protected string SnrLabel(float v)
+    {
+        int s = (int)(v + 0.5);
+        if (v < 0.0)
+            s = (int)(v - 0.5);
+        string txt = s.ToString();
+        while (txt.Length() < 3)
+            txt = " " + txt;
+        return txt + "d";
+    }
+
+    protected string TargetTypeLabel(RDF_RadarTarget t)
+    {
+        if (!t)
+            return "----";
+        if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            return "SHEL";
+        if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
+            return "EMIT";
+        if (t.m_IsAnonymous)
+            return "ANON";
+        if (t.m_RotorSidebandUsed)
+            return "ROTR";
+        return "AIR ";
     }
 }

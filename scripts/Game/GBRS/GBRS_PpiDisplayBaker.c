@@ -15,7 +15,9 @@ class GBRS_PpiDisplayBaker
     protected static const int MAX_WLR_PERSIST = 16;
     protected static const float PLOT_AFTERGLOW_S = 0.45;
     protected static const float WLR_PLOT_LIFE_S = 5.0;
-    protected static const float DISPLAY_CLUSTER_M = 90.0;
+    protected static const float DISPLAY_CLUSTER_M = 120.0;
+    protected static const float DISPLAY_CLUSTER_AZ_DEG = 4.0;
+    protected static const float DISPLAY_CLUSTER_RANGE_M = 400.0;
     protected static const float PERSIST_SPATIAL_M = 80.0;
     protected static const float TRACK_CLUSTER_RANGE_M = 700.0;
     protected static const float TRACK_CLUSTER_AZ_DEG = 8.0;
@@ -26,7 +28,6 @@ class GBRS_PpiDisplayBaker
     protected ref array<ref RDF_RadarTarget> m_DisplayPlots;
     protected ref array<ref RDF_RadarTrack> m_DisplayTracks;
     protected ref array<ref GBRS_WlrPersistDisplay> m_WlrPersist;
-    protected float m_LastCoastS;
     protected int m_DetectedTotal;
 
     //------------------------------------------------------------------------------------------------
@@ -40,7 +41,6 @@ class GBRS_PpiDisplayBaker
             m_DisplayTracks.Clear();
         if (m_WlrPersist)
             m_WlrPersist.Clear();
-        m_LastCoastS = 0.0;
         m_DetectedTotal = 0;
     }
 
@@ -89,7 +89,8 @@ class GBRS_PpiDisplayBaker
         }
 
         IngestLivePlots(live, settings, nowS);
-        CoastPersist(nowS);
+        // Afterglow stays at last detection. Coasting persist plots made PPI
+        // blips slide after the beam left, which looked like the sweep flung them.
 
         float lifeS = PLOT_AFTERGLOW_S;
         if (workstationMode == GBRS_RadarStationConstants.MODE_WLR)
@@ -238,36 +239,6 @@ class GBRS_PpiDisplayBaker
     }
 
     //------------------------------------------------------------------------------------------------
-    protected void CoastPersist(float nowS)
-    {
-        if (!m_PersistPlots)
-            return;
-
-        float dt = nowS - m_LastCoastS;
-        m_LastCoastS = nowS;
-        if (dt <= 0.0)
-            return;
-        if (dt > 0.5)
-            return;
-
-        int i = 0;
-        while (i < m_PersistPlots.Count())
-        {
-            GBRS_PpiPersistRow row = m_PersistPlots.Get(i);
-            i = i + 1;
-            if (!row || !row.m_Target)
-                continue;
-            if ((nowS - row.m_LastFreshS) < 0.05)
-                continue;
-
-            RDF_RadarTarget t = row.m_Target;
-            t.m_Position = t.m_Position + (t.m_Velocity * dt);
-            if (t.m_Distance > 1.0)
-                t.m_Distance = t.m_Distance + (t.m_RadialSpeedMs * dt);
-        }
-    }
-
-    //------------------------------------------------------------------------------------------------
     protected void PrunePersist(float nowS, float lifeS)
     {
         if (!m_PersistPlots)
@@ -292,6 +263,38 @@ class GBRS_PpiDisplayBaker
             return t.m_Distance;
         vector d = t.m_Position - origin;
         return d.Length();
+    }
+
+    protected bool PlotsSharePolarCell(
+        RDF_RadarTarget a,
+        RDF_RadarTarget b,
+        vector origin,
+        float rngB)
+    {
+        if (!a || !b)
+            return false;
+
+        vector da = a.m_Position - origin;
+        vector db = b.m_Position - origin;
+        float azA = Math.Atan2(da[0], da[2]) * Math.RAD2DEG;
+        float azB = Math.Atan2(db[0], db[2]) * Math.RAD2DEG;
+        float dAz = azA - azB;
+        while (dAz > 180.0)
+            dAz = dAz - 360.0;
+        while (dAz < -180.0)
+            dAz = dAz + 360.0;
+        if (dAz < 0.0)
+            dAz = -dAz;
+        if (dAz > DISPLAY_CLUSTER_AZ_DEG)
+            return false;
+
+        float rngA = PlotRangeM(a, origin);
+        float dRng = rngA - rngB;
+        if (dRng < 0.0)
+            dRng = -dRng;
+        if (dRng > DISPLAY_CLUSTER_RANGE_M)
+            return false;
+        return true;
     }
 
     //------------------------------------------------------------------------------------------------
@@ -373,14 +376,19 @@ class GBRS_PpiDisplayBaker
                         break;
                     }
 
-                    if (!srcRoot && !keptRoot)
+                    // One airframe yields several scatterers (fuselage + rotors).
+                    // Merge by range even when entity-truth clustering is off.
+                    vector d = kept.m_Position - src.m_Position;
+                    if (d.LengthSq() <= gateSq)
                     {
-                        vector d = kept.m_Position - src.m_Position;
-                        if (d.LengthSq() <= gateSq)
-                        {
-                            match = j;
-                            break;
-                        }
+                        match = j;
+                        break;
+                    }
+
+                    if (PlotsSharePolarCell(kept, src, origin, rng))
+                    {
+                        match = j;
+                        break;
                     }
                 }
                 j = j + 1;
@@ -448,7 +456,7 @@ class GBRS_PpiDisplayBaker
         {
             RDF_RadarTrack tr = all.Get(i);
             i = i + 1;
-            if (!tr || !tr.m_Confirmed)
+            if (!tr)
                 continue;
             if (!IsTrackInRange(tr, origin, rangeM))
                 continue;
@@ -536,6 +544,12 @@ class GBRS_PpiDisplayBaker
             return false;
         if (!b)
             return true;
+        if (a.m_Confirmed != b.m_Confirmed)
+        {
+            if (a.m_Confirmed)
+                return true;
+            return false;
+        }
         if (a.m_Coasting != b.m_Coasting)
         {
             if (!a.m_Coasting)
