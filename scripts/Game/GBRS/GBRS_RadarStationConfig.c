@@ -580,14 +580,19 @@ class GBRS_RadarStationConfig
         settings.m_IncludeVehicles = false;
         settings.m_IncludeRadarEmitters = false;
         settings.m_IncludeProjectiles = true;
-        // Full 360° mechanical rotation. A default ±45° east corridor left
-        // most mortar/arty fire unilluminated, so WLR painted an empty PPI.
+        // Full 360° mechanical search. A fixed east corridor left most fires
+        // unilluminated. After a projectile track is cued, the station
+        // auto-narrows (see UpdateWlrAutoSector) so the ballistic fit gets a
+        // dense sample window.
         settings.m_EnableMechanicalScan = true;
         settings.m_SectorSweepEnabled = false;
         settings.m_SectorSweepCenterRad = 0.0;
-        settings.m_SectorSweepHalfWidthRad = 3.14159265;
-        settings.m_SectorSweepRateRadS = 0.6;
-        // 24–30° beam at 6 RPM dwells ~0.7 s; 0.08 s scans yield enough hits.
+        settings.m_SectorSweepHalfWidthRad =
+            GBRS_RadarStationConstants.WLR_AUTO_SECTOR_HALF_DEG * 0.017453292519943295;
+        settings.m_SectorSweepRateRadS =
+            GBRS_RadarStationConstants.WLR_AUTO_SECTOR_RATE_RAD_S;
+        // Single 24–30° pass at 6 RPM dwells ~0.67 s — enough to cue a track.
+        // Stable LCH/IMP needs the auto-sector pass after cue.
         settings.m_WeaponLocateMinHits = 3;
         settings.m_WeaponLocateMinSpanS = 0.6;
         settings.m_WeaponLocateMaxFitRmsM = 80.0;

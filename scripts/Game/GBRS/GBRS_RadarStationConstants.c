@@ -57,10 +57,16 @@ class GBRS_RadarStationConstants
     // sweep needle from live GetScanForwardWorld between snapshots.
     static const float PPI_SNAPSHOT_INTERVAL_S = 0.033333;
 
-    // Counter-battery WLR slow all-around mechanical rotation. Slow enough that
-    // an 82 mm shell flight sees 1-2 beam passes (wide mortar beams), fast
-    // enough to cover the full circle. Min-hits / span are tuned for this.
+    // Counter-battery WLR slow all-around mechanical rotation for discovery.
+    // A single 24° pass at 6 RPM dwells ~0.67 s — enough to cue a track, not
+    // enough for a stable launch/impact fit. After a shell track is cued the
+    // station auto-narrows to WLR_AUTO_SECTOR_HALF_DEG for the solve.
     static const float WLR_SCAN_RPM = 6.0;
+    static const float WLR_AUTO_SECTOR_HALF_DEG = 40.0;
+    // Keep the threat corridor lit after the last live shell coasts out so a
+    // follow-on round in the same barrage still gets dense samples.
+    static const float WLR_AUTO_SECTOR_HOLD_S = 8.0;
+    static const float WLR_AUTO_SECTOR_RATE_RAD_S = 0.9;
 
     // RDF clamps classify to 256. Eden sphere discovery queues ~15k DYNAMIC
     // entities; infantry fail IsRadarCandidate only after that queue drains.

@@ -140,6 +140,13 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected ref map<int, ref RDF_RadarTarget> m_Contacts;
     protected ref map<int, float> m_ContactLastSeen;
     protected ref map<int, bool> m_WlrFiredTrackIds;
+    // Product WLR: 360° discovers shells; once a projectile track exists the
+    // dish auto-narrows to that corridor for ballistic sampling. Operator /
+    // Demo calls to SetWlrSectorSweep lock the corridor and suppress auto.
+    protected bool m_bWlrSectorOperatorLocked;
+    protected bool m_bWlrAutoSectorActive;
+    protected float m_fWlrAutoSectorClearAfterS;
+    protected int m_iWlrAutoSectorTrackId;
     protected float m_fNextContactUpdateS;
     protected float m_fLastForceIntelS;
     protected bool m_bLockLayerEnabled;
@@ -253,6 +260,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         PublishDatalink(owner);
         UpdateNetworkContactEvents(owner);
         UpdateWlrEvents(owner);
+        UpdateWlrAutoSector(owner);
         UpdateLockDwell(owner);
         DebugScanTick(owner);
         TickPpiSnapshot(owner);
@@ -1388,9 +1396,28 @@ class GBRS_RadarStationComponent : ScriptComponent
     }
 
     // Re-centre / enable the WLR sector-sweep (degrees, 0=east, 90=north).
-    // Demo uses a narrow corridor on the mortar line; the product default is
-    // full 360° mechanical scan (SectorSweepEnabled=false).
+    // Explicit operator / Demo calls lock the corridor and disable auto-narrow.
+    // Product WLR otherwise starts in 360° search and auto-narrows on cue.
     bool SetWlrSectorSweep(float centerAzDeg, float halfWidthDeg, bool enabled)
+    {
+        if (!ApplyWlrSectorSweepInternal(centerAzDeg, halfWidthDeg, enabled))
+            return false;
+
+        m_bWlrSectorOperatorLocked = enabled;
+        if (!enabled)
+        {
+            m_bWlrAutoSectorActive = false;
+            m_iWlrAutoSectorTrackId = 0;
+            m_fWlrAutoSectorClearAfterS = 0.0;
+        }
+        return true;
+    }
+
+    // Live settings write used by both operator lock and auto-narrow.
+    protected bool ApplyWlrSectorSweepInternal(
+        float centerAzDeg,
+        float halfWidthDeg,
+        bool enabled)
     {
         if (!m_Radar)
             return false;
@@ -1399,13 +1426,186 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!st)
             return false;
 
+        float az = centerAzDeg;
+        while (az < 0.0)
+            az = az + 360.0;
+        while (az >= 360.0)
+            az = az - 360.0;
+
         st.m_SectorSweepEnabled = enabled;
-        st.m_SectorSweepCenterRad = centerAzDeg * 0.017453292519943295;
+        st.m_SectorSweepCenterRad = az * 0.017453292519943295;
         if (halfWidthDeg > 0.0)
             st.m_SectorSweepHalfWidthRad = halfWidthDeg * 0.017453292519943295;
-        if (st.m_SectorSweepRateRadS <= 0.0)
+        if (enabled)
+            st.m_SectorSweepRateRadS =
+                GBRS_RadarStationConstants.WLR_AUTO_SECTOR_RATE_RAD_S;
+        else if (st.m_SectorSweepRateRadS <= 0.0)
             st.m_SectorSweepRateRadS = 0.6;
         return true;
+    }
+
+    // 360° discovers shells; once a projectile track exists, narrow to that
+    // corridor so the ballistic solver gets a dense sample window.
+    protected void UpdateWlrAutoSector(IEntity owner)
+    {
+        if (!owner)
+            return;
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_WLR)
+            return;
+        if (m_bWlrSectorOperatorLocked)
+            return;
+        if (!m_Radar)
+            return;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return;
+
+        RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+        if (!tracker)
+            return;
+
+        float worldNowS = 0.0;
+        BaseWorld world = owner.GetWorld();
+        if (world)
+            worldNowS = world.GetWorldTime() * 0.001;
+        float cueAzDeg = 0.0;
+        int cueTrackId = 0;
+        if (FindWlrAutoSectorCue(tracker, cueAzDeg, cueTrackId))
+        {
+            m_fWlrAutoSectorClearAfterS =
+                worldNowS + GBRS_RadarStationConstants.WLR_AUTO_SECTOR_HOLD_S;
+            m_iWlrAutoSectorTrackId = cueTrackId;
+            if (!ApplyWlrSectorSweepInternal(
+                cueAzDeg,
+                GBRS_RadarStationConstants.WLR_AUTO_SECTOR_HALF_DEG,
+                true))
+            {
+                return;
+            }
+
+            if (!m_bWlrAutoSectorActive)
+            {
+                m_bWlrAutoSectorActive = true;
+                if (m_bDebugLog)
+                {
+                    Print("[GBRS-DEBUG] WLR auto-sector ON az="
+                        + cueAzDeg.ToString()
+                        + " half="
+                        + GBRS_RadarStationConstants.WLR_AUTO_SECTOR_HALF_DEG.ToString()
+                        + " track="
+                        + cueTrackId.ToString(), LogLevel.WARNING);
+                }
+            }
+            return;
+        }
+
+        if (!m_bWlrAutoSectorActive)
+            return;
+        if (worldNowS < m_fWlrAutoSectorClearAfterS)
+            return;
+
+        ClearWlrAutoSector(true);
+    }
+
+    // Prefer an unsolved confirmed shell so the corridor stays on the fire that
+    // still needs LCH/IMP samples. Fall back to the newest live projectile.
+    protected bool FindWlrAutoSectorCue(
+        RDF_RadarProjectileTracker tracker,
+        out float outAzDeg,
+        out int outTrackId)
+    {
+        outAzDeg = 0.0;
+        outTrackId = 0;
+        if (!tracker)
+            return false;
+
+        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
+        if (!tracks)
+            return false;
+
+        RDF_RadarTrack bestUnsolved = null;
+        RDF_RadarTrack bestAny = null;
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+            if (!tr.IsProjectileTrack())
+                continue;
+            // Tentatives with two hits are already a discovery cue — waiting for
+            // confirmed-only would leave the dish in 360° until the track dies.
+            if (!tr.m_Confirmed)
+            {
+                if (tr.m_HitCount < 2)
+                    continue;
+            }
+
+            if (!bestAny)
+                bestAny = tr;
+            else if (tr.m_LastUpdateTime > bestAny.m_LastUpdateTime)
+                bestAny = tr;
+            else if (tr.m_LastUpdateTime == bestAny.m_LastUpdateTime)
+            {
+                if (tr.m_HitCount > bestAny.m_HitCount)
+                    bestAny = tr;
+            }
+
+            bool hasFix = false;
+            if (tr.m_LastWlrFix)
+            {
+                if (tr.m_LastWlrFix.m_LaunchValid)
+                {
+                    if (tr.m_LastWlrFix.m_ImpactValid)
+                        hasFix = true;
+                }
+            }
+            if (hasFix)
+                continue;
+
+            if (!bestUnsolved)
+                bestUnsolved = tr;
+            else if (tr.m_LastUpdateTime > bestUnsolved.m_LastUpdateTime)
+                bestUnsolved = tr;
+            else if (tr.m_LastUpdateTime == bestUnsolved.m_LastUpdateTime)
+            {
+                if (tr.m_HitCount > bestUnsolved.m_HitCount)
+                    bestUnsolved = tr;
+            }
+        }
+
+        RDF_RadarTrack chosen = bestUnsolved;
+        if (!chosen)
+            chosen = bestAny;
+        if (!chosen)
+            return false;
+
+        float az = chosen.m_FilteredAzimuthDeg;
+        while (az < 0.0)
+            az = az + 360.0;
+        while (az >= 360.0)
+            az = az - 360.0;
+        outAzDeg = az;
+        outTrackId = chosen.m_TrackId;
+        return true;
+    }
+
+    protected void ClearWlrAutoSector(bool restoreSearch)
+    {
+        bool wasActive = m_bWlrAutoSectorActive;
+        m_bWlrAutoSectorActive = false;
+        m_iWlrAutoSectorTrackId = 0;
+        m_fWlrAutoSectorClearAfterS = 0.0;
+        if (!restoreSearch)
+            return;
+        if (m_bWlrSectorOperatorLocked)
+            return;
+
+        ApplyWlrSectorSweepInternal(0.0, 0.0, false);
+        if (wasActive && m_bDebugLog)
+            Print("[GBRS-DEBUG] WLR auto-sector OFF (360 search)", LogLevel.WARNING);
     }
 
     // Re-centre the WLR sector-sweep on a world azimuth (degrees, 0=east,
@@ -1772,6 +1972,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (m_bDebugLog)
             Print("[GBRS-DEBUG] Power OFF", LogLevel.WARNING);
 
+        m_bWlrSectorOperatorLocked = false;
+        ClearWlrAutoSector(false);
+
         // Freeze the antenna at its last driven bearing. Sync* stops running
         // below (EOnFrame early-outs on !m_bPowered) so the value recorded by
         // the last spin tick is the frozen angle; re-power offsets the RDF
@@ -1835,6 +2038,11 @@ class GBRS_RadarStationComponent : ScriptComponent
         {
             if (m_PpiBaker)
                 m_PpiBaker.Clear();
+            if (m_WorkstationMode == GBRS_RadarStationConstants.MODE_WLR)
+            {
+                m_bWlrSectorOperatorLocked = false;
+                ClearWlrAutoSector(false);
+            }
         }
         m_WorkstationMode = mode;
     }
@@ -2017,6 +2225,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         // Keep mortar elevation layout; do not overlay air-search beam overrides.
         PushSensorSettings(owner, settings, ERDF_RadarSensorMode.RDF_RADAR_MODE_WLR);
         ConfigureLockLayer(false);
+        // Fresh WLR product: start in 360° search. Auto-sector engages after a
+        // projectile track is cued. Operator lock is cleared on mode entry.
+        m_bWlrSectorOperatorLocked = false;
+        ClearWlrAutoSector(false);
 
         if (m_bDebugLog)
         {

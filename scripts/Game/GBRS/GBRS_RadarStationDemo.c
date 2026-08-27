@@ -308,20 +308,10 @@ class GBRS_RadarStationDemo
         }
         else if (m_WantShells)
         {
-            // Demo: keep the beam on the mortar corridor. Product WLR defaults
-            // to 360° scan; without a sector the 6 RPM beam only paints shells
-            // for a few hundred ms per revolution (empty PPI most of the time).
-            float fireAz = FireAzimuthDeg();
-            if (m_Station.SetWlrSectorSweep(fireAz, 40.0, true))
-            {
-                Print("[GBRS Demo] WLR sector-sweep ±40 deg centred at az="
-                    + fireAz.ToString()
-                    + " deg (0=east, 90=north) on the mortar line.");
-            }
-            else
-            {
-                Print("[GBRS Demo] WLR sector-sweep setup failed.", LogLevel.WARNING);
-            }
+            // Product WLR: 360° discovers shells, then auto-narrows to the cue
+            // track corridor for ballistic samples. Do not lock a Demo sector —
+            // that would hide the product path under a permanent corridor.
+            Print("[GBRS Demo] WLR starts in 360 search; auto-sector engages after a shell track is cued.");
         }
 
         m_Running = true;
