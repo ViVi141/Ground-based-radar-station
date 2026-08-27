@@ -4,7 +4,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 - **Addon ID**：`Groundbasedradarstation`
 - **GUID**：`69FCEDCE73FC5335`
-- **Version**：1.1.5
+- **Version**：1.1.6
 
 ## 依赖
 

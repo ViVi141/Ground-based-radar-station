@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 1.1.6 — 2026-08-27
+
+依赖 / Requires **RDF ≥ 1.1.6**。
+
+### 中文
+
+- WLR：**360° 搜索发现炮弹**；出现航迹后天线自动收窄到该方位 ±40° 扇区做弹道采样，航迹消失约 8 s 后回到全周搜索。
+- 显式 `SetWlrSectorSweep` 仍可锁定威胁走廊；Demo 不再强制扇区，走同一产品路径。
+- 加固多人复制 / 锁定 / PPI 快照序号与 WLR 显示路径；限制重复弹道重算尖峰，优先复用 Baker 快照。
+
+### English
+
+- WLR: **360° search cues shells**, then the dish auto-narrows to a ±40° corridor for ballistic samples; returns to all-around scan about 8 s after the last cue.
+- Explicit `SetWlrSectorSweep` still locks a threat corridor; Demo no longer forces a sector so it exercises the product path.
+- Hardened replication / lock / PPI snapshot sequencing and the WLR display path; capped repeated ballistic re-solves and preferred Baker snapshots over 60 Hz re-bake.
+
+---
+
 ## 1.1.5 — 2026-08-27
 
 依赖 / Requires **RDF ≥ 1.1.6**。
