@@ -106,6 +106,27 @@ class GBRS_PlayerControllerNet
         return true;
     }
 
+    // Request a server-authoritative lock by painted scatterer identity.
+    static bool RequestLockScatterer(GBRS_RadarStationComponent station, int scattererId)
+    {
+        if (!station)
+            return false;
+        if (scattererId <= 0)
+            return false;
+
+        RplId stationId = station.GetStationRplId();
+        if (!stationId.IsValid())
+            return false;
+
+        SCR_PlayerController playerController =
+            SCR_PlayerController.Cast(GetGame().GetPlayerController());
+        if (!playerController)
+            return false;
+
+        playerController.GBRS_RpcAsk_LockScatterer(stationId, scattererId);
+        return true;
+    }
+
     //------------------------------------------------------------------------------------------------
     static bool RequestForceIntelTx(GBRS_RadarStationComponent station)
     {
@@ -221,6 +242,12 @@ modded class SCR_PlayerController
     void GBRS_RpcAsk_LockTrack(RplId stationId, int trackId)
     {
         Rpc(RpcAsk_GBRS_LockTrack, stationId, trackId);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void GBRS_RpcAsk_LockScatterer(RplId stationId, int scattererId)
+    {
+        Rpc(RpcAsk_GBRS_LockScatterer, stationId, scattererId);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -351,6 +378,27 @@ modded class SCR_PlayerController
             return;
 
         station.AuthorityLockTrack(trackId);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    [RplRpc(RplChannel.Reliable, RplRcver.Server)]
+    protected void RpcAsk_GBRS_LockScatterer(RplId stationId, int scattererId)
+    {
+        GBRS_RadarStationComponent station = GBRS_PlayerControllerNet.ResolveStation(stationId);
+        if (!station)
+            return;
+
+        IEntity owner = station.GetOwner();
+        if (!owner)
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterNearStation(this, owner))
+            return;
+
+        if (!GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(this, station))
+            return;
+
+        station.AuthorityLockScatterer(scattererId);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -507,18 +555,33 @@ modded class SCR_PlayerController
         float scanAzDeg,
         float rangeM,
         string eccm,
+        int snapshotSeq,
         array<int> packedInts,
         array<float> packedFloats)
     {
         if (GBRS_IsLocalPlayerController())
         {
             RpcDo_GBRS_PpiSnapshot(
-                stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+                stationId,
+                origin,
+                scanAzDeg,
+                rangeM,
+                eccm,
+                snapshotSeq,
+                packedInts,
+                packedFloats);
             return;
         }
 
         Rpc(RpcDo_GBRS_PpiSnapshot,
-            stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+            stationId,
+            origin,
+            scanAzDeg,
+            rangeM,
+            eccm,
+            snapshotSeq,
+            packedInts,
+            packedFloats);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -529,11 +592,19 @@ modded class SCR_PlayerController
         float scanAzDeg,
         float rangeM,
         string eccm,
+        int snapshotSeq,
         array<int> packedInts,
         array<float> packedFloats)
     {
         GBRS_RadarStationMenu.ApplyReplicatedSnapshot(
-            stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+            stationId,
+            origin,
+            scanAzDeg,
+            rangeM,
+            eccm,
+            snapshotSeq,
+            packedInts,
+            packedFloats);
     }
 
     //------------------------------------------------------------------------------------------------

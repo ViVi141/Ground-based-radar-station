@@ -143,6 +143,8 @@ class GBRS_RadarStationComponent : ScriptComponent
     protected float m_fNextContactUpdateS;
     protected float m_fLastForceIntelS;
     protected bool m_bLockLayerEnabled;
+    protected int m_iPendingLockScattererId;
+    protected float m_fPendingLockUntilS;
     protected bool m_bIntelBriefingSent;
 
     // Multi-radar datalink: each powered station publishes its confirmed tracks
@@ -167,6 +169,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     // operators who opened the workstation. Proxies never run RDF ScanOnce.
     protected ref array<int> m_PpiSubscriberPlayerIds;
     protected float m_fNextPpiSnapshotS;
+    protected int m_iPpiSnapshotSeq;
     protected ref GBRS_PpiDisplayBaker m_PpiBaker;
 
     override void OnPostInit(IEntity owner)
@@ -1029,6 +1032,9 @@ class GBRS_RadarStationComponent : ScriptComponent
         float rangeM;
         string eccm;
         BuildPpiSnapshot(origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+        m_iPpiSnapshotSeq = m_iPpiSnapshotSeq + 1;
+        if (m_iPpiSnapshotSeq <= 0)
+            m_iPpiSnapshotSeq = 1;
 
         int i = 0;
         while (i < m_PpiSubscriberPlayerIds.Count())
@@ -1039,6 +1045,7 @@ class GBRS_RadarStationComponent : ScriptComponent
                 scanAzDeg,
                 rangeM,
                 eccm,
+                m_iPpiSnapshotSeq,
                 packedInts,
                 packedFloats);
             i = i + 1;
@@ -1055,7 +1062,18 @@ class GBRS_RadarStationComponent : ScriptComponent
         float rangeM;
         string eccm;
         BuildPpiSnapshot(origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
-        DispatchPpiSnapshot(playerId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+        m_iPpiSnapshotSeq = m_iPpiSnapshotSeq + 1;
+        if (m_iPpiSnapshotSeq <= 0)
+            m_iPpiSnapshotSeq = 1;
+        DispatchPpiSnapshot(
+            playerId,
+            origin,
+            scanAzDeg,
+            rangeM,
+            eccm,
+            m_iPpiSnapshotSeq,
+            packedInts,
+            packedFloats);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -1141,6 +1159,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         float scanAzDeg,
         float rangeM,
         string eccm,
+        int snapshotSeq,
         notnull array<int> packedInts,
         notnull array<float> packedFloats)
     {
@@ -1159,6 +1178,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             scanAzDeg,
             rangeM,
             eccm,
+            snapshotSeq,
             packedInts,
             packedFloats);
     }
@@ -1170,16 +1190,25 @@ class GBRS_RadarStationComponent : ScriptComponent
             return;
 
         PlayerManager playerManager = GetGame().GetPlayerManager();
+        IEntity owner = GetOwner();
         int i = m_PpiSubscriberPlayerIds.Count() - 1;
         while (i >= 0)
         {
             int playerId = m_PpiSubscriberPlayerIds.Get(i);
             bool keep = false;
-            if (playerManager)
+            if (playerManager && owner)
             {
                 PlayerController controller = playerManager.GetPlayerController(playerId);
                 if (controller)
-                    keep = true;
+                {
+                    keep = GBRS_PlayerControllerNet.IsRequesterNearStation(
+                        controller, owner);
+                    if (keep)
+                    {
+                        keep = GBRS_PlayerControllerNet.IsRequesterFriendlyToStation(
+                            controller, this);
+                    }
+                }
             }
             if (!keep)
                 m_PpiSubscriberPlayerIds.Remove(i);
@@ -1358,10 +1387,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         return m_bAntennaStare;
     }
 
-    // Re-centre the WLR sector-sweep on a world azimuth (degrees, 0=east,
-    // 90=north). Applies to the live RDF settings so the beam sweeps the
-    // operator-selected threat corridor.
-    bool SetWlrSectorCenterDeg(float azDeg)
+    // Re-centre / enable the WLR sector-sweep (degrees, 0=east, 90=north).
+    // Demo uses a narrow corridor on the mortar line; the product default is
+    // full 360° mechanical scan (SectorSweepEnabled=false).
+    bool SetWlrSectorSweep(float centerAzDeg, float halfWidthDeg, bool enabled)
     {
         if (!m_Radar)
             return false;
@@ -1370,8 +1399,21 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!st)
             return false;
 
-        st.m_SectorSweepCenterRad = azDeg * 0.017453292519943295;
+        st.m_SectorSweepEnabled = enabled;
+        st.m_SectorSweepCenterRad = centerAzDeg * 0.017453292519943295;
+        if (halfWidthDeg > 0.0)
+            st.m_SectorSweepHalfWidthRad = halfWidthDeg * 0.017453292519943295;
+        if (st.m_SectorSweepRateRadS <= 0.0)
+            st.m_SectorSweepRateRadS = 0.6;
         return true;
+    }
+
+    // Re-centre the WLR sector-sweep on a world azimuth (degrees, 0=east,
+    // 90=north). Applies to the live RDF settings so the beam sweeps the
+    // operator-selected threat corridor.
+    bool SetWlrSectorCenterDeg(float azDeg)
+    {
+        return SetWlrSectorSweep(azDeg, 0.0, true);
     }
 
     float GetAntennaStareAzDeg()
@@ -1382,20 +1424,10 @@ class GBRS_RadarStationComponent : ScriptComponent
     // Live RDF scan angle in degrees (0 = east, 90 = north).
     float GetLiveScanAngleDeg()
     {
-        if (m_bAntennaStare)
-            return m_fAntennaStareAzDeg;
-
-        float rpm = GetLiveScanRpm();
-        BaseWorld world = GetGame().GetWorld();
-        float worldTimeS = 0.0;
-        if (world)
-            worldTimeS = world.GetWorldTime() * 0.001;
-
-        float angleRad = m_fScanPhaseOffsetRad;
-        if (rpm > 0.0)
-            angleRad = worldTimeS * rpm * Math.PI * 2.0 / 60.0 + m_fScanPhaseOffsetRad;
-
-        float deg = angleRad * Math.RAD2DEG;
+        // CurrentScanAngleRad also covers antenna stare and WLR sector sweep.
+        // The old RPM-only formula made diagnostics and manual stare start at a
+        // bearing different from the actual RDF beam.
+        float deg = CurrentScanAngleRad() * Math.RAD2DEG;
         while (deg < 0.0)
             deg = deg + 360.0;
         while (deg >= 360.0)
@@ -2156,7 +2188,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             ApplyAntennaStarePhase(owner);
             StampScanPhaseOnSettings(settings);
         }
-        else if (m_fScanRpm > 0.0 && prevRpm <= 0.0)
+        else if (m_fScanRpm > 0.0)
         {
             BaseWorld world2 = GetGame().GetWorld();
             float timeS = 0.0;
@@ -2191,6 +2223,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             lockMgr.SetAutoAcquire(false);
             lockMgr.Unlock();
             sensor.ClearDesignation();
+            m_iPendingLockScattererId = 0;
+            m_fPendingLockUntilS = 0.0;
             if (m_bLockLayerEnabled != false)
             {
                 m_bLockLayerEnabled = false;
@@ -2240,15 +2274,41 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (!lockMgr)
             return;
 
-        if (!lockMgr.IsLocked())
+        if (m_iPendingLockScattererId > 0)
+        {
+            float nowS = System.GetTickCount() * 0.001;
+            int pendingTrackId = FindCurrentTrackIdByScatterer(
+                sensor, m_iPendingLockScattererId);
+            if (pendingTrackId > 0)
+            {
+                lockMgr.SetAutoAcquire(false);
+                lockMgr.LockTrackId(pendingTrackId);
+                m_iPendingLockScattererId = 0;
+                m_fPendingLockUntilS = 0.0;
+            }
+            else if (nowS > m_fPendingLockUntilS)
+            {
+                m_iPendingLockScattererId = 0;
+                m_fPendingLockUntilS = 0.0;
+                sensor.ClearDesignation();
+                lockMgr.SetAutoAcquire(true);
+                return;
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        // ACQUIRING is a valid target state too. IsLocked() only covers
+        // TRACKING/COAST and previously cleared designation immediately after
+        // a manual LockTrackId(), before the next scan could confirm it.
+        int trackId = lockMgr.GetLockedTrackId();
+        if (trackId <= 0)
         {
             sensor.ClearDesignation();
             return;
         }
-
-        int trackId = ResolveLockedTrackId();
-        if (trackId <= 0)
-            return;
 
         RDF_RadarProjectileTracker tracker = sensor.GetTracker();
         if (!tracker)
@@ -2285,6 +2345,10 @@ class GBRS_RadarStationComponent : ScriptComponent
         RDF_RadarLockManager lockMgr = sensor.GetLockManager();
         if (!lockMgr)
             return 0;
+
+        int directTrackId = lockMgr.GetLockedTrackId();
+        if (directTrackId > 0)
+            return directTrackId;
         if (!lockMgr.IsLocked())
             return 0;
 
@@ -2351,6 +2415,142 @@ class GBRS_RadarStationComponent : ScriptComponent
         return GBRS_PlayerControllerNet.RequestLockTrack(this, trackId);
     }
 
+    // Lock from a painted plot that has no TWS track id yet: designate the
+    // scatterer and let auto-acquire promote it on the next scan update.
+    bool RequestLockScatterer(int scattererId)
+    {
+        if (IsDestroyed())
+            return false;
+        if (!m_bPowered)
+            return false;
+        if (scattererId <= 0)
+            return false;
+
+        if (IsAuthority())
+            return AuthorityLockScatterer(scattererId);
+
+        return GBRS_PlayerControllerNet.RequestLockScatterer(this, scattererId);
+    }
+
+    protected int FindCurrentTrackIdByScatterer(
+        RDF_RadarSensor sensor,
+        int scattererId)
+    {
+        if (!sensor || scattererId <= 0)
+            return 0;
+
+        RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+        if (!tracker)
+            return 0;
+
+        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
+        if (!tracks)
+            return 0;
+
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack track = tracks.Get(i);
+            i = i + 1;
+            if (!track)
+                continue;
+            if (track.m_ScattererId == scattererId)
+                return track.m_TrackId;
+        }
+
+        return 0;
+    }
+
+    protected bool HasCurrentLockablePlot(
+        RDF_RadarSensor sensor,
+        int scattererId)
+    {
+        if (!sensor || scattererId <= 0)
+            return false;
+
+        RDF_RadarSettings settings = sensor.GetSettings();
+        array<ref RDF_RadarTarget> plots = sensor.GetPlots();
+        if (!plots)
+            return false;
+
+        int i = 0;
+        while (i < plots.Count())
+        {
+            RDF_RadarTarget plot = plots.Get(i);
+            i = i + 1;
+            if (!plot)
+                continue;
+            if (plot.m_ScattererId != scattererId)
+                continue;
+            if (!GBRS_RadarStationConfig.ShouldDisplayPlot(plot, settings))
+                continue;
+            if (settings && settings.m_Range > 0.0)
+            {
+                float rangeM = plot.m_Distance;
+                if (rangeM <= 0.0)
+                    rangeM = vector.Distance(plot.m_Position, GetScanOriginWorld());
+                if (rangeM > settings.m_Range * 1.1)
+                    continue;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    bool AuthorityLockScatterer(int scattererId)
+    {
+        if (!IsAuthority())
+            return false;
+        if (IsDestroyed())
+            return false;
+        if (!m_bPowered)
+            return false;
+        if (scattererId <= 0)
+            return false;
+
+        if (!m_Radar)
+            return false;
+
+        RDF_RadarSensor sensor = m_Radar.GetSensor();
+        if (!sensor)
+            return false;
+
+        int trackId = FindCurrentTrackIdByScatterer(sensor, scattererId);
+        if (trackId <= 0 && !HasCurrentLockablePlot(sensor, scattererId))
+            return false;
+
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_LOCK)
+        {
+            ApplyWorkstationModeLocal(GBRS_RadarStationConstants.MODE_LOCK);
+            Rpc(
+                RpcDo_WorkstationMode,
+                WorkstationModeToIndex(GBRS_RadarStationConstants.MODE_LOCK));
+        }
+
+        RDF_RadarLockManager lockMgr = sensor.GetLockManager();
+        if (!lockMgr)
+            return false;
+
+        sensor.DesignateScattererId(scattererId);
+
+        if (trackId > 0)
+        {
+            m_iPendingLockScattererId = 0;
+            m_fPendingLockUntilS = 0.0;
+            lockMgr.SetAutoAcquire(false);
+            lockMgr.LockTrackId(trackId);
+            return true;
+        }
+
+        // No track file yet: keep the designated dwell for a short acquisition
+        // window, then lock exactly the track created from this scatterer.
+        m_iPendingLockScattererId = scattererId;
+        m_fPendingLockUntilS = System.GetTickCount() * 0.001 + 3.0;
+        lockMgr.SetAutoAcquire(false);
+        return true;
+    }
+
     bool AuthorityLockTrack(int trackId)
     {
         if (!IsAuthority())
@@ -2359,12 +2559,6 @@ class GBRS_RadarStationComponent : ScriptComponent
             return false;
         if (!m_bPowered)
             return false;
-
-        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_LOCK)
-        {
-            ApplyWorkstationModeLocal(GBRS_RadarStationConstants.MODE_LOCK);
-            Rpc(RpcDo_WorkstationMode, WorkstationModeToIndex(GBRS_RadarStationConstants.MODE_LOCK));
-        }
 
         if (!m_Radar)
             return false;
@@ -2380,11 +2574,47 @@ class GBRS_RadarStationComponent : ScriptComponent
         if (trackId <= 0)
         {
             lockMgr.Unlock();
+            sensor.ClearDesignation();
+            m_iPendingLockScattererId = 0;
+            m_fPendingLockUntilS = 0.0;
             return true;
+        }
+
+        RDF_RadarProjectileTracker tracker = sensor.GetTracker();
+        if (!tracker)
+            return false;
+
+        array<ref RDF_RadarTrack> tracks = tracker.GetAllTracks();
+        bool found = false;
+        if (tracks)
+        {
+            int i = 0;
+            while (i < tracks.Count())
+            {
+                RDF_RadarTrack track = tracks.Get(i);
+                i = i + 1;
+                if (track && track.m_TrackId == trackId)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found)
+            return false;
+
+        if (m_WorkstationMode != GBRS_RadarStationConstants.MODE_LOCK)
+        {
+            ApplyWorkstationModeLocal(GBRS_RadarStationConstants.MODE_LOCK);
+            Rpc(
+                RpcDo_WorkstationMode,
+                WorkstationModeToIndex(GBRS_RadarStationConstants.MODE_LOCK));
         }
 
         lockMgr.SetAutoAcquire(false);
         lockMgr.LockTrackId(trackId);
+        m_iPendingLockScattererId = 0;
+        m_fPendingLockUntilS = 0.0;
         return true;
     }
 
@@ -2932,11 +3162,11 @@ class GBRS_RadarStationComponent : ScriptComponent
             if (m_WlrFiredTrackIds.Contains(id))
                 continue;
 
-            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-            if (!sol || !sol.m_Fix)
+            RDF_RadarWlrFix fix =
+                GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
+            if (!fix)
                 continue;
 
-            RDF_RadarWlrFix fix = sol.m_Fix;
             if (!fix.m_ImpactValid)
                 continue;
 
@@ -3098,7 +3328,10 @@ class GBRS_RadarStationComponent : ScriptComponent
 
         if (!srcTracks || srcTracks.Count() < 1)
         {
-            hub.RemoveSource(m_DatalinkSourceId);
+            // Keep the last batch until the hub's normal TTL expires. Removing
+            // the source on a single empty scan made fused tracks blink across
+            // the whole network during coast gaps and mode transitions.
+            hub.AgeOut(worldS);
             RDF_RadarFusionService.Get().UpdateFromHub(hub, worldS);
             return;
         }
@@ -3132,14 +3365,23 @@ class GBRS_RadarStationComponent : ScriptComponent
             dt.m_RadarOrigin = radarOrigin;
             if (iff)
                 dt.m_Iff = iff.Resolve(owner, src);
-            if (src.m_LastWlrFix)
+            RDF_RadarWlrFix datalinkFix =
+                GBRS_RadarWlrBallisticSolver.ResolveFix(src);
+            if (datalinkFix)
             {
-                dt.m_WlrLaunchValid = src.m_LastWlrFix.m_LaunchValid;
-                dt.m_WlrLaunchPos = src.m_LastWlrFix.m_LaunchPos;
-                dt.m_WlrImpactValid = src.m_LastWlrFix.m_ImpactValid;
-                dt.m_WlrImpactPos = src.m_LastWlrFix.m_ImpactPos;
+                dt.m_WlrLaunchValid = datalinkFix.m_LaunchValid;
+                dt.m_WlrLaunchPos = datalinkFix.m_LaunchPos;
+                dt.m_WlrImpactValid = datalinkFix.m_ImpactValid;
+                dt.m_WlrImpactPos = datalinkFix.m_ImpactPos;
             }
             batch.Insert(dt);
+        }
+
+        if (batch.Count() < 1)
+        {
+            hub.AgeOut(worldS);
+            RDF_RadarFusionService.Get().UpdateFromHub(hub, worldS);
+            return;
         }
 
         hub.PublishFromRadar(m_DatalinkSourceId, radarOrigin, worldS, batch);

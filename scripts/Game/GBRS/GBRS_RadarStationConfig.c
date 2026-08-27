@@ -378,9 +378,11 @@ class GBRS_RadarStationConfig
         settings.m_FairScanCursor = true;
         settings.m_TrackCoastOnMiss = true;
         settings.m_TrackCoastOnDopplerNull = false;
-        // Short coast: a long-lived coasting file near the mortar line steals
-        // the next round's first hits (same az, overlapping range gate).
-        settings.m_TrackCoastMaxSec = 6.0;
+        // 6 RPM → 10 s/rev. Coast must outlast one full rotation or the PPI
+        // goes blank between beam passes (Demo logs: trk peaks then 0).
+        // Same-corridor glue is handled by 5°/350 m gates + JPDA, not by a
+        // coast shorter than the scan period.
+        settings.m_TrackCoastMaxSec = 12.0;
         if (!settings.m_MeasurementModel)
             settings.m_MeasurementModel = new RDF_RadarDefaultMeasurementModel();
 
@@ -390,11 +392,10 @@ class GBRS_RadarStationConfig
         // Shells live only a few seconds. The shared 1 s discovery interval
         // let infantry fill the classify queue before the round was tabled.
         settings.m_ScattererDiscoveryIntervalS = 0.35;
-        // RDF 1.0.2+ default is 2 solves/scan (queue the rest). GBRS PPI launch
-        // / impact / ETA need the fix in the same barrage, so take the governor
-        // max and keep the overflow queue. HUD reads track.m_LastWlrFix only —
-        // do not run a second ballistic solver on the feed tick.
-        settings.m_WeaponLocateSolvesPerScan = 6;
+        // A drag/DEM solution can cost tens of milliseconds. Solve one fresh
+        // hit history per scan and queue the rest; the GBRS tracker override
+        // suppresses repeated solves when no new hit was added.
+        settings.m_WeaponLocateSolvesPerScan = 1;
         settings.m_WeaponLocateQueueMax = 16;
 
         if (settings.m_EwStack)

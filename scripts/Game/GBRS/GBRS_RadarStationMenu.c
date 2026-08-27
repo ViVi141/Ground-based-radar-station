@@ -103,6 +103,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected ref array<ref RDF_RadarFusedTrack> m_PpiSnapFused;
 	protected ref array<ref GBRS_WlrPersistDisplay> m_PpiSnapWlr;
 	protected int m_PpiSnapLockedTrackId;
+	protected int m_iLastPpiSnapshotSeq;
 	protected ref GBRS_PpiZoomWheelHandler m_PpiWheelHandler;
 	protected Widget m_wPpiWheelHost;
 
@@ -293,6 +294,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	override void OnMenuClose()
 	{
 		GBRS_RadarStationComponent station = m_Station;
+		UnbindModeTabs();
 		UnbindNavigation();
 		UnbindPpiZoomWheel();
 		StopDeviceListener();
@@ -342,7 +344,13 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 				invLock.Insert(OnModeTabLock);
 		}
 		if (widgets.m_wModeTabManual)
+		{
 			MuteWLibSounds(widgets.m_wModeTabManual);
+			ScriptInvoker invManual = ButtonActionComponent.GetOnAction(
+				widgets.m_wModeTabManual, true);
+			if (invManual)
+				invManual.Insert(OnModeTabManual);
+		}
 
 		if (widgets.m_wIntelTxBtn)
 		{
@@ -360,6 +368,57 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			if (invOptics)
 				invOptics.Insert(OnOpticsToggleBtn);
 			UpdateOpticsToggleVisual();
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void UnbindModeTabs()
+	{
+		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
+		if (!widgets)
+			return;
+
+		if (widgets.m_wModeTabPd)
+		{
+			ScriptInvoker invPd = ButtonActionComponent.GetOnAction(
+				widgets.m_wModeTabPd, true);
+			if (invPd)
+				invPd.Remove(OnModeTabPd);
+		}
+		if (widgets.m_wModeTabWlr)
+		{
+			ScriptInvoker invWlr = ButtonActionComponent.GetOnAction(
+				widgets.m_wModeTabWlr, true);
+			if (invWlr)
+				invWlr.Remove(OnModeTabWlr);
+		}
+		if (widgets.m_wModeTabLock)
+		{
+			ScriptInvoker invLock = ButtonActionComponent.GetOnAction(
+				widgets.m_wModeTabLock, true);
+			if (invLock)
+				invLock.Remove(OnModeTabLock);
+		}
+		if (widgets.m_wModeTabManual)
+		{
+			ScriptInvoker invManual = ButtonActionComponent.GetOnAction(
+				widgets.m_wModeTabManual, true);
+			if (invManual)
+				invManual.Remove(OnModeTabManual);
+		}
+		if (widgets.m_wIntelTxBtn)
+		{
+			ScriptInvoker invIntel = ButtonActionComponent.GetOnAction(
+				widgets.m_wIntelTxBtn, true);
+			if (invIntel)
+				invIntel.Remove(OnIntelTxBtn);
+		}
+		if (widgets.m_wOpticsToggleBtn)
+		{
+			ScriptInvoker invOptics = ButtonActionComponent.GetOnAction(
+				widgets.m_wOpticsToggleBtn, true);
+			if (invOptics)
+				invOptics.Remove(OnOpticsToggleBtn);
 		}
 	}
 
@@ -571,6 +630,67 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected void UnbindNavigation()
 	{
 		UnbindManualActions();
+		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
+		if (widgets)
+		{
+			SCR_InputButtonComponent navButton = null;
+			if (widgets.m_wHintTabPrev)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintTabPrev.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavTabPrev);
+			}
+			if (widgets.m_wHintTabNext)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintTabNext.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavTabNext);
+			}
+			if (widgets.m_wHintSelect)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintSelect.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavSelect);
+			}
+			if (widgets.m_wHintClose)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintClose.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavClose);
+			}
+			if (widgets.m_wHintParamPrev)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintParamPrev.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavParamPrev);
+			}
+			if (widgets.m_wHintParamNext)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintParamNext.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavParamNext);
+			}
+			if (widgets.m_wHintParamDec)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintParamDec.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavParamDec);
+			}
+			if (widgets.m_wHintParamInc)
+			{
+				navButton = SCR_InputButtonComponent.Cast(
+					widgets.m_wHintParamInc.FindHandler(SCR_InputButtonComponent));
+				if (navButton)
+					navButton.m_OnActivated.Remove(OnNavParamInc);
+			}
+		}
 		m_bNavBound = false;
 	}
 
@@ -637,9 +757,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	//------------------------------------------------------------------------------------------------
 	protected void OnModeTabManual(Widget w, float value, EActionTrigger reason)
 	{
-		// Reserved: no operator-training addon yet.
-		// m_iFocusedModeTab = 3;
-		// ActivateFocusedModeTab();
+		m_iFocusedModeTab = 3;
+		ActivateFocusedModeTab();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -904,9 +1023,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		if (!CanAcceptModeNav())
 			return;
 
-		// LOCK on; MANUAL still reserved.
-		int tabCount = 3;
-		// int tabCount = MODE_TAB_COUNT;
+		int tabCount = MODE_TAB_COUNT;
 		m_iFocusedModeTab = m_iFocusedModeTab + delta;
 		while (m_iFocusedModeTab < 0)
 			m_iFocusedModeTab = m_iFocusedModeTab + tabCount;
@@ -984,9 +1101,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			nextMode = MODE_WLR;
 		else if (m_iFocusedModeTab == 2)
 			nextMode = MODE_LOCK;
-		// MANUAL still reserved.
-		// else if (m_iFocusedModeTab == 3)
-		// 	nextMode = MODE_MANUAL;
+		else if (m_iFocusedModeTab == 3)
+			nextMode = MODE_MANUAL;
 
 		if (nextMode == m_ActiveMode)
 		{
@@ -1447,7 +1563,6 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 
 		m_ActiveMode = liveMode;
 		ClearPersist();
-		ClearPpiSnapshot();
 		m_LastClusterS = 0.0;
 		m_DetectedInRange = 0;
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
@@ -1623,7 +1738,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		dst.m_ScattererId = src.m_ScattererId;
 		dst.m_Position = src.m_Position;
 		dst.m_Distance = src.m_Distance;
-		dst.m_Velocity = src.m_Velocity;
+		dst.m_Velocity = GBRS_RadarStationConfig.SanitizePlotCoastVelocity(src);
 		dst.m_Type = src.m_Type;
 		dst.m_Time = nowS;
 		dst.m_AzimuthDeg = src.m_AzimuthDeg;
@@ -1832,7 +1947,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		{
 			int worst = 0;
 			float worstSnr = 1.0e30;
-			int i = 0;
+			i = 0;
 			while (i < m_DisplayPlots.Count())
 			{
 				RDF_RadarTarget t = m_DisplayPlots.Get(i);
@@ -1887,6 +2002,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		float scanAzDeg,
 		float rangeM,
 		string eccm,
+		int snapshotSeq,
 		array<int> packedInts,
 		array<float> packedFloats)
 	{
@@ -1900,7 +2016,14 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		menu.StoreReplicatedSnapshot(
-			stationId, origin, scanAzDeg, rangeM, eccm, packedInts, packedFloats);
+			stationId,
+			origin,
+			scanAzDeg,
+			rangeM,
+			eccm,
+			snapshotSeq,
+			packedInts,
+			packedFloats);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1910,6 +2033,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		float scanAzDeg,
 		float rangeM,
 		string eccm,
+		int snapshotSeq,
 		array<int> packedInts,
 		array<float> packedFloats)
 	{
@@ -1917,6 +2041,8 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return;
 
 		if (m_Station.GetStationRplId() != stationId)
+			return;
+		if (snapshotSeq <= m_iLastPpiSnapshotSeq)
 			return;
 
 		array<ref RDF_RadarTarget> plots;
@@ -1941,6 +2067,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_PpiSnapTracks = tracks;
 		m_PpiSnapFused = fused;
 		m_PpiSnapWlr = wlr;
+		m_iLastPpiSnapshotSeq = snapshotSeq;
 		m_bHasPpiSnapshot = true;
 		GBRS_RadarStationHud.SetTrackCoastAnchor(System.GetTickCount() * 0.001);
 	}
@@ -1956,6 +2083,7 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 		m_PpiSnapDetectedTotal = 0;
 		m_PpiSnapNetOnline = 0;
 		m_PpiSnapLockedTrackId = 0;
+		m_iLastPpiSnapshotSeq = 0;
 		if (m_PpiSnapPlots)
 			m_PpiSnapPlots.Clear();
 		if (m_PpiSnapTracks)
@@ -1970,6 +2098,11 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	bool TryLockPaintedTarget(int localX, int localY)
 	{
 		if (!m_bBound || !m_Station)
+			return false;
+
+		string mode = m_Station.GetWorkstationMode();
+		if (mode != GBRS_RadarStationConstants.MODE_PD_SEARCH
+			&& mode != GBRS_RadarStationConstants.MODE_LOCK)
 			return false;
 
 		GBRS_RadarStationHudWidgets widgets = GBRS_RadarStationHud.GetWidgets();
@@ -2000,10 +2133,25 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			return false;
 
 		int trackId = GBRS_RadarStationHud.PickTrackIdAtCanvasPixels(px, py);
-		if (trackId <= 0)
+		if (trackId > 0)
+			return m_Station.RequestLockTrack(trackId);
+
+		// Painted afterglow / raw plots often have no TWS square yet. Resolve
+		// the nearest blip to a track (scatterer or spatial gate), or designate
+		// the scatterer so auto-acquire can take it on the next scan.
+		int scattererId = 0;
+		vector plotPos;
+		if (!GBRS_RadarStationHud.PickPlotAtCanvasPixels(px, py, scattererId, plotPos))
 			return false;
 
-		return m_Station.RequestLockTrack(trackId);
+		trackId = GBRS_RadarStationHud.ResolveTrackIdNearContact(scattererId, plotPos);
+		if (trackId > 0)
+			return m_Station.RequestLockTrack(trackId);
+
+		if (scattererId > 0)
+			return m_Station.RequestLockScatterer(scattererId);
+
+		return false;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -2064,21 +2212,47 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 			TickLocalPlots(detectedTotal, replicatedTracks);
 		}
 
+		// Live sensor handles: WLR LCH/IMP bake and lock-ring need these on the
+		// authority / Workbench path. Snapshot WLR/tracks still win when present.
+		RDF_RadarProjectileTracker liveTracker = null;
+		RDF_RadarLockManager liveLockMgr = null;
+		RDF_RadarComponent radar = m_Station.GetRadarComponent();
+		if (radar && m_Station.IsStationAuthority())
+		{
+			RDF_RadarSensor sensor = radar.GetSensor();
+			if (sensor)
+			{
+				liveTracker = sensor.GetTracker();
+				liveLockMgr = sensor.GetLockManager();
+			}
+		}
+
 		GBRS_RadarStationHud.SetDisplayRange(viewRange);
 		GBRS_RadarStationHud.SetMode(m_ActiveMode);
 		GBRS_RadarStationHud.SetEccmStatus(eccm);
 		int lockedTrackId = 0;
-		if (m_bHasPpiSnapshot)
-			lockedTrackId = m_PpiSnapLockedTrackId;
+		if (liveLockMgr)
+		{
+			int liveLocked = liveLockMgr.GetLockedTrackId();
+			if (liveLocked >= 0)
+				lockedTrackId = liveLocked;
+		}
+		if (lockedTrackId <= 0)
+		{
+			if (m_bHasPpiSnapshot)
+				lockedTrackId = m_PpiSnapLockedTrackId;
+			else
+				lockedTrackId = m_Station.ResolveLockedTrackId();
+		}
 		GBRS_RadarStationHud.SetLockedTrackId(lockedTrackId);
 		GBRS_RadarStationHud.FeedScan(
 			m_DisplayPlots,
 			hudOrigin,
 			hudForward,
 			viewRange,
-			null,
+			liveTracker,
 			detectedTotal,
-			null,
+			liveLockMgr,
 			replicatedTracks,
 			replicatedFused,
 			netOnline,

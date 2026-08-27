@@ -308,13 +308,20 @@ class GBRS_RadarStationDemo
         }
         else if (m_WantShells)
         {
-            // WLR sweeps back and forth within a narrow sector (cold-war
-            // counter-battery behavior). Centre that sector on the mortar line.
+            // Demo: keep the beam on the mortar corridor. Product WLR defaults
+            // to 360° scan; without a sector the 6 RPM beam only paints shells
+            // for a few hundred ms per revolution (empty PPI most of the time).
             float fireAz = FireAzimuthDeg();
-            m_Station.SetWlrSectorCenterDeg(fireAz);
-            Print("[GBRS Demo] WLR sector-sweep centred at az="
-                + fireAz.ToString()
-                + " deg (0=east, 90=north) on the mortar line.");
+            if (m_Station.SetWlrSectorSweep(fireAz, 40.0, true))
+            {
+                Print("[GBRS Demo] WLR sector-sweep ±40 deg centred at az="
+                    + fireAz.ToString()
+                    + " deg (0=east, 90=north) on the mortar line.");
+            }
+            else
+            {
+                Print("[GBRS Demo] WLR sector-sweep setup failed.", LogLevel.WARNING);
+            }
         }
 
         m_Running = true;

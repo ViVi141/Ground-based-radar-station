@@ -305,7 +305,8 @@ class GBRS_PpiSnapshot
         float launchTime = 0.0;
         vector impactPos = "0 0 0";
         float impactTime = 0.0;
-        RDF_RadarWlrFix fix = tr.m_LastWlrFix;
+        RDF_RadarWlrFix fix =
+            GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
         if (fix)
         {
             if (fix.m_LaunchValid)

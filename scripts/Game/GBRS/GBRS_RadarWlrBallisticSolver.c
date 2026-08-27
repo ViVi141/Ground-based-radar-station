@@ -68,10 +68,32 @@ class GBRS_RadarWlrBallisticSolver
     {
         if (!src)
             return null;
+        if (track && track.m_GbrsDisplayFixCached)
+        {
+            if (track.m_GbrsDisplayFixSource == src)
+                return track.m_GbrsDisplayFix;
+        }
+
+        RDF_RadarWlrFix result = SanitizeFixUncached(src, track);
+        if (track)
+        {
+            track.m_GbrsDisplayFixSource = src;
+            track.m_GbrsDisplayFix = result;
+            track.m_GbrsDisplayFixCached = true;
+        }
+        return result;
+    }
+
+    static RDF_RadarWlrFix SanitizeFixUncached(RDF_RadarWlrFix src, RDF_RadarTrack track)
+    {
+        if (!src)
+            return null;
         if (!src.m_LaunchValid || !src.m_ImpactValid)
             return null;
 
         float tof = src.m_ImpactTimeS - src.m_LaunchTimeS;
+        if (tof != tof)
+            return null;
         if (tof < MIN_TOF_S)
             return null;
         if (tof > MAX_TOF_S)
@@ -79,8 +101,11 @@ class GBRS_RadarWlrBallisticSolver
 
         vector launch = src.m_LaunchPos;
         vector impact = src.m_ImpactPos;
+        if (!IsFiniteVector(launch) || !IsFiniteVector(impact))
+            return null;
         float tLaunch = src.m_LaunchTimeS;
         float tImpact = src.m_ImpactTimeS;
+        bool swapped = false;
 
         vector arc = impact - launch;
         arc[1] = 0.0;
@@ -100,14 +125,15 @@ class GBRS_RadarWlrBallisticSolver
                 vector tmpP = launch;
                 launch = impact;
                 impact = tmpP;
-                float tmpT = tLaunch;
-                tLaunch = tImpact;
-                tImpact = tmpT;
-                tof = tImpact - tLaunch;
-                if (tof < MIN_TOF_S)
-                    return null;
+                swapped = true;
             }
         }
+
+        // The normal path is already correctly oriented. Reuse RDF's fix
+        // instead of allocating an identical copy on every HUD redraw,
+        // snapshot bake, event update, and datalink update.
+        if (!swapped)
+            return src;
 
         RDF_RadarWlrFix outFix = new RDF_RadarWlrFix();
         outFix.m_LaunchValid = true;
@@ -122,6 +148,21 @@ class GBRS_RadarWlrBallisticSolver
         outFix.m_FitPointCount = src.m_FitPointCount;
         outFix.m_FitSpanS = src.m_FitSpanS;
         return outFix;
+    }
+
+    static bool IsFiniteVector(vector value)
+    {
+        int i = 0;
+        while (i < 3)
+        {
+            float component = value[i];
+            if (component != component)
+                return false;
+            if (component >= float.INFINITY || component <= -float.INFINITY)
+                return false;
+            i = i + 1;
+        }
+        return true;
     }
 
     // Horizontal motion from recent position history (m/s). Empty when sparse.

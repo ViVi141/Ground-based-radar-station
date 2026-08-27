@@ -39,8 +39,6 @@ class GBRS_RadarStationHud
     static const float OPTICS_FORWARD_CLEAR_M = 2.5;
     // Fixed upward look bias for PIP clearance — not antenna elevation.
     static const float OPTICS_LOOK_UP_Y = 0.08;
-    // Workstation UI redraw at 60 Hz (menu feed matches).
-    static const float UPDATE_INTERVAL = 0.0166667;
     static const int OPTICS_MAX_FPS = 60;
     // PIP cameras often start underexposed; sync main HDR then lift slightly.
     static const float OPTICS_HDR_BOOST = 1.35;
@@ -68,8 +66,8 @@ class GBRS_RadarStationHud
     static const int MAX_DRAW_BLIPS = 64;
     // Merge TWS symbols in polar (range/az), not 3D. Elevation noise and
     // coasting ghosts otherwise sit just outside a Cartesian 220 m ball.
-    static const float TRACK_CLUSTER_RANGE_M = 700.0;
-    static const float TRACK_CLUSTER_AZ_DEG = 8.0;
+    static const float TRACK_CLUSTER_RANGE_M = 350.0;
+    static const float TRACK_CLUSTER_AZ_DEG = 5.0;
     static const float HEADING_SPAN_S = 1.0;
 
     // Static face is drawn on the same Canvas as sweep/blips (RHS Garmin pattern).
@@ -102,6 +100,7 @@ class GBRS_RadarStationHud
     static const float WLR_ALERT_RADIUS_M = 120.0;
     static const float WLR_PERSIST_S = 20.0;
     static const float WLR_IMPACT_PERSIST_S = 3.0;
+    static const float WLR_LIST_UPDATE_INTERVAL_S = 0.1;
     static const int MAX_WLR_PERSIST = 16;
     static const string MODE_WLR = GBRS_RadarStationConstants.MODE_WLR;
     static const string MODE_LOCK = GBRS_RadarStationConstants.MODE_LOCK;
@@ -162,9 +161,9 @@ class GBRS_RadarStationHud
     // between ~30 Hz snaps at the 60 Hz UI rate.
     protected float m_TrackCoastAnchorS;
     protected float m_DisplayRange = 12000.0;
-    protected float m_LastUpdateS;
     protected string m_Mode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
     protected int m_DetectedTotal;
+    protected float m_fNextWlrListUpdateS;
     protected RDF_RadarLockManager m_LockManager;
     protected int m_LockedTrackId;
     protected vector m_ScanOrigin;
@@ -187,6 +186,7 @@ class GBRS_RadarStationHud
     protected ref SharedItemRef m_PpiFaceTex;
     protected ref array<ref GBRS_WlrPersistDisplay> m_WlrPersist;
     protected ref array<ref RDF_RadarTrack> m_CachedDisplayTracks;
+    protected ref array<ref RDF_RadarTarget> m_CachedDisplayPlots;
     protected ref array<ref RDF_RadarFusedTrack> m_ReplicatedFused;
     protected int m_ReplicatedNetOnline = -1;
 
@@ -238,13 +238,7 @@ class GBRS_RadarStationHud
                 inst.m_Widgets.m_wListTitle.SetText("TRACKED CONTACTS");
         }
 
-        if (inst.m_Widgets && inst.m_Widgets.m_wListHType)
-        {
-            if (mode == GBRS_RadarStationConstants.MODE_WLR)
-                inst.m_Widgets.m_wListHType.SetText("SHELL");
-            else
-                inst.m_Widgets.m_wListHType.SetText("TYPE");
-        }
+        inst.ApplyContactListHeaders(mode);
 
         if (inst.m_Widgets && inst.m_Widgets.m_wPpiHint)
         {
@@ -258,7 +252,10 @@ class GBRS_RadarStationHud
                 inst.m_Widgets.m_wPpiHint.SetText("click contact to lock   Up/Dn PPI range");
         }
 
-        bool showTable = false;
+        // Only MANUAL keeps free-text ListBody; WLR uses the same column table.
+        bool showTable = true;
+        if (mode == GBRS_RadarStationConstants.MODE_MANUAL)
+            showTable = false;
         inst.SetContactsTableVisible(showTable);
 
         // Optics PIP is opt-in via OPTICS mode-bar button (see SetOpticsEnabled).
@@ -266,6 +263,8 @@ class GBRS_RadarStationHud
             inst.CreateOpticsCamera(inst.m_OpticsParent);
     }
 
+    // contacts=true: column table (NR/AZ/RNG/…). contacts=false: free-text ListBody
+    // (MANUAL params only). Exactly one of the two is visible.
     protected void SetContactsTableVisible(bool contacts)
     {
         if (!m_Widgets)
@@ -274,7 +273,47 @@ class GBRS_RadarStationHud
         if (m_Widgets.m_wListTable)
             m_Widgets.m_wListTable.SetVisible(contacts);
         if (m_Widgets.m_wListBody)
-            m_Widgets.m_wListBody.SetVisible(true);
+            m_Widgets.m_wListBody.SetVisible(!contacts);
+    }
+
+    protected void ApplyContactListHeaders(string mode)
+    {
+        if (!m_Widgets)
+            return;
+
+        if (mode == GBRS_RadarStationConstants.MODE_WLR)
+        {
+            if (m_Widgets.m_wListHNr)
+                m_Widgets.m_wListHNr.SetText("ID");
+            if (m_Widgets.m_wListHAz)
+                m_Widgets.m_wListHAz.SetText("AZ");
+            if (m_Widgets.m_wListHRng)
+                m_Widgets.m_wListHRng.SetText("RNG");
+            if (m_Widgets.m_wListHAlt)
+                m_Widgets.m_wListHAlt.SetText("ETA");
+            if (m_Widgets.m_wListHSpd)
+                m_Widgets.m_wListHSpd.SetText("TOF");
+            if (m_Widgets.m_wListHType)
+                m_Widgets.m_wListHType.SetText("TYPE");
+            if (m_Widgets.m_wListHSnr)
+                m_Widgets.m_wListHSnr.SetText("DRAG");
+            return;
+        }
+
+        if (m_Widgets.m_wListHNr)
+            m_Widgets.m_wListHNr.SetText("NR");
+        if (m_Widgets.m_wListHAz)
+            m_Widgets.m_wListHAz.SetText("AZ");
+        if (m_Widgets.m_wListHRng)
+            m_Widgets.m_wListHRng.SetText("RNG");
+        if (m_Widgets.m_wListHAlt)
+            m_Widgets.m_wListHAlt.SetText("ALT");
+        if (m_Widgets.m_wListHSpd)
+            m_Widgets.m_wListHSpd.SetText("SPD");
+        if (m_Widgets.m_wListHType)
+            m_Widgets.m_wListHType.SetText("TYPE");
+        if (m_Widgets.m_wListHSnr)
+            m_Widgets.m_wListHSnr.SetText("SNR");
     }
 
     protected void ApplyModeChrome(string mode)
@@ -332,6 +371,26 @@ class GBRS_RadarStationHud
             else
                 m_Widgets.m_wListBody.SetColor(Color.FromRGBA(185, 230, 255, 235));
         }
+
+        Color bodyCol = Color.FromRGBA(185, 230, 255, 235);
+        if (mode == GBRS_RadarStationConstants.MODE_WLR)
+            bodyCol = Color.FromRGBA(255, 214, 140, 245);
+        else if (mode == GBRS_RadarStationConstants.MODE_LOCK)
+            bodyCol = Color.FromRGBA(255, 200, 190, 240);
+        if (m_Widgets.m_wListBNr)
+            m_Widgets.m_wListBNr.SetColor(bodyCol);
+        if (m_Widgets.m_wListBAz)
+            m_Widgets.m_wListBAz.SetColor(bodyCol);
+        if (m_Widgets.m_wListBRng)
+            m_Widgets.m_wListBRng.SetColor(bodyCol);
+        if (m_Widgets.m_wListBAlt)
+            m_Widgets.m_wListBAlt.SetColor(bodyCol);
+        if (m_Widgets.m_wListBSpd)
+            m_Widgets.m_wListBSpd.SetColor(bodyCol);
+        if (m_Widgets.m_wListBType)
+            m_Widgets.m_wListBType.SetColor(bodyCol);
+        if (m_Widgets.m_wListBSnr)
+            m_Widgets.m_wListBSnr.SetColor(bodyCol);
     }
 
     static void SetDisplayRange(float rangeM)
@@ -398,6 +457,121 @@ class GBRS_RadarStationHud
     static int PickTrackIdAtCanvasPixels(float pixelX, float pixelY)
     {
         return GetInstance().PickTrackIdAtCanvasPixelsInternal(pixelX, pixelY);
+    }
+
+    // Nearest painted plot (afterglow / raw blip) under the cursor.
+    protected bool PickPlotAtCanvasPixelsInternal(
+        float pixelX,
+        float pixelY,
+        out int scattererId,
+        out vector worldPos)
+    {
+        scattererId = 0;
+        worldPos = "0 0 0";
+        if (!m_Widgets || !m_Widgets.m_wPpiCanvas)
+            return false;
+
+        array<ref RDF_RadarTarget> plots = m_CachedDisplayPlots;
+        if (!plots)
+            return false;
+
+        float canvasW;
+        float canvasH;
+        m_Widgets.m_wPpiCanvas.GetScreenSize(canvasW, canvasH);
+        if (canvasW < 1.0)
+            canvasW = 1.0;
+        if (canvasH < 1.0)
+            canvasH = 1.0;
+
+        float clickX = (pixelX / canvasW) * m_PpiW;
+        float clickY = (pixelY / canvasH) * m_PpiH;
+
+        float bestDist = 28.0;
+        bool found = false;
+        int i = 0;
+        while (i < plots.Count())
+        {
+            RDF_RadarTarget t = plots.Get(i);
+            i = i + 1;
+            if (!t)
+                continue;
+
+            float bx;
+            float by;
+            if (!WorldToPpi(m_ScanOrigin, t.m_Position, bx, by))
+                continue;
+
+            float dx = bx - clickX;
+            float dy = by - clickY;
+            float dist = Math.Sqrt(dx * dx + dy * dy);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                scattererId = t.m_ScattererId;
+                worldPos = t.m_Position;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    static bool PickPlotAtCanvasPixels(
+        float pixelX,
+        float pixelY,
+        out int scattererId,
+        out vector worldPos)
+    {
+        return GetInstance().PickPlotAtCanvasPixelsInternal(
+            pixelX, pixelY, scattererId, worldPos);
+    }
+
+    // Map a plot contact to a TWS track id (scatterer match, then spatial gate).
+    protected int ResolveTrackIdNearContactInternal(int scattererId, vector worldPos)
+    {
+        array<ref RDF_RadarTrack> tracks = m_CachedDisplayTracks;
+        if (!tracks)
+            return 0;
+
+        if (scattererId > 0)
+        {
+            int i = 0;
+            while (i < tracks.Count())
+            {
+                RDF_RadarTrack tr = tracks.Get(i);
+                i = i + 1;
+                if (!tr)
+                    continue;
+                if (tr.m_ScattererId == scattererId)
+                    return tr.m_TrackId;
+            }
+        }
+
+        int bestId = 0;
+        float bestDist = 400.0;
+        int j = 0;
+        while (j < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(j);
+            j = j + 1;
+            if (!tr)
+                continue;
+
+            vector drawPos = CoastTrackWorldPos(tr);
+            float dist = vector.Distance(drawPos, worldPos);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestId = tr.m_TrackId;
+            }
+        }
+
+        return bestId;
+    }
+
+    static int ResolveTrackIdNearContact(int scattererId, vector worldPos)
+    {
+        return GetInstance().ResolveTrackIdNearContactInternal(scattererId, worldPos);
     }
 
     // RDF 1.0.0 ECCM status from the Sensor (GetEccmStatusShort): drives the
@@ -493,8 +667,11 @@ class GBRS_RadarStationHud
         if (m_Widgets.m_wListBody)
         {
             m_Widgets.m_wListBody.SetText("(no contacts)");
-            m_Widgets.m_wListBody.SetVisible(true);
         }
+        // Default to the authored column table; SetMode / UpdateList will switch
+        // to ListBody only for MANUAL / WLR free-text panels.
+        WriteContactColumns("--", "---", "-.-", "-.-", "---", "----", "--");
+        SetContactsTableVisible(true);
         if (m_Widgets.m_wPpiMode)
             m_Widgets.m_wPpiMode.SetText(m_Mode);
 
@@ -503,8 +680,8 @@ class GBRS_RadarStationHud
         // Az/El keeps its authored FillWeight (placeholder shown until enabled).
         m_bOpticsEnabled = false;
         ApplyOpticsVisibility();
-        m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
+        m_fNextWlrListUpdateS = 0.0;
         Print("[GBRS HUD] attached to menu root");
     }
 
@@ -525,10 +702,11 @@ class GBRS_RadarStationHud
         if (m_WlrPersist)
             m_WlrPersist.Clear();
         m_CachedDisplayTracks = null;
+        m_CachedDisplayPlots = null;
         m_ReplicatedFused = null;
         m_ReplicatedNetOnline = -1;
-        m_LastUpdateS = 0.0;
         m_DetectedTotal = 0;
+        m_fNextWlrListUpdateS = 0.0;
         m_TrackCoastAnchorS = 0.0;
         GBRS_RadarWlrBallisticSolver.Clear();
     }
@@ -934,19 +1112,12 @@ class GBRS_RadarStationHud
         m_ReplicatedFused = replicatedFused;
         m_ReplicatedNetOnline = replicatedNetOnline;
         m_ScanOrigin = origin;
-
-        float now = System.GetTickCount() * 0.001;
-        if (now - m_LastUpdateS < UPDATE_INTERVAL)
-            return;
-        m_LastUpdateS = now;
+        m_CachedDisplayPlots = targets;
 
         if (replicatedTracks)
             m_CachedDisplayTracks = replicatedTracks;
         else
             m_CachedDisplayTracks = CollectDisplayTracks(tracker, origin);
-
-        if (replicatedWlr)
-            m_WlrPersist = replicatedWlr;
 
         CenterRoot();
         SyncPpiSquare();
@@ -956,11 +1127,32 @@ class GBRS_RadarStationHud
             UpdateOpticsCamera(origin, forward);
         if (m_Mode == MODE_WLR)
         {
-            if (!replicatedWlr)
+            // The authority already bakes this at the snapshot cadence. Prefer
+            // that result so the 60 Hz HUD does not duplicate persist work;
+            // live tracker remains the Workbench/startup fallback.
+            if (replicatedWlr && replicatedWlr.Count() > 0)
+                m_WlrPersist = replicatedWlr;
+            else if (tracker)
                 UpdateWlrPersist(origin, tracker);
         }
         UpdatePpi(targets, origin, forward, tracker);
-        UpdateList(targets, origin, tracker);
+        if (m_Mode == MODE_WLR)
+        {
+            // PPI remains 60 Hz; text columns and layout only need 10 Hz.
+            // This avoids seven SetText/layout passes on every render tick.
+            float listNowS = GetWorldTimeS();
+            if (listNowS >= m_fNextWlrListUpdateS)
+            {
+                m_fNextWlrListUpdateS =
+                    listNowS + WLR_LIST_UPDATE_INTERVAL_S;
+                UpdateList(targets, origin, tracker);
+            }
+        }
+        else
+        {
+            m_fNextWlrListUpdateS = 0.0;
+            UpdateList(targets, origin, tracker);
+        }
         UpdateAzEl(targets, origin, tracker);
 
         if (m_Widgets && m_Widgets.m_wPpiRange)
@@ -1131,6 +1323,13 @@ class GBRS_RadarStationHud
                 continue;
             if (index >= MAX_DRAW_BLIPS)
                 break;
+            if (m_Mode == MODE_WLR)
+            {
+                // The shell track pass owns this contact. Avoid drawing the
+                // same physical round again as a raw afterglow underneath it.
+                if (PlotCoveredByCachedTrack(t, origin))
+                    continue;
+            }
 
             float bx;
             float by;
@@ -1147,66 +1346,118 @@ class GBRS_RadarStationHud
     protected void DrawWlrShellTracks(vector origin, RDF_RadarProjectileTracker tracker)
     {
         array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
-        if (!tracks)
-            return;
+        map<int, bool> drawnIds = new map<int, bool>();
 
         int drawn = 0;
-        int i = 0;
-        while (i < tracks.Count())
+        if (tracks)
         {
-            RDF_RadarTrack tr = tracks.Get(i);
-            i = i + 1;
-            if (!tr)
+            int i = 0;
+            while (i < tracks.Count())
+            {
+                RDF_RadarTrack tr = tracks.Get(i);
+                i = i + 1;
+                if (!tr)
+                    continue;
+                if (drawn >= MAX_DRAW_BLIPS)
+                    break;
+
+                // Anchor the shell blip on the ballistic launch->impact arc when a
+                // fix exists (stable), else fall back to the filtered position.
+                vector shellPos = tr.m_FilteredPosition;
+                GBRS_WlrPersistDisplay persist = FindWlrPersist(tr.m_TrackId);
+                if (persist && persist.m_HasLive)
+                    shellPos = persist.m_LivePos;
+
+                float bx;
+                float by;
+                if (!WorldToPpi(origin, shellPos, bx, by))
+                    continue;
+
+                int color = COL_WLR_SHELL;
+                float half = 7.0;
+
+                DrawPpiSquare(bx, by, half, color);
+
+                float dirX;
+                float dirZ;
+                float speed;
+                // Prefer the accepted launch→impact arc direction. FitVacuum /
+                // Doppler-radial headings reverse near CPA and with sparse hits.
+                if (persist && persist.m_HasLive && persist.m_HasLaunch && persist.m_HasImpact)
+                {
+                    vector arcDir = persist.m_LiveVel;
+                    dirX = arcDir[0];
+                    dirZ = arcDir[2];
+                    speed = Math.Sqrt(dirX * dirX + dirZ * dirZ);
+                    if (speed < 0.001)
+                        speed = 50.0;
+                }
+                else
+                {
+                    TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
+                }
+                if (speed >= 3.0)
+                {
+                    DrawPpiChevron(bx, by, dirX, dirZ, color);
+                    DrawPpiHeadingStick(bx, by, dirX, dirZ, color);
+                }
+
+                // Confirmed shell tracks get a map-grid coordinate label so the
+                // operator can read launch-side positions directly from the PPI.
+                string id = "W" + PadNum(tr.m_TrackId, 2);
+                DrawPpiLabel(bx, by, id + " " + GetPpiMapLabel(shellPos), COL_WLR_TEXT);
+
+                drawnIds.Set(tr.m_TrackId, true);
+                drawn = drawn + 1;
+            }
+        }
+
+        // Persist orphans: track file already coasted out, but keep the shell
+        // on the PPI until WLR_PERSIST_S expires.
+        if (!m_WlrPersist)
+            return;
+
+        float nowS = GetWorldTimeS();
+        int p = 0;
+        while (p < m_WlrPersist.Count())
+        {
+            GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(p);
+            p = p + 1;
+            if (!entry || !entry.m_HasLive)
+                continue;
+            if (drawnIds.Contains(entry.m_TrackId))
+                continue;
+            if (entry.m_HasImpact && nowS >= entry.m_ImpactTimeS)
                 continue;
             if (drawn >= MAX_DRAW_BLIPS)
                 break;
 
-            // Anchor the shell blip on the ballistic launch->impact arc when a
-            // fix exists (stable), else fall back to the filtered position.
-            vector shellPos = tr.m_FilteredPosition;
-            GBRS_WlrPersistDisplay persist = FindWlrPersist(tr.m_TrackId);
-            if (persist && persist.m_HasLive)
-                shellPos = persist.m_LivePos;
-
-            float bx;
-            float by;
-            if (!WorldToPpi(origin, shellPos, bx, by))
+            float persistX;
+            float persistY;
+            if (!WorldToPpi(origin, entry.m_LivePos, persistX, persistY))
                 continue;
 
-            int color = COL_WLR_SHELL;
-            float half = 7.0;
-
-            DrawPpiSquare(bx, by, half, color);
-
-            float dirX;
-            float dirZ;
-            float speed;
-            // Prefer the accepted launch→impact arc direction. FitVacuum /
-            // Doppler-radial headings reverse near CPA and with sparse hits.
-            if (persist && persist.m_HasLive && persist.m_HasLaunch && persist.m_HasImpact)
+            DrawPpiSquare(persistX, persistY, 7.0, COL_WLR_SHELL);
+            float persistDirX = entry.m_LiveVel[0];
+            float persistDirZ = entry.m_LiveVel[2];
+            float persistSpeed = Math.Sqrt(
+                persistDirX * persistDirX + persistDirZ * persistDirZ);
+            if (persistSpeed >= 3.0)
             {
-                vector arcDir = persist.m_LiveVel;
-                dirX = arcDir[0];
-                dirZ = arcDir[2];
-                speed = Math.Sqrt(dirX * dirX + dirZ * dirZ);
-                if (speed < 0.001)
-                    speed = 50.0;
-            }
-            else
-            {
-                TrackDisplayMotion(tr, origin, dirX, dirZ, speed);
-            }
-            if (speed >= 3.0)
-            {
-                DrawPpiChevron(bx, by, dirX, dirZ, color);
-                DrawPpiHeadingStick(bx, by, dirX, dirZ, color);
+                DrawPpiChevron(
+                    persistX, persistY, persistDirX, persistDirZ, COL_WLR_SHELL);
+                DrawPpiHeadingStick(
+                    persistX, persistY, persistDirX, persistDirZ, COL_WLR_SHELL);
             }
 
-            // Confirmed shell tracks get a map-grid coordinate label so the
-            // operator can read launch-side positions directly from the PPI.
-            string id = "W" + PadNum(tr.m_TrackId, 2);
-            DrawPpiLabel(bx, by, id + " " + GetPpiMapLabel(shellPos), COL_WLR_TEXT);
-
+            string persistId = entry.m_Id;
+            if (persistId == "")
+                persistId = "W" + PadNum(entry.m_TrackId, 2);
+            DrawPpiLabel(
+                persistX,
+                persistY,
+                persistId + " " + GetPpiMapLabel(entry.m_LivePos),
+                COL_WLR_TEXT);
             drawn = drawn + 1;
         }
     }
@@ -1581,6 +1832,23 @@ class GBRS_RadarStationHud
         if (a.m_ScattererId > 0 && a.m_ScattererId == b.m_ScattererId)
             return true;
 
+        if (a.m_Entity && b.m_Entity)
+        {
+            IEntity rootA = a.m_Entity.GetRootParent();
+            if (!rootA)
+                rootA = a.m_Entity;
+            IEntity rootB = b.m_Entity.GetRootParent();
+            if (!rootB)
+                rootB = b.m_Entity;
+            if (rootA == rootB)
+                return true;
+        }
+
+        // Different known scatterers are different physical contacts. Do not
+        // collapse close formations or projectile salvos by spatial gating.
+        if (a.m_ScattererId > 0 && b.m_ScattererId > 0)
+            return false;
+
         float dRange = a.m_FilteredRangeM - b.m_FilteredRangeM;
         if (dRange < 0.0)
             dRange = -dRange;
@@ -1687,9 +1955,13 @@ class GBRS_RadarStationHud
             }
         }
 
-        float vx = tr.m_FilteredVelocity[0];
-        float vz = tr.m_FilteredVelocity[2];
-        float vH = Math.Sqrt(vx * vx + vz * vz);
+        float vx = 0.0;
+        float vz = 0.0;
+        float vH = 0.0;
+        vector filtVel = GBRS_RadarStationConfig.SanitizeTrackCoastVelocity(tr.m_FilteredVelocity);
+        vx = filtVel[0];
+        vz = filtVel[2];
+        vH = Math.Sqrt(vx * vx + vz * vz);
 
         // 1) Accepted / sanitized WLR launch→impact (stable course).
         RDF_RadarWlrFix wlrFix = GBRS_RadarWlrBallisticSolver.SanitizeFixForDisplay(
@@ -1736,13 +2008,21 @@ class GBRS_RadarStationHud
         if (tr.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
             return;
 
-        float azRad = tr.m_FilteredAzimuthDeg * 0.017453292519943295;
+        // Radial Doppler can still carry rotor sideband energy on air tracks
+        // (no sideband flag on RDF_RadarTrack). Reject absurd radials so
+        // hovering helos / beam-entry jets do not paint at hundreds of m/s.
         float rr = tr.m_FilteredRangeRateMs;
-        dirX = Math.Cos(azRad) * (-rr);
-        dirZ = Math.Sin(azRad) * (-rr);
         float radialAbs = rr;
         if (radialAbs < 0.0)
             radialAbs = -radialAbs;
+        if (radialAbs < 3.0)
+            return;
+        if (radialAbs > 90.0)
+            return;
+
+        float azRad = tr.m_FilteredAzimuthDeg * 0.017453292519943295;
+        dirX = Math.Cos(azRad) * (-rr);
+        dirZ = Math.Sin(azRad) * (-rr);
         speed = GBRS_RadarStationConfig.SanitizeDisplaySpeedMs(radialAbs, false);
     }
 
@@ -1830,11 +2110,11 @@ class GBRS_RadarStationHud
         float c = v[2];
         if (a != a || b != b || c != c)
             return false;
-        if (a > float.INFINITY || a < -float.INFINITY)
+        if (a >= float.INFINITY || a <= -float.INFINITY)
             return false;
-        if (b > float.INFINITY || b < -float.INFINITY)
+        if (b >= float.INFINITY || b <= -float.INFINITY)
             return false;
-        if (c > float.INFINITY || c < -float.INFINITY)
+        if (c >= float.INFINITY || c <= -float.INFINITY)
             return false;
         return true;
     }
@@ -1896,10 +2176,8 @@ class GBRS_RadarStationHud
                         continue;
 
                     GBRS_WlrPersistDisplay entry = FindWlrPersist(tr.m_TrackId);
-                    GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-                    RDF_RadarWlrFix fix = null;
-                    if (sol)
-                        fix = sol.m_Fix;
+                    RDF_RadarWlrFix fix =
+                        GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
 
                     // Quality-gated fix: create / refresh LCH→IMP. Ungated raw
                     // LastWlrFix is never painted (early reverse / wild arcs).
@@ -1926,6 +2204,8 @@ class GBRS_RadarStationHud
                             entry.m_ImpactPos = fix.m_ImpactPos;
                             entry.m_ImpactTimeS = fix.m_ImpactTimeS;
                         }
+                        entry.m_AirDrag = tr.m_AirDrag;
+                        entry.m_DragEstimated = false;
 
                         entry.m_LivePos = WlrPositionOnArc(entry, worldNowS);
                         entry.m_LiveVel = WlrArcDirection(entry, tr);
@@ -1933,15 +2213,22 @@ class GBRS_RadarStationHud
                         continue;
                     }
 
-                    // No accepted fix yet: keep the shell blip on filtered
-                    // kinematics so the operator sees the track without a lie.
+                    // No accepted fix yet: still keep a live shell blip so the
+                    // PPI is not empty between beam passes / before WLR solve.
                     if (!entry)
-                        continue;
+                    {
+                        entry = new GBRS_WlrPersistDisplay();
+                        entry.m_TrackId = tr.m_TrackId;
+                        m_WlrPersist.Insert(entry);
+                    }
 
+                    entry.m_Id = "W" + PadNum(tr.m_TrackId, 2);
                     entry.m_LastSeenS = worldNowS;
                     entry.m_LivePos = tr.m_FilteredPosition;
                     entry.m_LiveVel = GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
                     entry.m_HasLive = true;
+                    entry.m_AirDrag = tr.m_AirDrag;
+                    entry.m_DragEstimated = false;
                 }
             }
         }
@@ -2554,10 +2841,13 @@ class GBRS_RadarStationHud
                 continue;
             if (index >= MAX_DRAW_BLIPS)
                 break;
+            // Track already owns this contact — avoid stacking a second blob.
+            if (PlotCoveredByCachedTrack(t, origin))
+                continue;
 
             float az = NorthUpAzimuthDeg(t, origin);
             float el = NorthUpElevationDeg(t, origin);
-            DrawAzElMark(az, el, BlipColor(t), 16.0);
+            DrawAzElMark(az, el, BlipColor(t), 3.5);
             index = index + 1;
         }
     }
@@ -2586,7 +2876,7 @@ class GBRS_RadarStationHud
                 az = az + 360.0;
             float horiz = Math.Sqrt(d[0] * d[0] + d[2] * d[2]);
             float el = Math.Atan2(d[1], Math.Max(0.001, horiz)) * Math.RAD2DEG;
-            DrawAzElMark(az, el, TrackColor(tr), 16.0);
+            DrawAzElMark(az, el, TrackColor(tr), 4.5);
             index = index + 1;
         }
     }
@@ -2639,8 +2929,10 @@ class GBRS_RadarStationHud
 
         vector centerPx = m_Widgets.m_wAzElCanvas.PosToPixels(Vector(x, y, 0.0));
         vector sizePx = m_Widgets.m_wAzElCanvas.SizeToPixels(Vector(sizeUnit, sizeUnit, 0.0));
-        float rPx = sizePx[0];
-        if (rPx < 6.0)
+        float rPx = sizePx[0] * 0.5;
+        if (rPx < 2.0)
+            rPx = 2.0;
+        if (rPx > 6.0)
             rPx = 6.0;
 
         array<float> verts = new array<float>();
@@ -2648,13 +2940,14 @@ class GBRS_RadarStationHud
         if (verts.Count() < 6)
             return;
 
-        // Outer halo for visibility against the dark AzEl background.
+        // Thin white halo — keep smaller than the old 16-unit filled ball.
         array<float> haloVerts = new array<float>();
-        m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, rPx * 1.35, 12, haloVerts);
+        float haloPx = rPx + 1.5;
+        m_Widgets.m_wAzElCanvas.TessellateCircle(centerPx, haloPx, 10, haloVerts);
         if (haloVerts.Count() >= 6)
         {
             PolygonDrawCommand halo = new PolygonDrawCommand();
-            halo.m_iColor = ARGB(255, 255, 255, 255);
+            halo.m_iColor = ARGB(200, 255, 255, 255);
             halo.m_Vertices = haloVerts;
             m_AzElAll.Insert(halo);
         }
@@ -2731,16 +3024,7 @@ class GBRS_RadarStationHud
             return;
         }
 
-        if (m_Mode == MODE_WLR)
-        {
-            SetContactsTableVisible(false);
-            if (m_Widgets.m_wListBody)
-                m_Widgets.m_wListBody.SetText(BuildWlrSolutionBody(origin, tracker));
-            UpdateListFooter(0, tracker);
-            return;
-        }
-
-        SetContactsTableVisible(false);
+        SetContactsTableVisible(true);
 
         string colNr = "";
         string colAz = "";
@@ -2751,23 +3035,32 @@ class GBRS_RadarStationHud
         string colSnr = "";
         int rows = 0;
 
+        if (m_Mode == MODE_WLR)
+        {
+            rows = AppendWlrListRows(origin, tracker, colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
+            if (colNr == "")
+                WriteContactColumns("--", "---", "-.-", "---", "---", "----", "----");
+            else
+                WriteContactColumns(colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
+            UpdateListFooter(rows, tracker);
+            return;
+        }
+
         rows = AppendTrackListRows(tracker, origin, colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
+        // Plots only fill gaps — never duplicate a contact that already has a
+        // TWS row (same helicopter was showing as both ANON and TRK).
         if (rows < MAX_LIST_ROWS && targets)
             rows = rows + AppendPlotListRows(targets, origin, colNr, colAz, colRng, colAlt, colSpd, colType, colSnr, rows);
 
-        if (m_Widgets.m_wListBody)
-        {
-            string body = "";
-            if (colNr != "")
-                body = "NR AZ\tRNG\tALT\tSPD\tTYPE\tSNR\n" + MergeContactColumns(colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
-            if (body == "")
-                body = " ";
-            m_Widgets.m_wListBody.SetText(body);
-        }
+        if (colNr == "")
+            WriteContactColumns("--", "---", "-.-", "-.-", "---", "----", "--");
+        else
+            WriteContactColumns(colNr, colAz, colRng, colAlt, colSpd, colType, colSnr);
+
         UpdateListFooter(rows, tracker);
     }
 
-    protected string MergeContactColumns(
+    protected void WriteContactColumns(
         string colNr,
         string colAz,
         string colRng,
@@ -2776,82 +3069,147 @@ class GBRS_RadarStationHud
         string colType,
         string colSnr)
     {
-        int nrCount = CountLines(colNr);
-        int azCount = CountLines(colAz);
-        int rngCount = CountLines(colRng);
-        int altCount = CountLines(colAlt);
-        int spdCount = CountLines(colSpd);
-        int typeCount = CountLines(colType);
-        int snrCount = CountLines(colSnr);
-        int maxCount = nrCount;
-        if (azCount > maxCount)
-            maxCount = azCount;
-        if (rngCount > maxCount)
-            maxCount = rngCount;
-        if (altCount > maxCount)
-            maxCount = altCount;
-        if (spdCount > maxCount)
-            maxCount = spdCount;
-        if (typeCount > maxCount)
-            maxCount = typeCount;
-        if (snrCount > maxCount)
-            maxCount = snrCount;
-        if (maxCount <= 0)
-            return "";
+        if (!m_Widgets)
+            return;
 
-        string result = "";
-        int i = 0;
-        while (i < maxCount)
-        {
-            if (i > 0)
-                result = result + "\n";
-            result = result + PadCell(LineAt(colNr, i), 3) + " "
-                + PadCell(LineAt(colAz, i), 3) + " "
-                + PadCell(LineAt(colRng, i), 5) + " "
-                + PadCell(LineAt(colAlt, i), 5) + " "
-                + PadCell(LineAt(colSpd, i), 4) + " "
-                + PadCell(LineAt(colType, i), 4) + " "
-                + PadCell(LineAt(colSnr, i), 4);
-            i = i + 1;
-        }
-        return result;
+        SetListCol(m_Widgets.m_wListBNr, colNr);
+        SetListCol(m_Widgets.m_wListBAz, colAz);
+        SetListCol(m_Widgets.m_wListBRng, colRng);
+        SetListCol(m_Widgets.m_wListBAlt, colAlt);
+        SetListCol(m_Widgets.m_wListBSpd, colSpd);
+        SetListCol(m_Widgets.m_wListBType, colType);
+        SetListCol(m_Widgets.m_wListBSnr, colSnr);
     }
 
-    protected string PadCell(string text, int width)
+    // WLR panel columns: ID / AZ / RNG / ETA / TOF / TYPE / DRAG
+    protected int AppendWlrListRows(
+        vector origin,
+        RDF_RadarProjectileTracker tracker,
+        inout string colNr,
+        inout string colAz,
+        inout string colRng,
+        inout string colAlt,
+        inout string colSpd,
+        inout string colType,
+        inout string colSnr)
     {
-        if (text == "")
-        {
-            text = "-";
-        }
-        while (text.Length() < width)
-            text = text + " ";
-        return text;
-    }
+        int row = 0;
+        float nowS = GetWorldTimeS();
+        map<int, bool> listed = new map<int, bool>();
 
-    protected int CountLines(string text)
-    {
-        if (text == "")
-            return 0;
-        int count = 1;
-        int i = 0;
-        while (i < text.Length())
+        if (m_WlrPersist)
         {
-            if (text.Get(i) == 10)
-                count = count + 1;
-            i = i + 1;
-        }
-        return count;
-    }
+            int i = 0;
+            while (i < m_WlrPersist.Count())
+            {
+                GBRS_WlrPersistDisplay entry = m_WlrPersist.Get(i);
+                i = i + 1;
+                if (!entry)
+                    continue;
+                if (!entry.m_HasLaunch && !entry.m_HasImpact && !entry.m_HasLive)
+                    continue;
+                if (row >= MAX_LIST_ROWS)
+                    break;
 
-    protected string LineAt(string text, int index)
-    {
-        if (text == "")
-            return "";
-        array<string> parts = new array<string>();
-        text.Split("\n", parts);
-        if (index < 0 || index >= parts.Count())
-            return "";
-        return parts.Get(index);
+                string id = entry.m_Id;
+                if (id == "")
+                    id = "W" + PadNum(entry.m_TrackId, 2);
+
+                vector pos = origin;
+                if (entry.m_HasLive)
+                    pos = entry.m_LivePos;
+                else if (entry.m_HasLaunch)
+                    pos = entry.m_LaunchPos;
+                else if (entry.m_HasImpact)
+                    pos = entry.m_ImpactPos;
+
+                vector d = pos - origin;
+                float az = Math.Atan2(d[0], d[2]) * Math.RAD2DEG;
+                if (az < 0.0)
+                    az = az + 360.0;
+                float rngKm = d.Length() / 1000.0;
+
+                string eta = "--";
+                string tof = "--";
+                if (entry.m_HasImpact)
+                {
+                    eta = FormatEtaS(entry.m_ImpactTimeS - nowS);
+                    if (entry.m_HasLaunch)
+                    {
+                        float tofS = entry.m_ImpactTimeS - entry.m_LaunchTimeS;
+                        if (tofS < 0.0)
+                            tofS = 0.0;
+                        tof = Fmt1(tofS);
+                    }
+                }
+
+                string typeTag = "SHELL";
+                if (entry.m_HasLaunch && entry.m_HasImpact)
+                    typeTag = "SOL ";
+                else if (entry.m_HasLive)
+                    typeTag = "LIVE";
+
+                string dragTag = "----";
+                if (entry.m_HasLaunch || entry.m_HasImpact)
+                {
+                    float dragK = entry.m_AirDrag;
+                    if (dragK <= 0.0)
+                        dragK = GBRS_RadarWlrBallisticSolver.K_PRIOR;
+                    if (entry.m_DragEstimated)
+                        dragTag = "E" + F0(dragK * 1000000.0);
+                    else
+                        dragTag = "P" + F0(dragK * 1000000.0);
+                }
+
+                colNr = AppendColLine(colNr, id);
+                colAz = AppendColLine(colAz, PadNum(az, 3));
+                colRng = AppendColLine(colRng, Fmt1(rngKm));
+                colAlt = AppendColLine(colAlt, eta);
+                colSpd = AppendColLine(colSpd, tof);
+                colType = AppendColLine(colType, typeTag);
+                colSnr = AppendColLine(colSnr, dragTag);
+                listed.Set(entry.m_TrackId, true);
+                row = row + 1;
+            }
+        }
+
+        // Live track files not yet in persist (first hits before bake).
+        array<ref RDF_RadarTrack> tracks = GetCachedDisplayTracks(tracker, origin);
+        if (!tracks)
+            return row;
+
+        int t = 0;
+        while (t < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(t);
+            t = t + 1;
+            if (!tr)
+                continue;
+            if (listed.Contains(tr.m_TrackId))
+                continue;
+            if (row >= MAX_LIST_ROWS)
+                break;
+
+            vector drawPos = TrackDrawWorldPos(tr, origin);
+            vector trackDelta = drawPos - origin;
+            float trackAz = Math.Atan2(trackDelta[0], trackDelta[2]) * Math.RAD2DEG;
+            if (trackAz < 0.0)
+                trackAz = trackAz + 360.0;
+            float trackRangeKm = tr.m_FilteredRangeM / 1000.0;
+            if (trackRangeKm <= 0.0)
+                trackRangeKm = trackDelta.Length() / 1000.0;
+
+            colNr = AppendColLine(colNr, "W" + PadNum(tr.m_TrackId, 2));
+            colAz = AppendColLine(colAz, PadNum(trackAz, 3));
+            colRng = AppendColLine(colRng, Fmt1(trackRangeKm));
+            colAlt = AppendColLine(colAlt, "--");
+            colSpd = AppendColLine(colSpd, "--");
+            colType = AppendColLine(colType, "TRK ");
+            colSnr = AppendColLine(colSnr, "----");
+            row = row + 1;
+        }
+
+        return row;
     }
 
     protected int AppendTrackListRows(
@@ -2926,6 +3284,8 @@ class GBRS_RadarStationHud
                 continue;
             if (!IsInDisplayRange(t, origin))
                 continue;
+            if (PlotCoveredByCachedTrack(t, origin))
+                continue;
             if (row >= MAX_LIST_ROWS)
                 break;
 
@@ -2951,6 +3311,95 @@ class GBRS_RadarStationHud
         }
 
         return row - startRow;
+    }
+
+    // True when a painted plot is the same physical contact as a TWS track
+    // already listed/drawn (scatterer, airframe root, or polar/spatial gate).
+    protected bool PlotCoveredByCachedTrack(RDF_RadarTarget t, vector origin)
+    {
+        if (!t)
+            return false;
+
+        array<ref RDF_RadarTrack> tracks = m_CachedDisplayTracks;
+        if (!tracks)
+            return false;
+
+        IEntity plotRoot = null;
+        if (t.m_ScattererId > 0)
+        {
+            RDF_RadarScatterer entry = RDF_RadarScattererRegistry.FindById(t.m_ScattererId);
+            if (entry && entry.m_Entity)
+            {
+                plotRoot = entry.m_Entity.GetRootParent();
+                if (!plotRoot)
+                    plotRoot = entry.m_Entity;
+            }
+        }
+
+        float plotRng = t.m_Distance;
+        if (plotRng <= 0.0)
+            plotRng = vector.Distance(t.m_Position, origin);
+        float plotAz = NorthUpAzimuthDeg(t, origin);
+
+        int i = 0;
+        while (i < tracks.Count())
+        {
+            RDF_RadarTrack tr = tracks.Get(i);
+            i = i + 1;
+            if (!tr)
+                continue;
+
+            if (t.m_ScattererId > 0 && t.m_ScattererId == tr.m_ScattererId)
+                return true;
+
+            if (plotRoot && tr.m_ScattererId > 0)
+            {
+                RDF_RadarScatterer trEntry = RDF_RadarScattererRegistry.FindById(tr.m_ScattererId);
+                if (trEntry && trEntry.m_Entity)
+                {
+                    IEntity trackRoot = trEntry.m_Entity.GetRootParent();
+                    if (!trackRoot)
+                        trackRoot = trEntry.m_Entity;
+                    if (trackRoot == plotRoot)
+                        return true;
+                }
+            }
+
+            if (tr.m_Entity)
+            {
+                IEntity entRoot = tr.m_Entity.GetRootParent();
+                if (!entRoot)
+                    entRoot = tr.m_Entity;
+                if (plotRoot && entRoot == plotRoot)
+                    return true;
+            }
+
+            if (t.m_ScattererId > 0 && tr.m_ScattererId > 0)
+                continue;
+
+            vector trackPos = TrackDrawWorldPos(tr, origin);
+            float dist = vector.Distance(t.m_Position, trackPos);
+            if (dist <= TRACK_CLUSTER_RANGE_M)
+                return true;
+
+            float dRange = plotRng - tr.m_FilteredRangeM;
+            if (dRange < 0.0)
+                dRange = -dRange;
+            float dAz = plotAz - tr.m_FilteredAzimuthDeg;
+            while (dAz > 180.0)
+                dAz = dAz - 360.0;
+            while (dAz < -180.0)
+                dAz = dAz + 360.0;
+            if (dAz < 0.0)
+                dAz = -dAz;
+            if (dRange <= TRACK_CLUSTER_RANGE_M)
+            {
+                if (dAz <= TRACK_CLUSTER_AZ_DEG)
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     protected string TrackTypeTag(RDF_RadarTrack tr)

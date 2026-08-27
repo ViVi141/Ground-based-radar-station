@@ -469,11 +469,11 @@ class GBRS_CampaignRadarWarning
             if (!tr || !tr.m_Confirmed)
                 continue;
 
-            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-            if (!sol || !sol.m_Fix)
+            RDF_RadarWlrFix fix =
+                GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
+            if (!fix)
                 continue;
 
-            RDF_RadarWlrFix fix = sol.m_Fix;
             if (!fix.m_ImpactValid)
                 continue;
 

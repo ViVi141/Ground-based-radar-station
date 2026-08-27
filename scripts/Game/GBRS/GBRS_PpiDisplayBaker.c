@@ -19,8 +19,8 @@ class GBRS_PpiDisplayBaker
     protected static const float DISPLAY_CLUSTER_AZ_DEG = 4.0;
     protected static const float DISPLAY_CLUSTER_RANGE_M = 400.0;
     protected static const float PERSIST_SPATIAL_M = 80.0;
-    protected static const float TRACK_CLUSTER_RANGE_M = 700.0;
-    protected static const float TRACK_CLUSTER_AZ_DEG = 8.0;
+    protected static const float TRACK_CLUSTER_RANGE_M = 350.0;
+    protected static const float TRACK_CLUSTER_AZ_DEG = 5.0;
     protected static const float WLR_PERSIST_S = 20.0;
     protected static const float WLR_IMPACT_PERSIST_S = 3.0;
 
@@ -225,7 +225,7 @@ class GBRS_PpiDisplayBaker
         dst.m_ScattererId = src.m_ScattererId;
         dst.m_Position = src.m_Position;
         dst.m_Distance = src.m_Distance;
-        dst.m_Velocity = src.m_Velocity;
+        dst.m_Velocity = GBRS_RadarStationConfig.SanitizePlotCoastVelocity(src);
         dst.m_Type = src.m_Type;
         dst.m_Time = nowS;
         dst.m_AzimuthDeg = src.m_AzimuthDeg;
@@ -501,7 +501,9 @@ class GBRS_PpiDisplayBaker
         }
         if (rangeM <= 0.0)
             return true;
-        if (rng > rangeM)
+        // Match HUD IsTrackInDisplayRange (1.1×) so near-max-range tracks still
+        // pack into the replicated snapshot.
+        if (rng > rangeM * 1.1)
             return false;
         return true;
     }
@@ -513,6 +515,21 @@ class GBRS_PpiDisplayBaker
             return false;
         if (a.m_ScattererId > 0 && a.m_ScattererId == b.m_ScattererId)
             return true;
+
+        if (a.m_Entity && b.m_Entity)
+        {
+            IEntity rootA = a.m_Entity.GetRootParent();
+            if (!rootA)
+                rootA = a.m_Entity;
+            IEntity rootB = b.m_Entity.GetRootParent();
+            if (!rootB)
+                rootB = b.m_Entity;
+            if (rootA == rootB)
+                return true;
+        }
+
+        if (a.m_ScattererId > 0 && b.m_ScattererId > 0)
+            return false;
 
         float dRange = a.m_FilteredRangeM - b.m_FilteredRangeM;
         if (dRange < 0.0)
@@ -581,18 +598,34 @@ class GBRS_PpiDisplayBaker
             if (!tr)
                 continue;
 
-            GBRS_RadarWlrSolution sol = GBRS_RadarWlrBallisticSolver.Resolve(tr);
-            RDF_RadarWlrFix fix = null;
-            if (sol)
-                fix = sol.m_Fix;
-            if (!fix)
-                fix = tr.m_LastWlrFix;
-            if (!fix)
-                continue;
-            if (!fix.m_LaunchValid && !fix.m_ImpactValid)
-                continue;
+            RDF_RadarWlrFix fix =
+                GBRS_RadarWlrBallisticSolver.ResolveFix(tr);
 
             GBRS_WlrPersistDisplay entry = FindWlrPersist(tr.m_TrackId);
+            bool haveFix = false;
+            if (fix)
+            {
+                if (fix.m_LaunchValid || fix.m_ImpactValid)
+                    haveFix = true;
+            }
+
+            if (!haveFix)
+            {
+                // Keep a live shell marker even before LCH/IMP solves.
+                if (!entry)
+                {
+                    entry = new GBRS_WlrPersistDisplay();
+                    entry.m_TrackId = tr.m_TrackId;
+                    m_WlrPersist.Insert(entry);
+                }
+                entry.m_Id = "W" + tr.m_TrackId.ToString();
+                entry.m_LastSeenS = worldNowS;
+                entry.m_LivePos = tr.m_FilteredPosition;
+                entry.m_LiveVel = GBRS_RadarStationComponent.ReliableTrackVelocity(tr);
+                entry.m_HasLive = true;
+                continue;
+            }
+
             if (!entry)
             {
                 entry = new GBRS_WlrPersistDisplay();
@@ -614,11 +647,8 @@ class GBRS_PpiDisplayBaker
                 entry.m_ImpactPos = fix.m_ImpactPos;
                 entry.m_ImpactTimeS = fix.m_ImpactTimeS;
             }
-            if (sol)
-            {
-                entry.m_AirDrag = sol.m_AirDrag;
-                entry.m_DragEstimated = sol.m_DragEstimated;
-            }
+            entry.m_AirDrag = tr.m_AirDrag;
+            entry.m_DragEstimated = false;
             entry.m_LivePos = WlrPositionOnArc(entry, worldNowS);
             entry.m_LiveVel = WlrArcDirection(entry, tr);
             entry.m_HasLive = true;
