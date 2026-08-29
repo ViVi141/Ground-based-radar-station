@@ -73,3 +73,7 @@ KNOWN LIMITS
 LOCK and MANUAL workstation tabs are reserved and hidden until a fire-control or training addon exists. RF is not TPN-19 / RPL-5 handbook data. Local PPI has no secondary radar. WLR on crossing shells and HQ/relay hops should still be checked in multiplayer. Editor thumbnails may lag until regenerated in Workbench.
 
 Load RDF, then GBRS. Place a pad, shovel it, power on, tune RADAR NET, and sit the scope.
+
+FIELD MANUAL
+ESC → Field Manual → Gameplay → Commanding → Ground Radar pages
+(Quick Start, Workstation, RADAR NET, Supply & Capture, Reading the Scope).

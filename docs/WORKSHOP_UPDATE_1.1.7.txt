@@ -1,0 +1,7 @@
+SUMMARY
+Field Manual operator guide for GBRS (ESC handbook). Requires RDF ≥ 1.1.6.
+
+UPDATE NOTES (1.1.7)
+EN: ESC → Field Manual → Gameplay → Commanding now lists Ground Radar operator pages (config override of FM_Commanding.conf, same pattern as RHS).
+
+ZH: ESC → 战斗手册 → Gameplay → Commanding 下新增 Ground Radar 说明页（Override FM_Commanding.conf，做法同 RHS）。

@@ -5,4 +5,31 @@ GameProject {
  Dependencies {
   "6892AB0669DF29AA" "58D0FB3206B6F859"
  }
+ Configurations {
+  GameProjectConfig PC {
+   WidgetManagerSettings WidgetManagerSettings "{69FCEDCEA0070010}" {
+    StringTables {
+     StringTableDefinition "{69FCEDCEA0070011}" {
+      StringTableSource "{69FCEDCEA0070002}language/localization.st"
+      Languages {
+       LanguageDefinition "{69FCEDCEA0070012}" {
+        Code "en_us"
+        StringTableRuntime "{69FCEDCEA0070001}language/localization.en_us.conf"
+       }
+      }
+     }
+    }
+   }
+  }
+  GameProjectConfig XBOX_ONE {
+  }
+  GameProjectConfig XBOX_SERIES {
+  }
+  GameProjectConfig PS4 {
+  }
+  GameProjectConfig PS5 {
+  }
+  GameProjectConfig HEADLESS {
+  }
+ }
 }

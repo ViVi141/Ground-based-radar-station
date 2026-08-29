@@ -4,7 +4,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 - **Addon ID**：`Groundbasedradarstation`
 - **GUID**：`69FCEDCE73FC5335`
-- **Version**：1.1.6
+- **Version**：1.1.7
 
 ## 依赖
 
@@ -58,6 +58,10 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 - 开关机（物资不够会拒绝开机；运行中扣不起则断电）
 - 打开 PPI：`PD SEARCH` / `WLR` / `LOCK`（点击 PPI 航迹锁定；`MANUAL` 仍预留）
 - 扫描体可视化（本地）
+
+### Field Manual（战斗手册）
+
+局内 `ESC` → **Field Manual** → **Gameplay** → **Commanding**：Ground Radar 七页（Quick Start / Workstation / RADAR NET / Supply & Capture / Reading the Scope / Interference & ECM / US vs USSR）。Override 原版 `FM_Commanding.conf`（GUID `{D9B6837CBB60A9EB}`）。
 
 ### Script Debugger 演示
 

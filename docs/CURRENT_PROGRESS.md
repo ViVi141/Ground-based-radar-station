@@ -1,9 +1,10 @@
 # GBRS Conflict 建造 — 进度
 
-> 最后更新：2026-08-27
-> **版本：1.1.6**（RDF ≥ 1.1.6）
+> 最后更新：2026-08-29
+> **版本：1.1.7**（RDF ≥ 1.1.6）
 > 状态：**BUILDING 放置已正常**。放置 `E_RadarStation_S_*` 会先出 FRB 施工区，铲完才生成成品雷达。
 > UI：顶栏 **OPTICS** 可选打开光学 PIP（默认关，占位保留布局）；工作台刷新 **60 Hz**；扫描线跟 live antenna；PPI snap ~30 Hz + 航迹 coast。
+> Field Manual：Override `FM_Commanding.conf`（Gameplay → Commanding），`m_aEntries +{}` 追加 Ground Radar 说明页。
 
 ---
 
@@ -25,6 +26,7 @@
     - `ApplyPulseDopplerHardware` 关闭 Derive，leak 对齐 HwCalib `1e-9`；苏军走 `ApplyPulseDopplerHardwareVhf`（不加载 SHORAD profile，钉死 floor `0.01`）。
     - 离线：`calib_pd_full.suggest_mti_floor` 补 2π；`validate_rdf_drag_fit` / `ab_doppler_wlr` Nelder-Mead 第 5 顶点扰动 drag 轴。
     - 离线复跑：WLR drag-fit 中位落点误差 ~57–71 m（真空 ~289–351 m），接受率 100%；苏军 PD tracker PASS（1 条/架）；美军离线 TwoPulse 仍 FAIL（已知，需局内 Airborne 对照）。
+13. Field Manual（2026-08-29）：Override `FM_Commanding.conf`；七页说明含 Interference & ECM、US vs USSR。
 
 ---
 

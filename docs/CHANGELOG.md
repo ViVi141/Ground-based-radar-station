@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 1.1.7 — 2026-08-29
+
+依赖 / Requires **RDF ≥ 1.1.6**.
+
+### 中文
+
+- 战斗手册：按原版/RHS 方式 Override `Configs/FieldManual/Categories/Gameplay/FM_Commanding.conf`，在 Gameplay → Commanding 下追加 Ground Radar 五页说明（`m_aEntries +{}`）。
+
+### English
+
+- Field Manual: overrides `Configs/FieldManual/Categories/Gameplay/FM_Commanding.conf` (same pattern as RHS) and appends Ground Radar pages under Gameplay → Commanding via `m_aEntries +{}`.
+
+---
+
 ## 1.1.6 — 2026-08-27
 
 依赖 / Requires **RDF ≥ 1.1.6**。
