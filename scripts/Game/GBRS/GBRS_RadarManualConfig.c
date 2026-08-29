@@ -2,8 +2,8 @@
 //! Operator knobs for MANUAL workstation mode.
 //!
 //! Only range, scan rate, elevation boresight, and stare bearing are exposed.
-//! RF balance (SNR gate, clutter, beamwidth, power, dwell) stays on the
-//! faction search preset so an operator cannot unbalance detection.
+//! Range and RPM cannot exceed the faction PD SEARCH caps. RF balance (SNR
+//! gate, clutter, beamwidth, power, dwell) stays on the faction preset.
 class GBRS_RadarManualConfig
 {
     static const int PARAM_RANGE = 0;
@@ -25,6 +25,8 @@ class GBRS_RadarManualConfig
     float m_UpdateIntervalS = 0.04;
     float m_PeakPowerW = 120000.0;
     float m_RangeMaxM = 12000.0;
+    // Matches CreateUsSearch / CreateUssrSearch ScanRpm; MANUAL cannot spin faster.
+    float m_ScanRpmMax = 10.0;
 
     //------------------------------------------------------------------------------------------------
     void SeedFromFaction(EGBRS_RadarFactionPreset preset)
@@ -34,6 +36,7 @@ class GBRS_RadarManualConfig
             m_RangeM = 16000.0;
             m_RangeMaxM = 16000.0;
             m_ScanRpm = 6.0;
+            m_ScanRpmMax = 6.0;
             m_ElevationBoresightDeg = 2.0;
             m_DetectionSnrDb = 5.0;
             m_DemClutterScale = 0.10;
@@ -47,6 +50,7 @@ class GBRS_RadarManualConfig
         m_RangeM = 12000.0;
         m_RangeMaxM = 12000.0;
         m_ScanRpm = 10.0;
+        m_ScanRpmMax = 10.0;
         m_ElevationBoresightDeg = 2.0;
         m_DetectionSnrDb = 8.0;
         m_DemClutterScale = 1.0;
@@ -84,7 +88,7 @@ class GBRS_RadarManualConfig
     }
 
     //------------------------------------------------------------------------------------------------
-    static float ClampParam(int index, float value, float rangeMaxM)
+    static float ClampParam(int index, float value, float rangeMaxM, float scanRpmMax)
     {
         if (index == PARAM_RANGE)
         {
@@ -96,10 +100,13 @@ class GBRS_RadarManualConfig
         }
         if (index == PARAM_RPM)
         {
+            float rpmMax = scanRpmMax;
+            if (rpmMax < 1.0)
+                rpmMax = 1.0;
             if (value < 1.0)
                 return 1.0;
-            if (value > 15.0)
-                return 15.0;
+            if (value > rpmMax)
+                return rpmMax;
             return value;
         }
         if (index == PARAM_EL_BORE)
@@ -149,6 +156,7 @@ class GBRS_RadarManualConfig
         writer.WriteFloat(m_PeakPowerW);
         writer.WriteFloat(m_StareAzDeg);
         writer.WriteFloat(m_RangeMaxM);
+        writer.WriteFloat(m_ScanRpmMax);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -166,5 +174,6 @@ class GBRS_RadarManualConfig
         reader.ReadFloat(v); m_PeakPowerW = v;
         reader.ReadFloat(v); m_StareAzDeg = v;
         reader.ReadFloat(v); m_RangeMaxM = v;
+        reader.ReadFloat(v); m_ScanRpmMax = v;
     }
 }

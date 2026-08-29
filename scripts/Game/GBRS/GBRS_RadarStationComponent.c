@@ -1304,7 +1304,10 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_ManualConfig = new GBRS_RadarManualConfig();
 
         float clamped = GBRS_RadarManualConfig.ClampParam(
-            paramIndex, value, m_ManualConfig.m_RangeMaxM);
+            paramIndex,
+            value,
+            m_ManualConfig.m_RangeMaxM,
+            m_ManualConfig.m_ScanRpmMax);
 
         if (IsAuthority())
         {
@@ -1337,7 +1340,10 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_ManualConfig = new GBRS_RadarManualConfig();
 
         float clamped = GBRS_RadarManualConfig.ClampParam(
-            paramIndex, value, m_ManualConfig.m_RangeMaxM);
+            paramIndex,
+            value,
+            m_ManualConfig.m_RangeMaxM,
+            m_ManualConfig.m_ScanRpmMax);
         m_ManualConfig.SetParam(paramIndex, clamped);
         Rpc(RpcDo_ManualParam, paramIndex, clamped);
 

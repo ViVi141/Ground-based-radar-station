@@ -1,7 +1,7 @@
 SUMMARY
-Field Manual operator guide for GBRS (ESC handbook). Requires RDF ≥ 1.1.6.
+Field Manual operator guide + MANUAL RPM faction caps. Requires RDF ≥ 1.1.6.
 
 UPDATE NOTES (1.1.7)
-EN: ESC → Field Manual → Gameplay → Commanding now lists Ground Radar operator pages (config override of FM_Commanding.conf, same pattern as RHS).
+EN: ESC → Field Manual → Gameplay → Commanding now lists Ground Radar operator pages (config override of FM_Commanding.conf, same pattern as RHS). MANUAL scan RPM is capped to the faction PD SEARCH preset (US 10 RPM, USSR 6 RPM); range still capped at the faction PD SEARCH max.
 
-ZH: ESC → 战斗手册 → Gameplay → Commanding 下新增 Ground Radar 说明页（Override FM_Commanding.conf，做法同 RHS）。
+ZH: ESC → 战斗手册 → Gameplay → Commanding 下新增 Ground Radar 说明页（Override FM_Commanding.conf，做法同 RHS）。MANUAL 转速不可超过阵营空搜预设（美 10 RPM，苏 6 RPM）；量程仍钳在阵营 PD SEARCH 上限。

@@ -6,11 +6,13 @@
 
 ### 中文
 
-- 战斗手册：按原版/RHS 方式 Override `Configs/FieldManual/Categories/Gameplay/FM_Commanding.conf`，在 Gameplay → Commanding 下追加 Ground Radar 五页说明（`m_aEntries +{}`）。
+- 战斗手册：按原版/RHS 方式 Override `Configs/FieldManual/Categories/Gameplay/FM_Commanding.conf`，在 Gameplay → Commanding 下追加 Ground Radar 说明页。
+- MANUAL：扫描转速（RPM）钳位到阵营 PD SEARCH 上限（美 ≤10，苏 ≤6），避免超预设加速扫描。
 
 ### English
 
-- Field Manual: overrides `Configs/FieldManual/Categories/Gameplay/FM_Commanding.conf` (same pattern as RHS) and appends Ground Radar pages under Gameplay → Commanding via `m_aEntries +{}`.
+- Field Manual: overrides `Configs/FieldManual/Categories/Gameplay/FM_Commanding.conf` (same pattern as RHS) and appends Ground Radar pages under Gameplay → Commanding.
+- MANUAL: clamp scan RPM to the faction PD SEARCH cap (US ≤10, USSR ≤6) so operators cannot spin faster than the product preset.
 
 ---
 
