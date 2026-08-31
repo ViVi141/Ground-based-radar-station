@@ -376,6 +376,7 @@ class GBRS_RadarStationComponent : ScriptComponent
     override void OnDelete(IEntity owner)
     {
         GBRS_RadarStationMenu.CloseIfBound(this);
+        GBRS_ConsoleSession.StopIfBound(this);
         StopSupplyDrain();
         StopAntennaResolveRetry();
         SetAntennaSpinning(false);
@@ -654,6 +655,7 @@ class GBRS_RadarStationComponent : ScriptComponent
             m_Radar.SetEnabled(false);
 
         GBRS_RadarStationMenu.CloseIfBound(this);
+        GBRS_ConsoleSession.StopIfBound(this);
         SetAntennaSpinning(false);
         SetTraceIgnoreActive(false);
         StopSupplyDrain();
@@ -1994,6 +1996,7 @@ class GBRS_RadarStationComponent : ScriptComponent
         ClearContactEvents();
         ClearPpiSubscribers();
         GBRS_RadarStationMenu.CloseIfBound(this);
+        GBRS_ConsoleSession.StopIfBound(this);
         SyncIntelRadio(false);
     }
 

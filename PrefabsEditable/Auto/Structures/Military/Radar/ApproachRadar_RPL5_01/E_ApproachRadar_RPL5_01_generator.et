@@ -36,6 +36,7 @@ GenericEntity : "{F15B99F6B06E7200}Prefabs/Structures/Military/Radar/ApproachRad
       "RadarPower"
      }
      Duration 0
+     m_sOpenPpiName "Operate Console"
     }
     GBRS_RadarStationScanVisualUserAction "{69FCEDCE20021015}" {
      ParentContextList {

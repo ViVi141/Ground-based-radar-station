@@ -21,7 +21,7 @@ StringTable {
   "1. Place from a construction truck or base build menu (sergeant, cost 450). A work pad appears first. Finish shoveling (build value 250). From a base terminal you also spend 100 HQ composition points."
  }
  Item "GBRS-FieldManual_Entry_QuickStart_Text_03" {
-  "2. At the generator: power ON (needs supply), then Open Workstation."
+  "2. At the generator: power ON (needs supply). At the desk console: Operate Console to light the PPI / CONTACT / OPTICS CRTs."
  }
  Item "GBRS-FieldManual_Entry_QuickStart_Text_04" {
   "3. Tune your handheld to RADAR NET (US 45.6 MHz / USSR 39.6 MHz) to hear air and counter-battery voice."
@@ -33,7 +33,7 @@ StringTable {
   "Ground Radar - Workstation"
  }
  Item "GBRS-FieldManual_Entry_Workstation_Text_01" {
-  "Open the PPI only while the station is powered and you are friendly to its faction."
+  "Open the console only while the station is powered and you are friendly to its faction. Use Operate Console at the desk — picture is on the world CRTs."
  }
  Item "GBRS-FieldManual_Entry_Workstation_Text_02" {
   "PD SEARCH - pulse-Doppler air search. Skin returns only: anonymous azimuth, range, altitude, speed, SNR. No aircraft type names. Radiating radars show as EMIT. Infantry never paints."
@@ -45,7 +45,7 @@ StringTable {
   "LOCK - auto-acquires nearby vehicles; click a PPI track to designate a lock. MANUAL - range, scan rate, elevation boresight, and stare bearing knobs."
  }
  Item "GBRS-FieldManual_Entry_Workstation_Text_05" {
-  "Controls: Up / Down or mouse wheel zoom PPI range. Tab left / right cycle modes. Select confirms. Back closes. OPTICS toggles an optional PIP camera (off by default)."
+  "Controls at the console: Up / Down zoom PPI range. Tab / Cycle Mode cycles modes. Select locks nearest confirmed track. Back leaves. Toggle Optics enables the third CRT (off by default)."
  }
  Item "GBRS-FieldManual_Entry_RadarNet_Title" {
   "Ground Radar - RADAR NET"

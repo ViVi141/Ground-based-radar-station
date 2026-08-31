@@ -1,0 +1,82 @@
+GenericEntity {
+ ID "69FCEDCEA0080010"
+ components {
+  MeshObject "{69FCEDCEA0080011}" {
+   Object "{71FCFED79B3ABBA7}Assets/Props/Military/Furniture/US/TableMilitary_US_01.xob"
+  }
+  Hierarchy "{69FCEDCEA0080012}" {
+   Enabled 1
+  }
+  RigidBody "{69FCEDCEA0080013}" {
+   ModelGeometry 1
+   Static 1
+  }
+  GBRS_ConsoleComponent "{69FCEDCEA0080014}" {
+  }
+  ActionsManagerComponent "{69FCEDCEA0080015}" {
+   ActionContexts {
+    UserActionContext "{69FCEDCEA0080016}" {
+     ContextName "GBRSConsole"
+     Position PointInfo "{69FCEDCEA0080017}" {
+      Offset 0 1.0 0.6
+     }
+     Radius 2.2
+    }
+   }
+   additionalActions {
+    GBRS_RadarStationOpenPpiUserAction "{69FCEDCEA0080018}" {
+     ParentContextList {
+      "GBRSConsole"
+     }
+     Duration 0
+     m_sOpenPpiName "Operate Console"
+    }
+    GBRS_RadarStationCycleModeUserAction "{69FCEDCEA0080019}" {
+     ParentContextList {
+      "GBRSConsole"
+     }
+     Duration 0
+    }
+    GBRS_RadarStationToggleOpticsUserAction "{69FCEDCEA008001A}" {
+     ParentContextList {
+      "GBRSConsole"
+     }
+     Duration 0
+    }
+   }
+  }
+ }
+ coords 0 0 0
+ {
+  GenericEntity : "{D7A31F04C8E26B90}Prefabs/RDF/ClutterSurface/Computer_E_01_Monitor_on_RT.et" {
+   ID "69FCEDCEA0080020"
+   components {
+    GBRS_ScreenTagComponent "{69FCEDCEA0080022}" {
+     m_eKind 0
+    }
+   }
+   coords -0.5 0.86 0.12
+   angles 0 180 0
+  }
+  GenericEntity : "{D7A31F04C8E26B90}Prefabs/RDF/ClutterSurface/Computer_E_01_Monitor_on_RT.et" {
+   ID "69FCEDCEA0080023"
+   components {
+    GBRS_ScreenTagComponent "{69FCEDCEA0080025}" {
+     m_eKind 1
+    }
+   }
+   coords 0 0.86 0.12
+   angles 0 180 0
+  }
+  GenericEntity : "{D7A31F04C8E26B90}Prefabs/RDF/ClutterSurface/Computer_E_01_Monitor_on_RT.et" {
+   ID "69FCEDCEA0080026"
+   components {
+    GBRS_ScreenTagComponent "{69FCEDCEA0080028}" {
+     m_eKind 2
+    }
+   }
+   coords 0.5 0.86 0.12
+   angles 0 180 0
+  }
+ }
+}

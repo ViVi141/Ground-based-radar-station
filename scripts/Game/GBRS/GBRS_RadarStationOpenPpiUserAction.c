@@ -1,7 +1,7 @@
-// Opens the GBRS radar workstation menu (PD SEARCH v1).
+// Opens the GBRS world console operate session (PPI / CONTACT / OPTICS CRTs).
 class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
 {
-    [Attribute("Open Workstation", UIWidgets.EditBox, "Shown when the radar is powered", "")]
+    [Attribute("Operate Console", UIWidgets.EditBox, "Shown when the radar is powered", "")]
     protected LocalizedString m_sOpenPpiName;
 
     [Attribute("Radar must be powered on", UIWidgets.EditBox, "Shown when the radar is off", "")]
@@ -23,6 +23,15 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
             GBRS_RadarStationComponent.Cast(fromEntity.FindComponent(GBRS_RadarStationComponent));
         if (onSelf)
             return onSelf;
+
+        GBRS_ConsoleComponent console =
+            GBRS_ConsoleComponent.Cast(fromEntity.FindComponent(GBRS_ConsoleComponent));
+        if (console)
+        {
+            GBRS_RadarStationComponent fromConsole = console.FindRadarStation();
+            if (fromConsole)
+                return fromConsole;
+        }
 
         IEntity parent = fromEntity.GetParent();
         while (parent)
@@ -61,7 +70,7 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation.IsFriendlyUser(user))
             return false;
 
-        if (GBRS_RadarStationMenu.IsOpenFor(m_RadarStation))
+        if (GBRS_ConsoleSession.IsActiveFor(m_RadarStation))
             return false;
 
         return true;
@@ -106,7 +115,7 @@ class GBRS_RadarStationOpenPpiUserAction : ScriptedUserAction
         if (!m_RadarStation.IsFriendlyUser(pUserEntity))
             return;
 
-        GBRS_RadarStationMenu.OpenFor(m_RadarStation);
+        GBRS_ConsoleSession.StartFor(m_RadarStation, pUserEntity);
     }
 
     override bool GetActionNameScript(out string outName)

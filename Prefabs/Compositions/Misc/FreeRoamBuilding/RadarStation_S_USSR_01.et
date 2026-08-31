@@ -123,5 +123,10 @@ GenericEntity : "{6E9190BC2713551D}Prefabs/Compositions/Slotted/BuildableComposi
    }
    coords -4 0 -2
   }
+  GenericEntity : "{69FCEDCEA0080030}Prefabs/GBRS/Console/GBRS_Console_USSR.et" {
+   ID "69FCEDCEA0010203"
+   coords 2.8 0 -2.8
+   angles 0 0 0
+  }
  }
 }

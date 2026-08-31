@@ -51,12 +51,13 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 
 真实的 RPL-5 与 AN/TPN-19 都是机场进近 / 空管系统。本模组只用它们的外观，射频按 Conflict 空搜平衡，没有改成进近雷达量程。
 
-## 工作台
+## 工作台（世界控制台）
 
-靠近成品雷达，己方交互：
+靠近成品雷达桌面控制台，己方交互：
 
-- 开关机（物资不够会拒绝开机；运行中扣不起则断电）
-- 打开 PPI：`PD SEARCH` / `WLR` / `LOCK` / `MANUAL`（MANUAL 量程与转速钳在阵营空搜上限；LOCK 供火控消费，无 SAM/AAA 模组时仅站内锁定路径）
+- 发电机开关机（物资不够会拒绝开机；运行中扣不起则断电）
+- **Operate Console**：三块 CRT — PPI（点迹/扫线）、CONTACT（航迹表/模式）、OPTICS（可选 PIP，默认关）
+- Cycle Mode / Tab：`PD SEARCH` / `WLR` / `LOCK` / `MANUAL`；↑/↓ 缩放；Select 锁最近确认航迹；Back 离开
 - 扫描体可视化（本地）
 
 ### Field Manual（战斗手册）
@@ -68,7 +69,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 Workbench **Play** 后在 Script Debugger 执行（一次只开一个；走成品射频，不走 ideal overlay）：
 
 ```
-GBRS_RadarStationDemo.Start();      // 美军站 + PD SEARCH + 径向来回 Mi-8 + 打开 PPI
+GBRS_RadarStationDemo.Start();      // 美军站 + PD SEARCH + 径向来回 Mi-8 + 打开控制台 PPI
 GBRS_RadarStationDemo.StartUssr();  // 苏军站
 GBRS_RadarStationDemo.StartWlr();   // WLR + 周期性 82 mm 迫击炮弹
 GBRS_RadarStationDemo.StartLock();  // 美军站 + LOCK（自动锁载具）
@@ -76,7 +77,7 @@ GBRS_RadarStationDemo.Probe();      // 强制一拍并打印点迹
 GBRS_RadarStationDemo.Stop();
 ```
 
-附近已有雷达就复用；没有则在玩家旁生成成品站并绕过物资开机。PPI 是 GBRS 工作台，不是 RDF AutoRunner 那套 HUD。↑/↓ 缩放显示距离。回归测试仍用 `GBRS_RadarStationAirborneAutoTest`。
+附近已有雷达就复用；没有则在玩家旁生成成品站并绕过物资开机。画面画在世界 CRT 上（`GBRS_ConsoleSession`），不是全屏 ChimeraMenu。↑/↓ 缩放显示距离。回归测试仍用 `GBRS_RadarStationAirborneAutoTest`。
 
 ### 搜索画面看到什么
 

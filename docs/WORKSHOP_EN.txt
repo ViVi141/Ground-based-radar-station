@@ -30,17 +30,19 @@ Forward placement is allowed (military theme). The set does not have to sit insi
 Campaign cost is 450 supply per faction, sergeant rank. From a base construction terminal you also spend 100 HQ composition points (same band as a medium vehicle repair station). A truck-placed pad does not check HQ points, matching vanilla fieldworks.
 
 WORKSTATION
-Friendly operators at a powered, finished station can:
-- Toggle power (refused if you cannot afford the first drain tick)
-- Open the PPI: PD SEARCH (air), WLR (shells), LOCK, or MANUAL
-- Zoom PPI range with Up/Down or mouse wheel
+Friendly operators at a powered, finished station use the desk console (three CRT screens):
+- Toggle power at the generator (refused if you cannot afford the first drain tick)
+- Operate Console at the desk: PPI (scope), CONTACT (track list / mode status), OPTICS (optional PIP, off by default)
+- Cycle Mode / Tab left-right: PD SEARCH, WLR, LOCK, MANUAL
+- Zoom PPI range with Up/Down; MenuSelect locks the nearest confirmed track; MenuBack leaves
+- Toggle Optics UserAction turns the third CRT camera on or off
 
 PD SEARCH is skin-return only. No IFF interrogation, no vehicle type names. The list is anonymous kinematics: azimuth, range, altitude, speed, SNR. Radiating radars show as EMIT. Infantry never paints. WLR marks shells after a full-circle cue, then estimates launch and impact grids with ETA. It does not name the gun. MANUAL knobs stay within faction PD SEARCH caps (US 12 km / 10 RPM, USSR 16 km / 6 RPM). LOCK is for fire-control consumers; without a SAM / AAA addon it only arms the station lock path.
 
 Multi-station datalink is separate. Powered stations publish confirmed tracks into a shared hub. The PPI network overlay colors fused tracks by IFF (friend / foe / neutral) against the station faction. Local search plots stay anonymous.
 
 SERVER-AUTHORITATIVE RADAR
-Scan, CFAR/MTI, track files, WLR ballistic fixes, plot afterglow, display clustering, and the PPI snapshot all run on the machine that owns the simulation. Clients subscribe when they open the workstation and only render that stream. Listen-server hosts use the same snapshot so everyone sees one picture.
+Scan, CFAR/MTI, track files, WLR ballistic fixes, plot afterglow, display clustering, and the PPI snapshot all run on the machine that owns the simulation. Clients subscribe when they operate the console and only render that stream on local CRT meshes. Listen-server hosts use the same snapshot so everyone sees one picture.
 
 RADAR NET
 A covering friendly Conflict base gets air contacts and in-radius WLR impacts as scripted radio, not map pings and not EvaluateEnemyPresence.

@@ -45,3 +45,4 @@
 ## 文档
 
 - `docs/WORKSHOP_EN.txt`（2026-08-31）：已与代码对齐 — PD 12/16 km、WLR 360°→±40°、Field Manual 七页、LOCK/MANUAL 入口说明。
+- 多显示器控制台（2026-08-31）：成品站挂美/苏军用桌 + PPI/CONTACT/OPTICS CRT；`Operate Console` 走 `GBRS_ConsoleSession`（RT→`$rendertarget`），产品路径不再依赖全屏 ChimeraMenu。

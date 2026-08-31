@@ -359,7 +359,10 @@ class GBRS_RadarStationDemo
         RDF_RadarAutoTestMapOverlay.Stop();
 
         if (m_Station)
+        {
             GBRS_RadarStationMenu.CloseIfBound(m_Station);
+            GBRS_ConsoleSession.StopIfBound(m_Station);
+        }
 
         if (m_AirTarget)
         {
@@ -405,10 +408,10 @@ class GBRS_RadarStationDemo
             return;
         }
 
-        GBRS_RadarStationMenu.OpenFor(m_Station);
+        GBRS_ConsoleSession.StartFor(m_Station, null);
         if (m_WantShells)
-            GBRS_RadarStationMenu.SetOpenMenuPpiViewRange(SHELL_PPI_VIEW_M);
-        Print("[GBRS Demo] opened GBRS PPI.");
+            GBRS_ConsoleSession.SetActivePpiViewRange(SHELL_PPI_VIEW_M);
+        Print("[GBRS Demo] opened GBRS console PPI.", LogLevel.NORMAL);
     }
 
     //------------------------------------------------------------------------------------------------

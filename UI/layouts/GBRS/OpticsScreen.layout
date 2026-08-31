@@ -1,0 +1,78 @@
+FrameWidgetClass {
+ Name "rootFrame"
+ Slot FrameWidgetSlot "{69FCEDCEA0080301}" {
+  SizeX 288
+  OffsetRight -288
+  SizeY 256
+  OffsetBottom -256
+ }
+ Color 1 1 1 1
+ {
+  RTTextureWidgetClass "{69FCEDCEA0080302}" {
+   Name "RTTexture"
+   Slot FrameWidgetSlot "{69FCEDCEA0080303}" {
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 288
+    OffsetRight -288
+    SizeY 256
+    OffsetBottom -256
+   }
+   {
+    FrameWidgetClass "{69FCEDCEA0080304}" {
+     Name "ScreenRoot"
+     Slot FrameWidgetSlot "{69FCEDCEA0080305}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0 0 0 1
+     {
+      RenderTargetWidgetClass "{69FCEDCEA0080306}" {
+       Name "OpticsRT"
+       Slot FrameWidgetSlot "{69FCEDCEA0080307}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 226
+        OffsetBottom -226
+       }
+      }
+      TextWidgetClass "{69FCEDCEA0080308}" {
+       Name "StatusText"
+       Slot FrameWidgetSlot "{69FCEDCEA0080309}" {
+        PositionX 4
+        OffsetLeft 4
+        PositionY 230
+        OffsetTop 230
+        SizeX 280
+        OffsetRight -284
+        SizeY 22
+        OffsetBottom -252
+       }
+       Color 0.9 0.9 0.85 1
+       Text "OPTICS OFF"
+       "Font Size" 12
+       "Min Font Size" 10
+       "Vertical Alignment" Center
+       FontProperties FontProperties "{69FCEDCEA008030A}" {
+        Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

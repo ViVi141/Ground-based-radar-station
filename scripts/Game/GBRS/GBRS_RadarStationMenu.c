@@ -108,8 +108,10 @@ class GBRS_RadarStationMenu : ChimeraMenuBase
 	protected Widget m_wPpiWheelHost;
 
 	//------------------------------------------------------------------------------------------------
+	//! Debug / transitional ChimeraMenu entry. Product path uses GBRS_ConsoleSession.
 	static void OpenFor(GBRS_RadarStationComponent station)
 	{
+		Print("[GBRS] Menu.OpenFor is debug-only; prefer Operate Console / GBRS_ConsoleSession", LogLevel.WARNING);
 		if (!station)
 			return;
 

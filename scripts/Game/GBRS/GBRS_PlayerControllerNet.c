@@ -605,6 +605,15 @@ modded class SCR_PlayerController
             snapshotSeq,
             packedInts,
             packedFloats);
+        GBRS_ConsoleSession.ApplyReplicatedSnapshot(
+            stationId,
+            origin,
+            scanAzDeg,
+            rangeM,
+            eccm,
+            snapshotSeq,
+            packedInts,
+            packedFloats);
     }
 
     //------------------------------------------------------------------------------------------------

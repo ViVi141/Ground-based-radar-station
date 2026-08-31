@@ -1,0 +1,106 @@
+FrameWidgetClass {
+ Name "rootFrame"
+ Slot FrameWidgetSlot "{69FCEDCEA0080201}" {
+  SizeX 288
+  OffsetRight -288
+  SizeY 256
+  OffsetBottom -256
+ }
+ Color 1 1 1 1
+ {
+  RTTextureWidgetClass "{69FCEDCEA0080202}" {
+   Name "RTTexture"
+   Slot FrameWidgetSlot "{69FCEDCEA0080203}" {
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 288
+    OffsetRight -288
+    SizeY 256
+    OffsetBottom -256
+   }
+   {
+    FrameWidgetClass "{69FCEDCEA0080204}" {
+     Name "ScreenRoot"
+     Slot FrameWidgetSlot "{69FCEDCEA0080205}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.02 0.05 0.04 1
+     {
+      TextWidgetClass "{69FCEDCEA0080206}" {
+       Name "StatusText"
+       Slot FrameWidgetSlot "{69FCEDCEA0080207}" {
+        PositionX 4
+        OffsetLeft 4
+        PositionY 2
+        OffsetTop 2
+        SizeX 280
+        OffsetRight -284
+        SizeY 20
+        OffsetBottom -22
+       }
+       Color 0.85 1 0.7 1
+       Text "CONTACT"
+       "Font Size" 12
+       "Min Font Size" 10
+       "Vertical Alignment" Center
+       FontProperties FontProperties "{69FCEDCEA0080208}" {
+        Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+       }
+      }
+      TextWidgetClass "{69FCEDCEA0080209}" {
+       Name "ContactBody"
+       Slot FrameWidgetSlot "{69FCEDCEA008020A}" {
+        PositionX 4
+        OffsetLeft 4
+        PositionY 24
+        OffsetTop 24
+        SizeX 280
+        OffsetRight -284
+        SizeY 204
+        OffsetBottom -228
+       }
+       Color 0.75 0.95 0.8 1
+       Text "(no contacts)"
+       "Font Size" 11
+       "Min Font Size" 9
+       "Vertical Alignment" Top
+       FontProperties FontProperties "{69FCEDCEA008020B}" {
+        Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Regular.fnt"
+       }
+      }
+      TextWidgetClass "{69FCEDCEA008020C}" {
+       Name "ContactFooter"
+       Slot FrameWidgetSlot "{69FCEDCEA008020D}" {
+        PositionX 4
+        OffsetLeft 4
+        PositionY 232
+        OffsetTop 232
+        SizeX 280
+        OffsetRight -284
+        SizeY 20
+        OffsetBottom -252
+       }
+       Color 0.65 0.85 0.75 1
+       Text ""
+       "Font Size" 11
+       "Min Font Size" 9
+       "Vertical Alignment" Center
+       FontProperties FontProperties "{69FCEDCEA008020E}" {
+        Font "{EABA4FE9D014CCEF}UI/Fonts/RobotoCondensed/RobotoCondensed_Bold.fnt"
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}
