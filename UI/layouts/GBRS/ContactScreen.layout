@@ -33,8 +33,22 @@ FrameWidgetClass {
       SizeY 0
       OffsetBottom 0
      }
-     Color 0.02 0.05 0.04 1
+     Color 0 0 0 1
      {
+      CanvasWidgetClass "{69FCEDCEA008020F}" {
+       Name "ContactCanvas"
+       Slot FrameWidgetSlot "{69FCEDCEA0080210}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+      }
       TextWidgetClass "{69FCEDCEA0080206}" {
        Name "StatusText"
        Slot FrameWidgetSlot "{69FCEDCEA0080207}" {

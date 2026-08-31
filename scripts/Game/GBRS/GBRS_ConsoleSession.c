@@ -173,11 +173,23 @@ class GBRS_ConsoleSession
             return false;
         }
 
-        m_ContactScreen = new GBRS_WorldScreen(LAYOUT_CONTACT, CONTACT_W, CONTACT_H, string.Empty);
+        m_ContactScreen = new GBRS_WorldScreen(LAYOUT_CONTACT, CONTACT_W, CONTACT_H, "ContactCanvas");
         if (!m_ContactScreen.EnableScreen(contactMesh))
         {
             CleanupScreens();
             return false;
+        }
+
+        IEntity opticsTagged = m_Console.FindScreenMesh(EGBRS_ScreenKind.OPTICS);
+        if (opticsTagged)
+        {
+            IEntity opticsMesh = GBRS_WorldScreen.PrepareScreenMesh(opticsTagged);
+            m_OpticsScreen = new GBRS_OpticsScreen();
+            if (!m_OpticsScreen.EnableScreen(opticsMesh, station))
+            {
+                m_OpticsScreen = null;
+                Print("[GBRS Console] OPTICS idle bind failed", LogLevel.WARNING);
+            }
         }
 
         m_PpiPanel = new GBRS_PpiPanel();
@@ -187,7 +199,7 @@ class GBRS_ConsoleSession
         TextWidget body = TextWidget.Cast(m_ContactScreen.GetRoot().FindAnyWidget("ContactBody"));
         TextWidget footer = TextWidget.Cast(m_ContactScreen.GetRoot().FindAnyWidget("ContactFooter"));
         m_ContactPanel = new GBRS_ContactListPanel();
-        m_ContactPanel.Bind(m_ContactScreen.GetStatus(), body, footer);
+        m_ContactPanel.Bind(m_ContactScreen.GetCanvas(), m_ContactScreen.GetStatus(), body, footer);
         m_ContactPanel.DrawIdle(station.GetWorkstationMode());
 
         GBRS_PlayerControllerNet.RequestSubscribePpi(station);
@@ -284,8 +296,8 @@ class GBRS_ConsoleSession
         }
 
         FeedOnce();
-        if (m_OpticsScreen && m_OpticsScreen.IsEnabled())
-            m_OpticsScreen.UpdatePose();
+        if (m_OpticsScreen)
+            m_OpticsScreen.Tick();
     }
 
     //------------------------------------------------------------------------------------------------
@@ -585,30 +597,35 @@ class GBRS_ConsoleSession
         if (!m_Console || !m_Station)
             return;
 
+        if (!m_OpticsScreen || !m_OpticsScreen.IsEnabled())
+        {
+            IEntity opticsTagged = m_Console.FindScreenMesh(EGBRS_ScreenKind.OPTICS);
+            if (!opticsTagged)
+            {
+                Print("[GBRS Console] OPTICS mesh missing", LogLevel.WARNING);
+                return;
+            }
+
+            IEntity opticsMesh = GBRS_WorldScreen.PrepareScreenMesh(opticsTagged);
+            m_OpticsScreen = new GBRS_OpticsScreen();
+            if (!m_OpticsScreen.EnableScreen(opticsMesh, m_Station))
+            {
+                m_OpticsScreen = null;
+                return;
+            }
+        }
+
         if (m_bOpticsWanted)
         {
             m_bOpticsWanted = false;
-            if (m_OpticsScreen)
-            {
-                m_OpticsScreen.DisableScreen();
-                m_OpticsScreen = null;
-            }
+            m_OpticsScreen.SetLive(false);
             FeedOnce();
             return;
         }
 
-        IEntity opticsTagged = m_Console.FindScreenMesh(EGBRS_ScreenKind.OPTICS);
-        if (!opticsTagged)
+        if (!m_OpticsScreen.SetLive(true))
         {
-            Print("[GBRS Console] OPTICS mesh missing", LogLevel.WARNING);
-            return;
-        }
-
-        IEntity opticsMesh = GBRS_WorldScreen.PrepareScreenMesh(opticsTagged);
-        m_OpticsScreen = new GBRS_OpticsScreen();
-        if (!m_OpticsScreen.EnableScreen(opticsMesh, m_Station))
-        {
-            m_OpticsScreen = null;
+            Print("[GBRS Console] OPTICS live failed", LogLevel.WARNING);
             return;
         }
         m_bOpticsWanted = true;

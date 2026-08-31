@@ -118,10 +118,10 @@ class GBRS_WorldScreen
         FrameSlot.SetSizeY(m_wRTTexture, m_RtH);
         if (m_wCanvas)
         {
-            // RDF EnableScreen: canvas FrameSlot height 226 (status strip below).
+            // RDF BindCanvas overwrites EnableScreen's 226 with full RT height.
             FrameSlot.SetPos(m_wCanvas, 0, 0);
             FrameSlot.SetSizeX(m_wCanvas, m_RtW);
-            FrameSlot.SetSizeY(m_wCanvas, 226);
+            FrameSlot.SetSizeY(m_wCanvas, m_RtH);
         }
 
         m_wRTTexture.SetRenderTarget(screenMesh);

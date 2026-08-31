@@ -35,6 +35,20 @@ FrameWidgetClass {
      }
      Color 0 0 0 1
      {
+      CanvasWidgetClass "{69FCEDCEA008030B}" {
+       Name "OpticsCanvas"
+       Slot FrameWidgetSlot "{69FCEDCEA008030C}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 226
+        OffsetBottom -226
+       }
+      }
       RenderTargetWidgetClass "{69FCEDCEA0080306}" {
        Name "OpticsRT"
        Slot FrameWidgetSlot "{69FCEDCEA0080307}" {

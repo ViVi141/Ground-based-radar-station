@@ -1,18 +1,23 @@
 //------------------------------------------------------------------------------------------------
-//! Canvas PPI for world CRT — plots, sweep, TWS / WLR markers from snapshot data.
+//! Canvas PPI for world CRT — face texture + RDF unit-space sweep/blips.
 class GBRS_PpiPanel
 {
     static const ResourceName PPI_FACE_TEXTURE =
         "{F2196E35CB708A41}UI/Textures/GBRS/GBRS_PpiFace.edds";
 
-    // Match RDF_RadarClutterSurfacePanel unit space (full RT 288×256).
+    // RDF full RT unit space.
     static const int RT_W = 288;
     static const int RT_H = 256;
-    static const int FACE_W = 288;
-    static const int FACE_H = 226;
+    static const int COL_BG = ARGB(255, 0, 0, 0);
+
+    // Face uses bottom/side glass room; higher OY clears top UV clip.
+    // Status strip starts ~230 — keep face bottom below that.
+    static const int FACE_SIZE = 160;
+    static const float FACE_OX = 64.0;  // (288 - 160) / 2
+    static const float FACE_OY = 68.0;  // was 50; use empty bottom margin
     static const float PPI_CX = 144.0;
-    static const float PPI_CY = 118.0;
-    static const float PPI_R = 108.0;
+    static const float PPI_CY = 148.0;  // FACE_OY + FACE_SIZE/2
+    static const float PPI_R = 75.0;    // FACE_SIZE * (300/640)
     static const int MAX_DRAW_BLIPS = 64;
 
     static const int COL_PPI_SWEEP = ARGB(250, 90, 255, 170);
@@ -34,6 +39,8 @@ class GBRS_PpiPanel
     protected TextWidget m_wStatus;
     protected ref array<ref CanvasWidgetCommand> m_Cmds;
     protected ref SharedItemRef m_PpiFaceTex;
+    protected ref PolygonDrawCommand m_BgCmd;
+    protected ref array<float> m_BgVerts;
     protected float m_DisplayRangeM;
     protected string m_Mode;
     protected int m_LockedTrackId;
@@ -51,13 +58,14 @@ class GBRS_PpiPanel
         m_LockedTrackId = 0;
         m_ContentRevision = -1;
 
-        // RDF_RadarClutterSurfacePanel.BindCanvas — unit space is full RT (not 226).
         if (m_wCanvas)
         {
             m_wCanvas.SetVisible(true);
             m_wCanvas.SetSizeInUnits(Vector(RT_W, RT_H, 0));
+            FrameSlot.SetPos(m_wCanvas, 0, 0);
             FrameSlot.SetSizeX(m_wCanvas, RT_W);
             FrameSlot.SetSizeY(m_wCanvas, RT_H);
+            BuildBackground();
         }
         if (m_wStatus)
         {
@@ -72,6 +80,8 @@ class GBRS_PpiPanel
         m_wCanvas = null;
         m_wStatus = null;
         m_PpiFaceTex = null;
+        m_BgCmd = null;
+        m_BgVerts = null;
         if (m_Cmds)
             m_Cmds.Clear();
         m_Cmds = null;
@@ -109,8 +119,8 @@ class GBRS_PpiPanel
             return;
 
         m_Cmds.Clear();
+        BeginFrame();
         DrawFace();
-        DrawRangeRings();
         m_wCanvas.SetDrawCommands(m_Cmds);
         if (m_wStatus)
             m_wStatus.SetText(status);
@@ -139,23 +149,17 @@ class GBRS_PpiPanel
         m_Mode = mode;
         m_LockedTrackId = lockedTrackId;
 
-        bool redrawContent = forceContent;
-        if (contentRevision != m_ContentRevision)
-            redrawContent = true;
-
-        m_Cmds.Clear();
-        DrawFace();
-        DrawRangeRings();
-        DrawSweep(forward);
-
-        if (redrawContent)
+        if (forceContent || contentRevision != m_ContentRevision)
             m_ContentRevision = contentRevision;
 
+        m_Cmds.Clear();
+        BeginFrame();
+        DrawFace();
+        DrawSweep(forward);
         DrawPlots(plots, origin);
         DrawTracks(tracks, origin);
         DrawFused(fused, origin);
         DrawWlr(wlr, origin);
-
         m_wCanvas.SetDrawCommands(m_Cmds);
 
         if (m_wStatus)
@@ -174,13 +178,39 @@ class GBRS_PpiPanel
     }
 
     //------------------------------------------------------------------------------------------------
+    protected void BuildBackground()
+    {
+        m_BgVerts = new array<float>();
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_W);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_W);
+        m_BgVerts.Insert(RT_H);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_H);
+        m_BgCmd = new PolygonDrawCommand();
+        m_BgCmd.m_iColor = COL_BG;
+        m_BgCmd.m_Vertices = m_BgVerts;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void BeginFrame()
+    {
+        if (!m_BgCmd)
+            BuildBackground();
+        m_Cmds.Insert(m_BgCmd);
+    }
+
+    //------------------------------------------------------------------------------------------------
     protected void DrawFace()
     {
         if (!m_PpiFaceTex)
             return;
 
-        vector topLeft = m_wCanvas.PosToPixels(Vector(0.0, 0.0, 0.0));
-        vector size = m_wCanvas.SizeToPixels(Vector(FACE_W, FACE_H, 0.0));
+        // ImageDrawCommand is pixel space; geometry below stays in SizeInUnits.
+        vector topLeft = m_wCanvas.PosToPixels(Vector(FACE_OX, FACE_OY, 0.0));
+        vector size = m_wCanvas.SizeToPixels(Vector(FACE_SIZE, FACE_SIZE, 0.0));
         ImageDrawCommand face = new ImageDrawCommand();
         face.m_pTexture = m_PpiFaceTex;
         face.m_Position = topLeft;
@@ -189,19 +219,6 @@ class GBRS_PpiPanel
         face.m_iColor = 0xffffffff;
         face.m_iFlags = WidgetFlags.STRETCH;
         m_Cmds.Insert(face);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected void DrawRangeRings()
-    {
-        int i = 1;
-        while (i <= 3)
-        {
-            float r = PPI_R * (i / 3.0);
-            DrawCircleOutline(PPI_CX, PPI_CY, r, ARGB(90, 40, 180, 120), 1.0);
-            i = i + 1;
-        }
-        DrawCircleOutline(PPI_CX, PPI_CY, 2.0, ARGB(200, 90, 255, 170), 1.5);
     }
 
     //------------------------------------------------------------------------------------------------
@@ -216,13 +233,13 @@ class GBRS_PpiPanel
         float nx = fx / flen;
         float nz = fz / flen;
         array<float> sweep = new array<float>();
-        AppendUnitPoint(sweep, PPI_CX, PPI_CY);
-        AppendUnitPoint(sweep, PPI_CX + nx * PPI_R, PPI_CY - nz * PPI_R);
+        sweep.Insert(PPI_CX);
+        sweep.Insert(PPI_CY);
+        sweep.Insert(PPI_CX + nx * PPI_R);
+        sweep.Insert(PPI_CY - nz * PPI_R);
         LineDrawCommand edge = new LineDrawCommand();
         edge.m_iColor = COL_PPI_SWEEP;
-        edge.m_fWidth = UnitSizeToPixels(2.5);
-        if (edge.m_fWidth < 1.0)
-            edge.m_fWidth = 1.0;
+        edge.m_fWidth = 2.0;
         edge.m_Vertices = sweep;
         m_Cmds.Insert(edge);
     }
@@ -351,13 +368,13 @@ class GBRS_PpiPanel
             if (hasL && hasI)
             {
                 array<float> link = new array<float>();
-                AppendUnitPoint(link, lx, ly);
-                AppendUnitPoint(link, ix, iy);
+                link.Insert(lx);
+                link.Insert(ly);
+                link.Insert(ix);
+                link.Insert(iy);
                 LineDrawCommand line = new LineDrawCommand();
                 line.m_iColor = COL_WLR_LINK;
-                line.m_fWidth = UnitSizeToPixels(1.5);
-                if (line.m_fWidth < 1.0)
-                    line.m_fWidth = 1.0;
+                line.m_fWidth = 1.5;
                 line.m_Vertices = link;
                 m_Cmds.Insert(line);
             }
@@ -400,23 +417,16 @@ class GBRS_PpiPanel
         Color.UnpackInt(color, a, rr, gg, bb);
         int halo = ARGB(90, rr, gg, bb);
 
-        vector centerPx = m_wCanvas.PosToPixels(Vector(bx, by, 0.0));
-        float rPx = UnitSizeToPixels(r);
-        float haloPx = UnitSizeToPixels(r + 2.5);
-        if (rPx < 1.0)
-            rPx = 1.0;
-        if (haloPx < rPx + 1.0)
-            haloPx = rPx + 1.0;
-
+        vector center = Vector(bx, by, 0.0);
         array<float> hv = new array<float>();
-        m_wCanvas.TessellateCircle(centerPx, haloPx, 8, hv);
+        m_wCanvas.TessellateCircle(center, r + 2.5, 8, hv);
         PolygonDrawCommand haloPoly = new PolygonDrawCommand();
         haloPoly.m_iColor = halo;
         haloPoly.m_Vertices = hv;
         m_Cmds.Insert(haloPoly);
 
         array<float> bv = new array<float>();
-        m_wCanvas.TessellateCircle(centerPx, rPx, 8, bv);
+        m_wCanvas.TessellateCircle(center, r, 8, bv);
         PolygonDrawCommand blip = new PolygonDrawCommand();
         blip.m_iColor = color;
         blip.m_Vertices = bv;
@@ -427,53 +437,17 @@ class GBRS_PpiPanel
     protected void DrawSquare(float bx, float by, float half, int color)
     {
         array<float> v = new array<float>();
-        AppendUnitPoint(v, bx - half, by - half);
-        AppendUnitPoint(v, bx + half, by - half);
-        AppendUnitPoint(v, bx + half, by + half);
-        AppendUnitPoint(v, bx - half, by + half);
+        v.Insert(bx - half);
+        v.Insert(by - half);
+        v.Insert(bx + half);
+        v.Insert(by - half);
+        v.Insert(bx + half);
+        v.Insert(by + half);
+        v.Insert(bx - half);
+        v.Insert(by + half);
         PolygonDrawCommand poly = new PolygonDrawCommand();
         poly.m_iColor = color;
         poly.m_Vertices = v;
         m_Cmds.Insert(poly);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected void DrawCircleOutline(float cx, float cy, float r, int color, float widthU)
-    {
-        vector centerPx = m_wCanvas.PosToPixels(Vector(cx, cy, 0.0));
-        float rPx = UnitSizeToPixels(r);
-        if (rPx < 1.0)
-            rPx = 1.0;
-
-        array<float> ring = new array<float>();
-        m_wCanvas.TessellateCircle(centerPx, rPx, 32, ring);
-        // Close the ring for LineDrawCommand.
-        if (ring.Count() >= 2)
-        {
-            ring.Insert(ring.Get(0));
-            ring.Insert(ring.Get(1));
-        }
-        LineDrawCommand line = new LineDrawCommand();
-        line.m_iColor = color;
-        line.m_fWidth = UnitSizeToPixels(widthU);
-        if (line.m_fWidth < 1.0)
-            line.m_fWidth = 1.0;
-        line.m_Vertices = ring;
-        m_Cmds.Insert(line);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected void AppendUnitPoint(array<float> pixels, float unitX, float unitY)
-    {
-        vector p = m_wCanvas.PosToPixels(Vector(unitX, unitY, 0.0));
-        pixels.Insert(p[0]);
-        pixels.Insert(p[1]);
-    }
-
-    //------------------------------------------------------------------------------------------------
-    protected float UnitSizeToPixels(float unitSize)
-    {
-        vector px = m_wCanvas.SizeToPixels(Vector(unitSize, unitSize, 0.0));
-        return px[0];
     }
 }

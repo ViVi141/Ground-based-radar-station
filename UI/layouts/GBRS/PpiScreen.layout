@@ -45,8 +45,8 @@ FrameWidgetClass {
         OffsetTop 0
         SizeX 0
         OffsetRight 0
-        SizeY 226
-        OffsetBottom -226
+        SizeY 0
+        OffsetBottom 0
        }
       }
       TextWidgetClass "{69FCEDCEA0080108}" {

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------------------------
-//! OPTICS CRT — mesh RTTexture shell (RDF pattern) + PIP via RenderTargetWidget.SetWorld.
+//! OPTICS CRT — RDF RTTexture shell; idle Canvas keeps CRT dark until PIP is armed.
 class GBRS_OpticsScreen
 {
     static const ResourceName LAYOUT =
@@ -14,15 +14,21 @@ class GBRS_OpticsScreen
     static const float OPTICS_LOOK_UP_Y = 0.08;
     static const float OPTICS_HDR_BOOST = 1.35;
     static const int MAX_FPS = 12;
+    static const int COL_BG = ARGB(255, 0, 0, 0);
 
     protected Widget m_wRoot;
     protected RTTextureWidget m_wRTTexture;
+    protected CanvasWidget m_wCanvas;
     protected RenderTargetWidget m_wOpticsRT;
     protected TextWidget m_wStatus;
     protected IEntity m_ScreenMesh;
     protected GBRS_RadarStationComponent m_Station;
     protected SCR_PIPCamera m_OpticsCamera;
     protected bool m_bEnabled;
+    protected bool m_bLive;
+    protected ref array<ref CanvasWidgetCommand> m_Cmds;
+    protected ref PolygonDrawCommand m_BgCmd;
+    protected ref array<float> m_BgVerts;
 
     //------------------------------------------------------------------------------------------------
     bool IsEnabled()
@@ -31,15 +37,18 @@ class GBRS_OpticsScreen
     }
 
     //------------------------------------------------------------------------------------------------
+    bool IsLive()
+    {
+        return m_bLive;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    //! Bind RT shell in idle (OPTICS OFF). Call SetLive(true) for PIP.
     //! screenMesh must already be PrepareScreenMesh()'d (LOD0 + remap).
     bool EnableScreen(IEntity screenMesh, GBRS_RadarStationComponent station)
     {
         DisableScreen();
         if (!screenMesh || !station)
-            return false;
-
-        IEntity owner = station.GetOwner();
-        if (!owner)
             return false;
 
         WorkspaceWidget ws = GetGame().GetWorkspace();
@@ -54,17 +63,20 @@ class GBRS_OpticsScreen
         }
 
         m_wRTTexture = RTTextureWidget.Cast(m_wRoot.FindAnyWidget("RTTexture"));
+        m_wCanvas = CanvasWidget.Cast(m_wRoot.FindAnyWidget("OpticsCanvas"));
         m_wOpticsRT = RenderTargetWidget.Cast(m_wRoot.FindAnyWidget("OpticsRT"));
         m_wStatus = TextWidget.Cast(m_wRoot.FindAnyWidget("StatusText"));
-        if (!m_wRTTexture || !m_wOpticsRT)
+        if (!m_wRTTexture || !m_wCanvas || !m_wOpticsRT)
         {
-            Print("[GBRS OPTICS] RTTexture/OpticsRT missing", LogLevel.ERROR);
+            Print("[GBRS OPTICS] RTTexture/OpticsCanvas/OpticsRT missing", LogLevel.ERROR);
             DisableScreen();
             return false;
         }
 
         m_ScreenMesh = screenMesh;
         m_Station = station;
+        m_Cmds = new array<ref CanvasWidgetCommand>();
+        BuildBackground();
 
         m_wRoot.SetVisible(true);
         FrameSlot.SetPos(m_wRoot, -4096, -4096);
@@ -73,27 +85,61 @@ class GBRS_OpticsScreen
         FrameSlot.SetPos(m_wRTTexture, 0, 0);
         FrameSlot.SetSizeX(m_wRTTexture, RT_W);
         FrameSlot.SetSizeY(m_wRTTexture, RT_H);
+        FrameSlot.SetPos(m_wCanvas, 0, 0);
+        FrameSlot.SetSizeX(m_wCanvas, RT_W);
+        FrameSlot.SetSizeY(m_wCanvas, RT_H - 30);
         FrameSlot.SetPos(m_wOpticsRT, 0, 0);
         FrameSlot.SetSizeX(m_wOpticsRT, RT_W);
         FrameSlot.SetSizeY(m_wOpticsRT, RT_H - 30);
+
+        m_wCanvas.SetVisible(true);
+        m_wCanvas.SetSizeInUnits(Vector(RT_W, RT_H, 0));
+        m_wOpticsRT.SetVisible(false);
 
         m_wRTTexture.SetRenderTarget(screenMesh);
         m_wRTTexture.SetMaxFPS(MAX_FPS);
         m_wRTTexture.SetEnabled(false);
 
-        if (!CreateOpticsCamera(owner))
-        {
-            DisableScreen();
-            return false;
-        }
-
         m_bEnabled = true;
-        UpdatePose();
+        m_bLive = false;
+        PushIdleFrame();
         if (m_wStatus)
         {
             m_wStatus.SetVisible(true);
-            m_wStatus.SetText("OPTICS LIVE");
+            m_wStatus.SetText("OPTICS OFF");
         }
+        return true;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    bool SetLive(bool live)
+    {
+        if (!m_bEnabled || !m_Station)
+            return false;
+
+        if (!live)
+        {
+            DestroyOpticsCamera();
+            if (m_wOpticsRT)
+                m_wOpticsRT.SetVisible(false);
+            m_bLive = false;
+            PushIdleFrame();
+            if (m_wStatus)
+                m_wStatus.SetText("OPTICS OFF");
+            return true;
+        }
+
+        IEntity owner = m_Station.GetOwner();
+        if (!owner)
+            return false;
+
+        if (!CreateOpticsCamera(owner))
+            return false;
+
+        m_bLive = true;
+        UpdatePose();
+        if (m_wStatus)
+            m_wStatus.SetText("OPTICS LIVE");
         return true;
     }
 
@@ -109,22 +155,69 @@ class GBRS_OpticsScreen
             m_wRoot = null;
         }
         m_wRTTexture = null;
+        m_wCanvas = null;
         m_wOpticsRT = null;
         m_wStatus = null;
         m_ScreenMesh = null;
         m_Station = null;
+        m_BgCmd = null;
+        m_BgVerts = null;
+        if (m_Cmds)
+            m_Cmds.Clear();
+        m_Cmds = null;
         m_bEnabled = false;
+        m_bLive = false;
+    }
+
+    //------------------------------------------------------------------------------------------------
+    void Tick()
+    {
+        if (!m_bEnabled)
+            return;
+        if (m_bLive)
+            UpdatePose();
+        else
+            PushIdleFrame();
     }
 
     //------------------------------------------------------------------------------------------------
     void UpdatePose()
     {
-        if (!m_bEnabled || !m_OpticsCamera || !m_Station)
+        if (!m_bEnabled || !m_bLive || !m_OpticsCamera || !m_Station)
             return;
 
         vector origin = m_Station.GetScanOriginWorld();
         vector forward = m_Station.GetScanForwardWorld();
         ApplyPose(origin, forward);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void PushIdleFrame()
+    {
+        if (!m_wCanvas || !m_Cmds)
+            return;
+        if (!m_BgCmd)
+            BuildBackground();
+        m_Cmds.Clear();
+        m_Cmds.Insert(m_BgCmd);
+        m_wCanvas.SetDrawCommands(m_Cmds);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void BuildBackground()
+    {
+        m_BgVerts = new array<float>();
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_W);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_W);
+        m_BgVerts.Insert(RT_H);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_H);
+        m_BgCmd = new PolygonDrawCommand();
+        m_BgCmd.m_iColor = COL_BG;
+        m_BgCmd.m_Vertices = m_BgVerts;
     }
 
     //------------------------------------------------------------------------------------------------

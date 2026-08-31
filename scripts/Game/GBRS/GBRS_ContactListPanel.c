@@ -1,19 +1,38 @@
 //------------------------------------------------------------------------------------------------
-//! CONTACT CRT — mode / power status + tabular track list from snapshot data.
+//! CONTACT CRT — Canvas drives RT (RDF pattern); TextWidgets overlay the track table.
 class GBRS_ContactListPanel
 {
+    static const int RT_W = 288;
+    static const int RT_H = 256;
     static const int MAX_ROWS = 18;
+    static const int COL_BG = ARGB(255, 5, 12, 10);
 
+    protected CanvasWidget m_wCanvas;
     protected TextWidget m_wStatus;
     protected TextWidget m_wBody;
     protected TextWidget m_wFooter;
+    protected ref array<ref CanvasWidgetCommand> m_Cmds;
+    protected ref PolygonDrawCommand m_BgCmd;
+    protected ref array<float> m_BgVerts;
 
     //------------------------------------------------------------------------------------------------
-    void Bind(TextWidget status, TextWidget body, TextWidget footer)
+    void Bind(CanvasWidget canvas, TextWidget status, TextWidget body, TextWidget footer)
     {
+        m_wCanvas = canvas;
         m_wStatus = status;
         m_wBody = body;
         m_wFooter = footer;
+        m_Cmds = new array<ref CanvasWidgetCommand>();
+
+        // RDF_RadarClutterSurfacePanel.BindCanvas — Canvas SetDrawCommands keeps RT alive.
+        if (m_wCanvas)
+        {
+            m_wCanvas.SetVisible(true);
+            m_wCanvas.SetSizeInUnits(Vector(RT_W, RT_H, 0));
+            FrameSlot.SetSizeX(m_wCanvas, RT_W);
+            FrameSlot.SetSizeY(m_wCanvas, RT_H);
+            BuildBackground();
+        }
         if (m_wStatus)
             m_wStatus.SetVisible(true);
         if (m_wBody)
@@ -25,14 +44,21 @@ class GBRS_ContactListPanel
     //------------------------------------------------------------------------------------------------
     void Destroy()
     {
+        m_wCanvas = null;
         m_wStatus = null;
         m_wBody = null;
         m_wFooter = null;
+        m_BgCmd = null;
+        m_BgVerts = null;
+        if (m_Cmds)
+            m_Cmds.Clear();
+        m_Cmds = null;
     }
 
     //------------------------------------------------------------------------------------------------
     void DrawIdle(string status)
     {
+        PushCanvasFrame();
         if (m_wStatus)
             m_wStatus.SetText(status);
         if (m_wBody)
@@ -54,6 +80,8 @@ class GBRS_ContactListPanel
         int netOnline,
         bool opticsOn)
     {
+        PushCanvasFrame();
+
         bool powered = false;
         if (station)
             powered = station.IsPowered();
@@ -103,6 +131,35 @@ class GBRS_ContactListPanel
             foot = foot + rows.ToString();
             m_wFooter.SetText(foot);
         }
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void PushCanvasFrame()
+    {
+        if (!m_wCanvas || !m_Cmds)
+            return;
+        if (!m_BgCmd)
+            BuildBackground();
+        m_Cmds.Clear();
+        m_Cmds.Insert(m_BgCmd);
+        m_wCanvas.SetDrawCommands(m_Cmds);
+    }
+
+    //------------------------------------------------------------------------------------------------
+    protected void BuildBackground()
+    {
+        m_BgVerts = new array<float>();
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_W);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_W);
+        m_BgVerts.Insert(RT_H);
+        m_BgVerts.Insert(0.0);
+        m_BgVerts.Insert(RT_H);
+        m_BgCmd = new PolygonDrawCommand();
+        m_BgCmd.m_iColor = COL_BG;
+        m_BgCmd.m_Vertices = m_BgVerts;
     }
 
     //------------------------------------------------------------------------------------------------
