@@ -206,7 +206,7 @@ def build_hw(cfg: ScanConfig, faction: str) -> s.Hardware:
         hw = s.Hardware(
             name=f"WLR_{faction}",
             frequency_hz=9.0e9,
-            peak_power_w=500000.0,
+            peak_power_w=250000.0,
             antenna_gain_dbi=32.0,
             az_beamwidth_deg=cfg.beamwidth_deg,
             system_loss_db=6.0,

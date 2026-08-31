@@ -43,7 +43,7 @@ class GBRS_RadarManualConfig
             m_ElevationBeamwidthDeg = 16.0;
             m_AzimuthBeamwidthDeg = 6.0;
             m_UpdateIntervalS = 0.04;
-            m_PeakPowerW = 350000.0;
+            m_PeakPowerW = 250000.0;
             return;
         }
 

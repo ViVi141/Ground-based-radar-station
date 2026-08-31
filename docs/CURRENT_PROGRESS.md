@@ -1,10 +1,13 @@
 # GBRS Conflict 建造 — 进度
 
-> 最后更新：2026-08-29
+> 最后更新：2026-08-31
 > **版本：1.1.7**（RDF ≥ 1.1.6）
 > 状态：**BUILDING 放置已正常**。放置 `E_RadarStation_S_*` 会先出 FRB 施工区，铲完才生成成品雷达。
 > UI：顶栏 **OPTICS** 可选打开光学 PIP（默认关，占位保留布局）；工作台刷新 **60 Hz**；扫描线跟 live antenna；PPI snap ~30 Hz + 航迹 coast。
 > Field Manual：Override `FM_Commanding.conf`（Gameplay → Commanding），`m_aEntries +{}` 追加 Ground Radar 说明页。
+> 文档：`WORKSHOP_EN.txt` 已与代码量程对齐（2026-08-31）。
+> 射频：`CreateUssrWlr` 显式 `CreateP18Like`（160 MHz / 250 kW / 20 dBi / 30°）。
+> 2026-08-31 重平衡：US WLR 500→**250 kW**；苏军空搜 350→**250 kW**（离线 16 km Pd 仍 100%）。
 
 ---
 
@@ -35,6 +38,10 @@
 - 雷达施工垫仍跳过 `SpawnPreview`（E_ EditorLink 树会原生 AV）。
 - 未完成雷达垫禁止原版拆除动作（同样为规避原生 AV）；残骸用 GBRS 铲具拆除。
 - `chimeraMenus.conf` 必须整份覆盖原版菜单表才能注册 `GBRS_RadarStationMenu`。
-- WLR 扇扫 / 切向悬停直升机仍建议局内实测（RDF 1.1.6 drag 拟合修复后优先复测落点）。
+- WLR 全周发现 + 自动 ±40° 收窄 / 切向悬停直升机仍建议局内实测（RDF 1.1.6 drag 拟合修复后优先复测落点）。
 - 情报网 HQ / 中继跳转需局内核对。
-- `GBRS_RadarStationComponent` 枢纽约 3141 行，接触 / datalink / 天线 / 建造门闩尚未拆文件。
+- `GBRS_RadarStationComponent` 枢纽约 3951 行，接触 / datalink / 天线 / 建造门闩尚未拆文件。
+
+## 文档
+
+- `docs/WORKSHOP_EN.txt`（2026-08-31）：已与代码对齐 — PD 12/16 km、WLR 360°→±40°、Field Manual 七页、LOCK/MANUAL 入口说明。

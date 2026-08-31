@@ -5,19 +5,19 @@ DESCRIPTION
 Ground-based radar station (GBRS) turns Bohemia Interactive approach-radar meshes into playable Conflict and Game Master ground stations. Detection, tracking, and the PPI picture are computed on the server through Radar Development Framework (RDF). Clients only power the set, change mode, and draw the replicated scope.
 
 REQUIRED
-This addon will not load without Radar Development Framework (GUID 6892AB0669DF29AA). Subscribe to RDF first.
+This addon will not load without Radar Development Framework (GUID 6892AB0669DF29AA). Subscribe to RDF first. Requires RDF 1.1.6 or newer.
 
 WHAT YOU GET
 Two faction stations with historically matched visuals and Conflict-scaled RF, not airport-handbook ranges:
 
 US Ground Radar Station (AN/TPN-19)
-- 7 km pulse-Doppler air search, about 10 RPM, 2.5 deg beam
-- 8 km weapon-locating radar (WLR), plus/minus 45 deg sector, 12 deg beam, 6 RPM
+- 12 km pulse-Doppler air search, about 10 RPM, 2.5 deg beam
+- 8 km weapon-locating radar (WLR), 360 deg search then auto-narrow about +/-40 deg, 24 deg beam, 6 RPM
 - Whole-mesh antenna yaw
 
 USSR Ground Radar Station (Tesla RPL-5)
-- 10 km VHF early warning (P-18-style front end), about 6 RPM, 6 deg beam
-- 10 km WLR, plus/minus 45 deg sector, 15 deg beam, 6 RPM
+- 16 km VHF early warning (P-18-style front end), about 6 RPM, 6 deg beam
+- 10 km WLR, same 360 deg cue then +/-40 deg corridor, 30 deg beam, 6 RPM
 - Antenna spin on the antenna_rotation bone
 
 RPL-5 and AN/TPN-19 were approach / RAPCON systems in real life. GBRS keeps those models and retunes the radio for battlefield air search and counter-battery play.
@@ -32,10 +32,10 @@ Campaign cost is 450 supply per faction, sergeant rank. From a base construction
 WORKSTATION
 Friendly operators at a powered, finished station can:
 - Toggle power (refused if you cannot afford the first drain tick)
-- Open the PPI: PD SEARCH (air) or WLR (shells)
+- Open the PPI: PD SEARCH (air), WLR (shells), LOCK, or MANUAL
 - Zoom PPI range with Up/Down or mouse wheel
 
-PD SEARCH is skin-return only. No IFF interrogation, no vehicle type names. The list is anonymous kinematics: azimuth, range, altitude, speed, SNR. Radiating radars show as EMIT. Infantry never paints. WLR marks shells, then estimates launch and impact grids with ETA. It does not name the gun.
+PD SEARCH is skin-return only. No IFF interrogation, no vehicle type names. The list is anonymous kinematics: azimuth, range, altitude, speed, SNR. Radiating radars show as EMIT. Infantry never paints. WLR marks shells after a full-circle cue, then estimates launch and impact grids with ETA. It does not name the gun. MANUAL knobs stay within faction PD SEARCH caps (US 12 km / 10 RPM, USSR 16 km / 6 RPM). LOCK is for fire-control consumers; without a SAM / AAA addon it only arms the station lock path.
 
 Multi-station datalink is separate. Powered stations publish confirmed tracks into a shared hub. The PPI network overlay colors fused tracks by IFF (friend / foe / neutral) against the station faction. Local search plots stay anonymous.
 
@@ -70,10 +70,10 @@ Subscribe GBRS_RadarStationEvents:
 OnRadarContact, OnRadarContactLost, OnNetworkContact, OnWlrSolution, OnLockChanged, OnRadarDestroyed.
 
 KNOWN LIMITS
-LOCK and MANUAL workstation tabs are reserved and hidden until a fire-control or training addon exists. RF is not TPN-19 / RPL-5 handbook data. Local PPI has no secondary radar. WLR on crossing shells and HQ/relay hops should still be checked in multiplayer. Editor thumbnails may lag until regenerated in Workbench.
+RF is not TPN-19 / RPL-5 handbook data. Local PPI has no secondary radar. WLR on crossing shells and HQ/relay hops should still be checked in multiplayer. Editor thumbnails may lag until regenerated in Workbench.
 
 Load RDF, then GBRS. Place a pad, shovel it, power on, tune RADAR NET, and sit the scope.
 
 FIELD MANUAL
 ESC → Field Manual → Gameplay → Commanding → Ground Radar pages
-(Quick Start, Workstation, RADAR NET, Supply & Capture, Reading the Scope).
+(Quick Start, Workstation, RADAR NET, Supply & Capture, Reading the Scope, Interference & ECM, US vs USSR).

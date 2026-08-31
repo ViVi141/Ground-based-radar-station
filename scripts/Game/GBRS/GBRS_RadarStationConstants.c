@@ -8,9 +8,9 @@ class GBRS_RadarStationConstants
 {
     static const string MODE_PD_SEARCH = "PD SEARCH";
     static const string MODE_WLR = "WLR";
-    // Reserved: fire-control consumer (SAM / AAA) does not exist yet.
+    // Station lock path is live; SAM / AAA fire-control consumers are optional.
     static const string MODE_LOCK = "LOCK";
-    // Reserved: operator-training / manual RF console, no matching mod yet.
+    // Operator knobs within faction PD SEARCH caps (range / RPM / stare).
     static const string MODE_MANUAL = "MANUAL";
 
     // Semver for README / CHANGELOG / PPI mode bar. Bump on workshop releases.

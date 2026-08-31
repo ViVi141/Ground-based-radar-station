@@ -542,8 +542,9 @@ class GBRS_RadarStationConfig
         // P-18 RF front-end, then re-apply stock PD MTI (CreateP18Like is TwoPulse).
         RDF_RadarHardware hw = RDF_RadarHardware.CreateP18Like();
         hw.m_ScanRpm = 6.0;
-        // Mild early-warning RF uplift; Pd remains clutter-limited on Eden DEM.
-        hw.m_PeakPowerW = 350000.0;
+        // Mild early-warning RF; peak pinned to historical P-18 upper band
+        // (160–260 kW). Offline MTD at 16 km still Pd_cfar 100% (mean ~38 dB).
+        hw.m_PeakPowerW = 250000.0;
         hw.m_AntennaGainDbi = 20.0;
         hw.m_PulsesIntegrated = 12;
         hw.ClearElevationBeams();
@@ -630,10 +631,11 @@ class GBRS_RadarStationConfig
     }
 
     // US counter-battery WLR (~8 km all-around rotation).
-    // Offline-tuned (tools/simulate_wlr_projectile.py + WLR_VALIDATION.md):
-    // 500 kW gives ~8.6 dB at beam center and ~3.0 dB at 12 deg offset.
-    // Gate 4 dB keeps center detections and drops the cheap offset lobe,
-    // closer to USSR WLR 5 dB instead of the previous 2 dB US advantage.
+    // Offline (tools/out/balance_rf_sweep.py): 250 kW → 5.9 dB center SNR at
+    // 8 km / 0.01 m2 shell; gate 4 dB leaves +1.9 dB margin. 200 kW is only
+    // +0.9 dB (too tight). Firefinder AN/TPQ-36 publishes ~23 kW peak but uses
+    // chirp processing gain this RDF product does not model — 250 kW is the
+    // lowest playable non-chirp peak, half the prior 500 kW overheat.
     // NOTE: the offline chain models clutter-limited SNR but its CFAR gates
     // on thermal noise only (RDF uses adaptive clutter CFAR), so projectile
     // detection inside clutter needs in-game verification.
@@ -652,7 +654,7 @@ class GBRS_RadarStationConfig
             // on a shell to confirm a track (narrow 12° + ±45° east missed
             // almost every round the operator actually fired).
             settings.m_Hardware.m_AzimuthBeamwidthDeg = 24.0;
-            settings.m_Hardware.m_PeakPowerW = 500000.0;
+            settings.m_Hardware.m_PeakPowerW = 250000.0;
         }
         ApplyWlrProductFlags(settings);
         ApplyWorkstationReadout(settings, true);
@@ -669,12 +671,12 @@ class GBRS_RadarStationConfig
     }
 
     // USSR counter-battery WLR (~10 km all-around rotation, wider beam).
-    // VHF hardware (P-18-like) gives a large lambda^2 advantage at 10 km:
-    // offline chain (no clutter) shows ~30 dB center SNR — far above the gate,
-    // so peak power stays at the P-18 default (250 kW, CreateP18Like). The
-    // offline CFAR model cannot reliably resolve clutter-limited projectile
-    // detection (it gates on thermal noise, not RDF's adaptive clutter CFAR),
-    // so clutter behavior needs in-game verification.
+    // Must use the P-18 VHF front-end. CreateWlrSettings() ships X-band SHORAD
+    // hardware; only overriding beamwidth left USSR WLR on 9 GHz and broke the
+    // documented lambda^2 advantage. Stock P-18 peak (~250 kW) is enough:
+    // offline thermal chain shows ~24 dB center SNR at 10 km (gate 5 dB).
+    // ApplyWlrProductFlags still disables MTI and stamps the 1 µs WLR pulse /
+    // recovery blind zone on top of this RF.
     static RDF_RadarSettings CreateUssrWlr()
     {
         RDF_RadarSettings settings = RDF_RadarSensor.CreateWlrSettings(128);
@@ -684,14 +686,22 @@ class GBRS_RadarStationConfig
         settings.m_FreshUpdateBudgetMax = 96;
         ApplyScattererDiscoveryBudget(settings);
         settings.m_DetectionSnrDb = 5.0;
-        if (settings.m_Hardware)
-        {
-            // Wider than US for VHF; all-around mechanical scan (see US WLR).
-            settings.m_Hardware.m_AzimuthBeamwidthDeg = 30.0;
-        }
+
+        // Replace stock WLR X-band hardware with the same VHF identity as
+        // CreateUssrSearch (frequency / PRF / noise figure / system loss).
+        RDF_RadarHardware hw = RDF_RadarHardware.CreateP18Like();
+        hw.m_PeakPowerW = 250000.0;
+        hw.m_AntennaGainDbi = 20.0;
+        // Wider than US for VHF; all-around mechanical scan (see US WLR).
+        hw.m_AzimuthBeamwidthDeg = 30.0;
+        hw.m_ScanRpm = GBRS_RadarStationConstants.WLR_SCAN_RPM;
+        // Do not ApplyPulseDopplerHardwareVhf here: WLR turns MTI off in
+        // ApplyWlrProductFlags; pinning MTD floors would only confuse the preset.
+        settings.m_Hardware = hw;
+
         ApplyWlrProductFlags(settings);
-        // Same VHF surface-scale relief as USSR search; clutter stays enabled.
-        settings.m_DemClutterScale = 0.10;
+        // DEM clutter stays off for WLR (ApplyWlrFidelity). Scale is unused.
+        settings.m_DemClutterScale = 0.50;
         ApplyWorkstationReadout(settings, false);
         // Keep WLR measurement clean; see US WLR comment.
         settings.ClearMeasurementNoise();

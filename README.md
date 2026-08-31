@@ -56,7 +56,7 @@ Arma Reforger 模组：把官方进近雷达模型做成可建造的 Conflict / 
 靠近成品雷达，己方交互：
 
 - 开关机（物资不够会拒绝开机；运行中扣不起则断电）
-- 打开 PPI：`PD SEARCH` / `WLR` / `LOCK`（点击 PPI 航迹锁定；`MANUAL` 仍预留）
+- 打开 PPI：`PD SEARCH` / `WLR` / `LOCK` / `MANUAL`（MANUAL 量程与转速钳在阵营空搜上限；LOCK 供火控消费，无 SAM/AAA 模组时仅站内锁定路径）
 - 扫描体可视化（本地）
 
 ### Field Manual（战斗手册）
@@ -130,7 +130,8 @@ GBRS_RadarStationDemo.Stop();
 ## 文档
 
 - `docs/CHANGELOG.md` — 版本发布说明（中英）
-- `docs/WORKSHOP_UPDATE_1.1.0.txt` — 工坊更新说明（可粘贴）
+- `docs/WORKSHOP_EN.txt` — Steam/Workshop 长描述（与代码量程对齐）
+- `docs/WORKSHOP_UPDATE_1.1.7.txt` — 工坊更新说明（可粘贴）
 - `docs/CURRENT_PROGRESS.md` — 施工垫 / 放置相关笔记
 - `tools/PD_VALIDATION.md`、`tools/WLR_VALIDATION.md` — 离线探测标定
 - `tools/WLR_TRACKER_VALIDATION.md` — WLR 轨道碎片化 / PPI 杂乱离线验证

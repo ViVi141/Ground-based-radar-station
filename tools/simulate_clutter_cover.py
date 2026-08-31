@@ -266,7 +266,7 @@ def make_ussr() -> tuple[Hardware, Settings]:
     hw = Hardware(
         name="USSR_P18_PD",
         frequency_hz=1.6e8,
-        peak_power_w=350000.0,
+        peak_power_w=250000.0,
         antenna_gain_dbi=20.0,
         az_beamwidth_deg=6.0,
         system_loss_db=8.0,
