@@ -1,0 +1,110 @@
+{
+  "script": "simulate_ppi_display.py",
+  "description": "GBRS PPI display-path: dual-layer, anchor vs filter, clustering",
+  "results": {
+    "baseline": {
+      "US": {
+        "policy": "baseline",
+        "faction": "US",
+        "gate_az_deg": 10.0,
+        "gate_range_m": 1200.0,
+        "noise_scale": 2.5,
+        "use_measured_anchor": false,
+        "single_layer_pd": false,
+        "merge_birth_by_scatterer": false,
+        "tracks_per_aircraft": {
+          "1": 7,
+          "2": 5,
+          "3": 7
+        },
+        "fragmented_aircraft": 3,
+        "fragmentation_ratio": 6.33,
+        "max_dual_layer_sep_m": 52728.7,
+        "median_filter_error_m": 1776.8,
+        "median_anchor_error_m": 265.7,
+        "max_intra_scan_jump_m": 38464.7,
+        "max_inter_scan_jump_m": 37879.2,
+        "max_display_symbols_alive": 6,
+        "confirmed_display_tracks": 3,
+        "verdict": "FAIL"
+      },
+      "USSR": {
+        "policy": "baseline",
+        "faction": "USSR",
+        "gate_az_deg": 10.0,
+        "gate_range_m": 1200.0,
+        "noise_scale": 0.0,
+        "use_measured_anchor": false,
+        "single_layer_pd": false,
+        "merge_birth_by_scatterer": false,
+        "tracks_per_aircraft": {
+          "1": 1,
+          "2": 1,
+          "3": 1
+        },
+        "fragmented_aircraft": 0,
+        "fragmentation_ratio": 1.0,
+        "max_dual_layer_sep_m": 3485.7,
+        "median_filter_error_m": 57.7,
+        "median_anchor_error_m": 225.0,
+        "max_intra_scan_jump_m": 3.7,
+        "max_inter_scan_jump_m": 159.4,
+        "max_display_symbols_alive": 6,
+        "confirmed_display_tracks": 3,
+        "verdict": "FAIL"
+      }
+    },
+    "playable": {
+      "US": {
+        "policy": "playable",
+        "faction": "US",
+        "gate_az_deg": 10.0,
+        "gate_range_m": 1200.0,
+        "noise_scale": 0.0,
+        "use_measured_anchor": true,
+        "single_layer_pd": true,
+        "merge_birth_by_scatterer": true,
+        "tracks_per_aircraft": {
+          "1": 1,
+          "2": 1,
+          "3": 1
+        },
+        "fragmented_aircraft": 0,
+        "fragmentation_ratio": 1.0,
+        "max_dual_layer_sep_m": 0.0,
+        "median_filter_error_m": 845.1,
+        "median_anchor_error_m": 140.0,
+        "max_intra_scan_jump_m": 0.0,
+        "max_inter_scan_jump_m": 5.0,
+        "max_display_symbols_alive": 3,
+        "confirmed_display_tracks": 3,
+        "verdict": "PASS"
+      },
+      "USSR": {
+        "policy": "playable",
+        "faction": "USSR",
+        "gate_az_deg": 10.0,
+        "gate_range_m": 1200.0,
+        "noise_scale": 0.0,
+        "use_measured_anchor": true,
+        "single_layer_pd": true,
+        "merge_birth_by_scatterer": true,
+        "tracks_per_aircraft": {
+          "1": 1,
+          "2": 1,
+          "3": 1
+        },
+        "fragmented_aircraft": 0,
+        "fragmentation_ratio": 1.0,
+        "max_dual_layer_sep_m": 0.0,
+        "median_filter_error_m": 57.7,
+        "median_anchor_error_m": 225.0,
+        "max_intra_scan_jump_m": 0.0,
+        "max_inter_scan_jump_m": 5.0,
+        "max_display_symbols_alive": 3,
+        "confirmed_display_tracks": 3,
+        "verdict": "PASS"
+      }
+    }
+  }
+}

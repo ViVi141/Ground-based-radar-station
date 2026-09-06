@@ -87,12 +87,14 @@ class Track:
         "track_id", "aircraft_id", "last_pos", "last_vel", "last_time",
         "hit_count", "miss_count", "coast_elapsed", "confirmed",
         "first_time", "last_hit_time", "ever_hits", "last_snr_db",
+        "last_plot_pos",
     )
 
     def __init__(self, track_id: int, aircraft_id: int, plot: Plot):
         self.track_id = track_id
         self.aircraft_id = aircraft_id
         self.last_pos = plot.pos
+        self.last_plot_pos = plot.pos
         self.last_vel = (0.0, 0.0, 0.0)
         self.last_time = plot.time_s
         self.hit_count = 1
@@ -238,6 +240,7 @@ def update_tracker(
     confirm_hits: int,
     max_misses: int,
     coast_max_s: float,
+    merge_birth_by_scatterer: bool = False,
 ):
     assigned_track = [-1] * len(tracks)
     used_plot = [False] * len(plots)
@@ -288,6 +291,7 @@ def update_tracker(
         tr.coast_elapsed = 0.0
         tr.last_hit_time = pl.time_s
         tr.last_snr_db = pl.snr_db
+        tr.last_plot_pos = pl.pos
         if tr.hit_count >= confirm_hits:
             tr.confirmed = True
 
@@ -309,6 +313,30 @@ def update_tracker(
     for pi, pl in enumerate(plots):
         if used_plot[pi]:
             continue
+        if merge_birth_by_scatterer:
+            merged = False
+            for tr in tracks:
+                if tr.aircraft_id != pl.aircraft_id:
+                    continue
+                pr, pa, _, _ = polar(radar_origin, tr.last_plot_pos)
+                d_rng = abs(pl.range_m - pr)
+                d_az = angle_delta_deg(pl.az_deg, pa)
+                if d_rng <= gate_range_m and d_az <= gate_az_deg:
+                    tr.last_pos = pl.pos
+                    tr.last_plot_pos = pl.pos
+                    tr.last_time = pl.time_s
+                    tr.hit_count += 1
+                    tr.ever_hits += 1
+                    tr.miss_count = 0
+                    tr.coast_elapsed = 0.0
+                    tr.last_hit_time = pl.time_s
+                    tr.last_snr_db = pl.snr_db
+                    if tr.hit_count >= confirm_hits:
+                        tr.confirmed = True
+                    merged = True
+                    break
+            if merged:
+                continue
         tr = Track(next_track_id[0], pl.aircraft_id, pl)
         next_track_id[0] += 1
         tracks.append(tr)
@@ -341,6 +369,7 @@ def simulate(
     coast_max_s: float,
     duration_s: float = SIM_DURATION_S,
     seed: int = 12345,
+    merge_birth_by_scatterer: bool = False,
 ):
     hw, settings = make_pd(faction)
     rng = random.Random(seed)
@@ -426,6 +455,7 @@ def simulate(
             confirm_hits=2,
             max_misses=max_misses,
             coast_max_s=coast_max_s,
+            merge_birth_by_scatterer=merge_birth_by_scatterer,
         )
 
         alive = len(tracks)
@@ -476,6 +506,7 @@ def simulate(
         "gate_range_m": gate_range_m,
         "max_misses": max_misses,
         "coast_max_s": coast_max_s,
+        "merge_birth_by_scatterer": merge_birth_by_scatterer,
         "total_aircraft": total_aircraft,
         "total_tracks_ever": total_tracks_ever,
         "tracks_per_aircraft": tracks_per_aircraft,
@@ -510,15 +541,14 @@ def main() -> int:
     print("=" * 72)
 
     for faction in factions:
-        # In-game ApplyFullFidelity uses shared 8 deg / 600 m gates.
-        # US search only lengthens coast (16 s vs 12 s).
-        gate_range_m = 600.0
-        gate_az_deg = 8.0
+        # GBRS_RadarStationConfig ApplyFullFidelity: 10 deg / 1200 m gates.
+        gate_range_m = 1200.0
+        gate_az_deg = 10.0
         coast_max_s = 12.0
         if faction == "US":
             coast_max_s = 16.0
 
-        # Current GBRS PD: mechanical scan with high miss allowance.
+        # Current GBRS PD baseline (before display/merge fixes).
         current = simulate(
             faction,
             noise_scale=0.0,
@@ -529,6 +559,21 @@ def main() -> int:
             gate_az_deg=gate_az_deg,
             max_misses=600,
             coast_max_s=coast_max_s,
+            merge_birth_by_scatterer=False,
+        )
+
+        # Playable preset: wider gates + scatterer birth merge (mirrors Enforce fix).
+        playable = simulate(
+            faction,
+            noise_scale=0.0,
+            range_bias_m=0.0,
+            az_bias_deg=0.0,
+            el_bias_deg=0.0,
+            gate_range_m=gate_range_m,
+            gate_az_deg=gate_az_deg,
+            max_misses=600,
+            coast_max_s=coast_max_s,
+            merge_birth_by_scatterer=True,
         )
 
         # Legacy / naive PD: measurement noise + tight gates + low max misses.
@@ -546,17 +591,21 @@ def main() -> int:
 
         report["factions"][faction] = {
             "current_gbrs": current,
+            "playable": playable,
             "legacy": legacy,
             "summary": {
                 "current_verdict": current["verdict"],
+                "playable_verdict": playable["verdict"],
                 "legacy_verdict": legacy["verdict"],
                 "current_tracks_per_aircraft": current["tracks_per_aircraft"],
+                "playable_tracks_per_aircraft": playable["tracks_per_aircraft"],
                 "legacy_tracks_per_aircraft": legacy["tracks_per_aircraft"],
             },
         }
 
         for name, r in (
-            ("CURRENT (8/600, US TwoPulse, USSR MTD_BANK, maxMiss 600)", current),
+            ("CURRENT (10/1200, maxMiss 600, no merge)", current),
+            ("PLAYABLE (10/1200, scatterer birth merge)", playable),
             ("LEGACY (noise 3.5, gates 4/400, maxMiss 6)", legacy),
         ):
             print(f"\n[{faction}] {name}")
