@@ -24,6 +24,11 @@ class GBRS_RadarStationConfig
     // Counter-battery locating pulse (not the EW search pulse).
     protected static const float WLR_PULSE_WIDTH_S = 0.000001;
     protected static const float WLR_RECEIVER_RECOVERY_S = 0.0000005;
+    // SIGINT_RDF-style PPI anti-ghost: hide coasting air-search tracks that
+    // outlive one mechanical sweep without a live plot association.
+    protected static const float AIR_SEARCH_COAST_DISPLAY_MAX_S = 8.0;
+    protected static const int AIR_SEARCH_MISS_DISPLAY_MAX = 2;
+    protected static const float PLOT_AFTERGLOW_SWEEP_MULT = 1.1;
 
     // Display-side gate for PPI / detect visuals.
     // WLR is projectile-only: never paint vehicles, infantry, or anonymous clutter.
@@ -76,6 +81,91 @@ class GBRS_RadarStationConfig
             radialSpeed = -radialSpeed;
 
         return radialSpeed >= MTI_DISPLAY_MIN_RADIAL_SPEED_MS;
+    }
+
+    // True when the current sensor dwell still has at least one air-search plot
+    // (not shells/emitters). Used to suppress coasting ghost TWS symbols when
+    // the scope is otherwise empty — mirrors SIGINT_RDF ShouldDisplayAirSearchTrack.
+    static bool HasLiveAirSearchPlots(
+        array<ref RDF_RadarTarget> livePlots,
+        RDF_RadarSettings settings)
+    {
+        if (!livePlots)
+            return false;
+
+        int i = 0;
+        while (i < livePlots.Count())
+        {
+            RDF_RadarTarget t = livePlots.Get(i);
+            i = i + 1;
+            if (!t || !t.m_Detected)
+                continue;
+            if (!ShouldDisplayPlot(t, settings))
+                continue;
+            if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+                continue;
+            if (t.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
+                continue;
+            return true;
+        }
+
+        return false;
+    }
+
+    // PD / LOCK air-search track visibility. WLR and special types bypass.
+    static bool ShouldDisplayAirSearchTrack(
+        RDF_RadarTrack track,
+        string workstationMode,
+        int lockedTrackId,
+        bool hasLiveAirPlots,
+        bool hasLiveAirKnown)
+    {
+        if (!track)
+            return false;
+
+        if (workstationMode == GBRS_RadarStationConstants.MODE_WLR)
+            return true;
+
+        if (lockedTrackId > 0 && track.m_TrackId == lockedTrackId)
+            return true;
+
+        if (track.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_PROJECTILE)
+            return true;
+        if (track.m_Type == ERDF_RadarTargetType.RDF_RADAR_TARGET_RADAR_EMITTER)
+            return true;
+
+        if (track.m_MissCount >= AIR_SEARCH_MISS_DISPLAY_MAX)
+            return false;
+
+        if (track.m_CoastElapsedSec > AIR_SEARCH_COAST_DISPLAY_MAX_S)
+            return false;
+
+        if (hasLiveAirKnown)
+        {
+            if (!hasLiveAirPlots && track.m_Coasting)
+                return false;
+        }
+
+        return true;
+    }
+
+    // Afterglow lifetime scaled to one mechanical rotation (SIGINT_RDF pattern).
+    static float ResolvePlotAfterglowLifeS(
+        RDF_RadarSettings settings,
+        string workstationMode,
+        float fallbackLifeS)
+    {
+        if (workstationMode == GBRS_RadarStationConstants.MODE_WLR)
+            return fallbackLifeS;
+
+        if (!settings || !settings.m_Hardware)
+            return fallbackLifeS;
+
+        float rpm = settings.m_Hardware.m_ScanRpm;
+        if (rpm <= 0.01)
+            return fallbackLifeS;
+
+        return (60.0 / rpm) * PLOT_AFTERGLOW_SWEEP_MULT;
     }
 
     // PPI coast / speed readout must not treat blade Doppler or a one-dwell

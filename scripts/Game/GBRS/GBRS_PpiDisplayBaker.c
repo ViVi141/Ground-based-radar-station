@@ -76,7 +76,8 @@ class GBRS_PpiDisplayBaker
         float rangeM,
         string workstationMode,
         float nowS,
-        float worldNowS)
+        float worldNowS,
+        int lockedTrackId)
     {
         EnsureBuffers();
 
@@ -92,13 +93,23 @@ class GBRS_PpiDisplayBaker
         // Afterglow stays at last detection. Coasting persist plots made PPI
         // blips slide after the beam left, which looked like the sweep flung them.
 
-        float lifeS = PLOT_AFTERGLOW_S;
+        float lifeS = GBRS_RadarStationConfig.ResolvePlotAfterglowLifeS(
+            settings,
+            workstationMode,
+            PLOT_AFTERGLOW_S);
         if (workstationMode == GBRS_RadarStationConstants.MODE_WLR)
             lifeS = WLR_PLOT_LIFE_S;
         PrunePersist(nowS, lifeS);
 
         BuildClusteredDisplayPlots(origin, rangeM);
-        BuildClusteredDisplayTracks(tracker, origin, rangeM);
+        BuildClusteredDisplayTracks(
+            tracker,
+            origin,
+            rangeM,
+            live,
+            settings,
+            workstationMode,
+            lockedTrackId);
 
         if (workstationMode == GBRS_RadarStationConstants.MODE_WLR)
             UpdateWlrPersist(worldNowS);
@@ -440,7 +451,11 @@ class GBRS_PpiDisplayBaker
     protected void BuildClusteredDisplayTracks(
         RDF_RadarProjectileTracker tracker,
         vector origin,
-        float rangeM)
+        float rangeM,
+        array<ref RDF_RadarTarget> livePlots,
+        RDF_RadarSettings settings,
+        string workstationMode,
+        int lockedTrackId)
     {
         m_DisplayTracks.Clear();
         if (!tracker)
@@ -450,6 +465,7 @@ class GBRS_PpiDisplayBaker
         if (!all)
             return;
 
+        bool hasLiveAir = GBRS_RadarStationConfig.HasLiveAirSearchPlots(livePlots, settings);
         float gateSq = TRACK_CLUSTER_RANGE_M * TRACK_CLUSTER_RANGE_M;
         int i = 0;
         while (i < all.Count())
@@ -459,6 +475,13 @@ class GBRS_PpiDisplayBaker
             if (!tr)
                 continue;
             if (!IsTrackInRange(tr, origin, rangeM))
+                continue;
+            if (!GBRS_RadarStationConfig.ShouldDisplayAirSearchTrack(
+                    tr,
+                    workstationMode,
+                    lockedTrackId,
+                    hasLiveAir,
+                    true))
                 continue;
 
             int match = -1;

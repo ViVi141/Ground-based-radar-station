@@ -310,6 +310,13 @@ class GBRS_PpiPanel
                 continue;
             if (index >= MAX_DRAW_BLIPS)
                 break;
+            if (!GBRS_RadarStationConfig.ShouldDisplayAirSearchTrack(
+                    tr,
+                    m_Mode,
+                    m_LockedTrackId,
+                    false,
+                    false))
+                continue;
 
             float bx;
             float by;
