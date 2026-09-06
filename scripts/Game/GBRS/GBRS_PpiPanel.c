@@ -279,6 +279,25 @@ class GBRS_PpiPanel
     }
 
     //------------------------------------------------------------------------------------------------
+    // Match GBRS_RadarStationHud.TrackDrawWorldPos — anchor on last hit.
+    protected vector TrackDrawWorldPos(RDF_RadarTrack tr, vector origin)
+    {
+        if (!tr)
+            return origin;
+
+        if (tr.m_Positions && tr.m_Positions.Count() > 0)
+        {
+            int last = tr.m_Positions.Count() - 1;
+            vector newest = tr.m_Positions.Get(last);
+            vector deltaMeas = newest - origin;
+            if (deltaMeas.LengthSq() > 1.0)
+                return newest;
+        }
+
+        return tr.m_FilteredPosition;
+    }
+
+    //------------------------------------------------------------------------------------------------
     protected void DrawTracks(array<ref RDF_RadarTrack> tracks, vector origin)
     {
         if (!tracks)
@@ -291,10 +310,18 @@ class GBRS_PpiPanel
                 continue;
             if (index >= MAX_DRAW_BLIPS)
                 break;
+            if (!GBRS_RadarStationConfig.ShouldDisplayAirSearchTrack(
+                    tr,
+                    m_Mode,
+                    m_LockedTrackId,
+                    false,
+                    false))
+                continue;
 
             float bx;
             float by;
-            if (!WorldToPpi(origin, tr.m_FilteredPosition, bx, by))
+            vector drawPos = TrackDrawWorldPos(tr, origin);
+            if (!WorldToPpi(origin, drawPos, bx, by))
                 continue;
 
             int color = COL_TRACK;

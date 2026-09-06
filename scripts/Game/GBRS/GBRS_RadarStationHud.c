@@ -158,7 +158,7 @@ class GBRS_RadarStationHud
     protected IEntity m_OpticsParent;
     protected bool m_bOpticsEnabled;
     // Wall-clock when the last PPI track snap arrived; used to coast symbols
-    // between ~30 Hz snaps at the 60 Hz UI rate.
+    // between ~5 Hz authority snapshots at the 60 Hz UI rate.
     protected float m_TrackCoastAnchorS;
     protected float m_DisplayRange = 12000.0;
     protected string m_Mode = GBRS_RadarStationConstants.MODE_PD_SEARCH;
@@ -1323,13 +1323,10 @@ class GBRS_RadarStationHud
                 continue;
             if (index >= MAX_DRAW_BLIPS)
                 break;
-            if (m_Mode == MODE_WLR)
-            {
-                // The shell track pass owns this contact. Avoid drawing the
-                // same physical round again as a raw afterglow underneath it.
-                if (PlotCoveredByCachedTrack(t, origin))
-                    continue;
-            }
+            // When a TWS track already owns this contact, skip the raw afterglow
+            // so the PPI does not show two symbols for one aircraft (PD + WLR).
+            if (PlotCoveredByCachedTrack(t, origin))
+                continue;
 
             float bx;
             float by;
@@ -1673,6 +1670,13 @@ class GBRS_RadarStationHud
                 continue;
             if (drawn >= MAX_DRAW_BLIPS)
                 break;
+            if (!GBRS_RadarStationConfig.ShouldDisplayAirSearchTrack(
+                    tr,
+                    m_Mode,
+                    m_LockedTrackId,
+                    false,
+                    false))
+                continue;
 
             float bx;
             float by;
@@ -1735,18 +1739,31 @@ class GBRS_RadarStationHud
         return m_CachedDisplayTracks;
     }
 
-    // Authority snapshot already carries RDF-filtered position at ~30 Hz.
+    // Authority snapshot carries measured-anchor positions at ~5 Hz.
     protected vector CoastTrackWorldPos(RDF_RadarTrack tr)
     {
         return TrackDrawWorldPos(tr, m_ScanOrigin);
     }
 
-    // Prefer filtered ECEF; if that is 0/invalid, rebuild from RDF az/range
-    // (0 deg = +X east, 90 deg = +Z north).
+    // Prefer the last measured hit for PPI symbols. FilteredPosition keeps
+    // coasting between mechanical-scan updates and looked like contacts were
+    // being flung across the scope. Heading/chevron still use TrackDisplayMotion.
     protected vector TrackDrawWorldPos(RDF_RadarTrack tr, vector origin)
     {
         if (!tr)
             return origin;
+
+        if (tr.m_Positions && tr.m_Positions.Count() > 0)
+        {
+            int last = tr.m_Positions.Count() - 1;
+            vector newest = tr.m_Positions.Get(last);
+            if (VecFinite(newest))
+            {
+                vector deltaMeas = newest - origin;
+                if (deltaMeas.LengthSq() > 1.0)
+                    return newest;
+            }
+        }
 
         vector pos = tr.m_FilteredPosition;
         if (VecFinite(pos))
@@ -1791,6 +1808,13 @@ class GBRS_RadarStationHud
             if (!tr)
                 continue;
             if (!IsTrackInDisplayRange(tr, origin))
+                continue;
+            if (!GBRS_RadarStationConfig.ShouldDisplayAirSearchTrack(
+                    tr,
+                    m_Mode,
+                    m_LockedTrackId,
+                    false,
+                    false))
                 continue;
 
             int match = -1;

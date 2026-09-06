@@ -53,9 +53,10 @@ class GBRS_RadarStationConstants
     // kinematics and keeps ScanOnce off the 60 fps cadence.
     static const float STARE_UPDATE_INTERVAL_S = 0.12;
 
-    // Authority packs PPI plots/tracks at 30 Hz; the workstation drives the
-    // sweep needle from live GetScanForwardWorld between snapshots.
-    static const float PPI_SNAPSHOT_INTERVAL_S = 0.033333;
+    // Authority packs PPI plots/tracks at ~5 Hz (one mechanical-sweep cadence).
+    // The workstation still drives the sweep needle from live GetScanForwardWorld
+    // between snapshots so the beam does not stutter.
+    static const float PPI_SNAPSHOT_INTERVAL_S = 0.2;
 
     // Counter-battery WLR slow all-around mechanical rotation for discovery.
     // A single 24° pass at 6 RPM dwells ~0.67 s — enough to cue a track, not

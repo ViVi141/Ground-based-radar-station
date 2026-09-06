@@ -1142,7 +1142,8 @@ class GBRS_RadarStationComponent : ScriptComponent
             rangeM,
             m_WorkstationMode,
             nowS,
-            worldNowS);
+            worldNowS,
+            ResolveLockedTrackId());
 
         array<ref RDF_RadarFusedTrack> fused = null;
         RDF_RadarDatalinkHub hub = RDF_RadarDatalinkHub.Get();

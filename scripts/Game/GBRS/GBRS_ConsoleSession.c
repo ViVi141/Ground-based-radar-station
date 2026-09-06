@@ -356,7 +356,7 @@ class GBRS_ConsoleSession
         {
             origin = m_SnapOrigin;
             float azRad = m_SnapScanAzDeg * Math.DEG2RAD;
-            forward = Vector(Math.Sin(azRad), 0.0, Math.Cos(azRad));
+            forward = Vector(Math.Cos(azRad), 0.0, Math.Sin(azRad));
         }
 
         if (lockedId <= 0)
